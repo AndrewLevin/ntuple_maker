@@ -62,8 +62,16 @@ public:
       static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
   enum Cuts {
-    Lep1FullSelection  = 1UL<<2, 
-    Lep2FullSelection  = 1UL<<9 
+    Lep1FullSelectionV1  = 1UL<<1, 
+    Lep1FullSelectionV2  = 1UL<<2, 
+    Lep1FullSelectionV3  = 1UL<<3,
+    Lep1FullSelectionV4  = 1UL<<4, 
+    Lep1FullSelectionV5  = 1UL<<5, 
+    Lep2FullSelectionV1  = 1UL<<6, 
+    Lep2FullSelectionV2  = 1UL<<7, 
+    Lep2FullSelectionV3  = 1UL<<8, 
+    Lep2FullSelectionV4  = 1UL<<9, 
+    Lep2FullSelectionV5  = 1UL<<10 
   };
 
 
@@ -89,6 +97,8 @@ public:
   edm::EDGetTokenT<pat::JetCollection> fatjetToken_;
   edm::EDGetTokenT<pat::METCollection> metToken_;
 
+
+  TH1F * n_events_run_over;
   UInt_t cuts;
   UInt_t event;
   UInt_t run;
@@ -162,6 +172,12 @@ ntuple_maker::~ntuple_maker()
 void
 ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
+
+  n_events_run_over->Fill(0.5);
+
+  std::vector<UInt_t> loose_muon_indices;
+  std::vector<UInt_t> loose_electron_indices;
+
   cuts = 0;
 
    using namespace edm;
@@ -177,27 +193,632 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    nvtx=vertices->size();
 
+   edm::Handle<pat::ElectronCollection> electrons;
+   iEvent.getByToken(electronToken_, electrons);
+
+   //   for (const pat::Electron &el : *electrons) {
+   for(UInt_t i = 0; i < electrons->size(); i++){
+
+     if( (*electrons)[i].pt() < 10 || (*electrons)[i].chargedHadronIso()/(*electrons)[i].pt() > 0.3) 
+       continue;
+
+     loose_electron_indices.push_back(i);
+
+     //if (el.chargedHadronIso()/el.pt() > 0.3)
+     //  continue;
+
+   }
+
    edm::Handle<pat::MuonCollection> muons;
    iEvent.getByToken(muonToken_, muons);
 
-   Bool_t found_muon = kFALSE;
+   //Bool_t found_muon = kFALSE;
 
-   for (const pat::Muon &mu : *muons) {
-     if (mu.pt() < 10 || !mu.isLooseMuon() || mu.chargedHadronIso()/mu.pt() > 0.3)
+   
+
+   for(UInt_t i = 0; i < muons->size(); i++){
+     if ((*muons)[i].pt() < 10 || !(*muons)[i].isLooseMuon() || (*muons)[i].chargedHadronIso()/(*muons)[i].pt() > 0.3)
        continue;
 
-     Bool_t lep1passfullselection = kTRUE;
+     //std::cout << "(*muons)[i].pt() = " << (*muons)[i].pt() << std::endl;
 
-     Float_t relative_isolation = (mu.pfIsolationR04().sumChargedHadronPt+ std::max(0.0,mu.pfIsolationR04().sumNeutralHadronEt + mu.pfIsolationR04().sumPhotonEt - 0.5 * mu.pfIsolationR04().sumChargedHadronPt))/mu.pt();
-     if (!mu.isTightMuon(PV) || relative_isolation > 0.12) 
-       lep1passfullselection = kFALSE;
+     loose_muon_indices.push_back(i);
 
-     if (lep1passfullselection)
-       cuts = cuts | Lep1FullSelection;
+    }
 
-     lep1 = mu.p4();
-     lep1q = mu.charge();
-     lep1id = mu.pdgId();
+   if(loose_muon_indices.size() >= 2){
+
+     UInt_t i1 = loose_muon_indices[0];
+     UInt_t i2 = loose_muon_indices[1];
+
+     Float_t relative_isolation_1 = ((*muons)[i1].pfIsolationR04().sumChargedHadronPt+ std::max(0.0,(*muons)[i1].pfIsolationR04().sumNeutralHadronEt + (*muons)[i1].pfIsolationR04().sumPhotonEt - 0.5 * (*muons)[i1].pfIsolationR04().sumChargedHadronPt))/(*muons)[i1].pt();
+     Float_t relative_isolation_2 = ((*muons)[i2].pfIsolationR04().sumChargedHadronPt+ std::max(0.0,(*muons)[i2].pfIsolationR04().sumNeutralHadronEt + (*muons)[i2].pfIsolationR04().sumPhotonEt - 0.5 * (*muons)[i2].pfIsolationR04().sumChargedHadronPt))/(*muons)[i2].pt();
+
+     if ((*muons)[i1].isTightMuon(PV) && relative_isolation_1 < 0.12) 
+       cuts = cuts | Lep1FullSelectionV1;
+
+     if ((*muons)[i2].isTightMuon(PV) && relative_isolation_2 < 0.12) 
+       cuts = cuts | Lep2FullSelectionV1;
+
+     if ((*muons)[i1].isTightMuon(PV) && relative_isolation_1 < 0.2) 
+       cuts = cuts | Lep1FullSelectionV2;
+
+     if ((*muons)[i2].isTightMuon(PV) && relative_isolation_2 < 0.2) 
+       cuts = cuts | Lep2FullSelectionV2;
+
+     if ((*muons)[i1].isTightMuon(PV) && relative_isolation_1 < 0.3) 
+       cuts = cuts | Lep1FullSelectionV3;
+
+     if ((*muons)[i2].isTightMuon(PV) && relative_isolation_2 < 0.3) 
+       cuts = cuts | Lep2FullSelectionV3;
+
+     if ((*muons)[i1].isTightMuon(PV) && relative_isolation_1 < 0.4) 
+       cuts = cuts | Lep1FullSelectionV4;
+
+     if ((*muons)[i2].isTightMuon(PV) && relative_isolation_2 < 0.4) 
+       cuts = cuts | Lep2FullSelectionV4;
+
+     if (relative_isolation_1 < 0.2) 
+       cuts = cuts | Lep1FullSelectionV5;
+
+     if (relative_isolation_2 < 0.2) 
+       cuts = cuts | Lep2FullSelectionV5;
+     
+     lep1 = (*muons)[i1].p4();
+     lep1q = (*muons)[i1].charge();
+     lep1id = (*muons)[i1].pdgId();
+
+     lep2 = (*muons)[i2].p4();
+     lep2q = (*muons)[i2].charge();
+     lep2id = (*muons)[i2].pdgId();
+     
+   }
+   else if (loose_muon_indices.size() >=1 && loose_electron_indices.size() >= 1){
+
+     UInt_t im = loose_muon_indices[0];
+     UInt_t ie = loose_electron_indices[0];
+
+
+     Float_t relative_isolation_1 = ((*muons)[im].pfIsolationR04().sumChargedHadronPt+ std::max(0.0,(*muons)[im].pfIsolationR04().sumNeutralHadronEt + (*muons)[im].pfIsolationR04().sumPhotonEt - 0.5 * (*muons)[im].pfIsolationR04().sumChargedHadronPt))/(*muons)[im].pt();
+
+     if ((*muons)[im].isTightMuon(PV) && relative_isolation_1 < 0.12) 
+       cuts = cuts | Lep1FullSelectionV1;
+
+     if ((*muons)[im].isTightMuon(PV) && relative_isolation_1 < 0.2) 
+       cuts = cuts | Lep1FullSelectionV2;
+
+     if ((*muons)[im].isTightMuon(PV) && relative_isolation_1 < 0.3) 
+       cuts = cuts | Lep1FullSelectionV3;
+
+     if ((*muons)[im].isTightMuon(PV) && relative_isolation_1 < 0.4) 
+       cuts = cuts | Lep1FullSelectionV4;
+
+     if (relative_isolation_1 < 0.2) 
+       cuts = cuts | Lep1FullSelectionV5;
+
+     lep1 = (*muons)[im].p4();
+     lep1q = (*muons)[im].charge();
+     lep1id = (*muons)[im].pdgId();
+
+     reco::GsfElectron::PflowIsolationVariables pfIso = (*electrons)[ie].pfIsolationVariables();
+
+     Float_t absiso = pfIso.sumChargedHadronPt + std::max(0.0 , pfIso.sumNeutralHadronEt + pfIso.sumPhotonEt - 0.5 * pfIso.sumPUPt );
+     Float_t relIsoWithDBeta = absiso/(*electrons)[ie].pt();
+     Float_t ooEmooP = 0;
+
+     if( (*electrons)[ie].ecalEnergy() == 0 ){
+       std::cout << "Electron energy is zero!" << std::endl;
+       ooEmooP = 1e30;
+     }
+     else if (!std::isfinite((*electrons)[ie].ecalEnergy())){
+       std::cout << "Electron energy is not finite!" << std::endl;
+       ooEmooP = 1e30;
+     }
+     else
+       ooEmooP = fabs(1.0/(*electrons)[ie].ecalEnergy() - (*electrons)[ie].eSuperClusterOverP()/(*electrons)[ie].ecalEnergy() );
+
+     //loose working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
+     if((*electrons)[ie].superCluster()->eta() < 2.5 && (*electrons)[ie].superCluster()->eta() > 1.479 ){
+       if(
+	  (fabs((*electrons)[ie].deltaEtaSuperClusterTrackAtVtx()) < 0.0124)
+	  &&
+	  ( fabs((*electrons)[ie].deltaPhiSuperClusterTrackAtVtx()) < 0.0642)
+	  &&
+	  ((*electrons)[ie].full5x5_sigmaIetaIeta() < 0.035)
+	  &&
+	  ( (*electrons)[ie].hcalOverEcal() < 0.1115)
+	  &&
+	  ( fabs((-1) * (*electrons)[ie].gsfTrack()->dxy(PV.position())) < 0.098)
+	  &&
+	  (  fabs((*electrons)[ie].gsfTrack()->dz( PV.position() )) < 0.9187)
+	  &&
+	  (fabs(ooEmooP) < 0.1443)
+	  &&
+	  (relIsoWithDBeta < 0.3529)
+	  &&
+	  ((*electrons)[ie].passConversionVeto())
+	  &&
+	  ((*electrons)[ie].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  )
+	 cuts = cuts | Lep2FullSelectionV3;
+     } else if ((*electrons)[ie].superCluster()->eta() < 1.479) {
+       if(
+	  (fabs((*electrons)[ie].deltaEtaSuperClusterTrackAtVtx()) < 0.0181)
+	  &&
+	  ( fabs((*electrons)[ie].deltaPhiSuperClusterTrackAtVtx()) < 0.0936)
+	  &&
+	  ((*electrons)[ie].full5x5_sigmaIetaIeta() < 0.0123)
+	  &&
+	  ( (*electrons)[ie].hcalOverEcal() < 0.141)
+	  &&
+	  ( fabs((-1) * (*electrons)[ie].gsfTrack()->dxy(PV.position())) < 0.0166)
+	  &&
+	  (  fabs((*electrons)[ie].gsfTrack()->dz( PV.position() )) < 0.54342)
+	  &&
+	  (fabs(ooEmooP) < 0.1353)
+	  &&
+	  (relIsoWithDBeta < 0.24)
+	  &&
+	  ((*electrons)[ie].passConversionVeto())
+	  &&
+	  ((*electrons)[ie].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  )
+	 cuts = cuts | Lep2FullSelectionV3;
+     } 
+       
+     //medium working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
+     if((*electrons)[ie].superCluster()->eta() < 2.5 && (*electrons)[ie].superCluster()->eta() > 1.479 ){
+       if(
+	  (fabs((*electrons)[ie].deltaEtaSuperClusterTrackAtVtx()) < 0.0108)
+	  &&
+	  ( fabs((*electrons)[ie].deltaPhiSuperClusterTrackAtVtx()) < 0.0455)
+	  &&
+	  ((*electrons)[ie].full5x5_sigmaIetaIeta() < 0.0318)
+	  &&
+	  ( (*electrons)[ie].hcalOverEcal() < 0.097)
+	  &&
+	  ( fabs((-1) * (*electrons)[ie].gsfTrack()->dxy(PV.position())) < 0.0845)
+	  &&
+	  (  fabs((*electrons)[ie].gsfTrack()->dz( PV.position() )) < 0.7523)
+	  &&
+	  (fabs(ooEmooP) < 0.1201)
+	  &&
+	  (relIsoWithDBeta < 0.254)
+	  &&
+	  ((*electrons)[ie].passConversionVeto())
+	  &&
+	  ((*electrons)[ie].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  )
+	 cuts = cuts | Lep2FullSelectionV1;
+     } else if ((*electrons)[ie].superCluster()->eta() < 1.479) {
+       if(
+	  (fabs((*electrons)[ie].deltaEtaSuperClusterTrackAtVtx()) < 0.0106)
+	  &&
+	  ( fabs((*electrons)[ie].deltaPhiSuperClusterTrackAtVtx()) < 0.0323)
+	  &&
+	  ((*electrons)[ie].full5x5_sigmaIetaIeta() < 0.0107)
+	  &&
+	  ( (*electrons)[ie].hcalOverEcal() < 0.067)
+	  &&
+	  ( fabs((-1) * (*electrons)[ie].gsfTrack()->dxy(PV.position())) < 0.0131)
+	  &&
+	  (  fabs((*electrons)[ie].gsfTrack()->dz( PV.position() )) < 0.22310)
+	  &&
+	  (fabs(ooEmooP) < 0.1043)
+	  &&
+	  (relIsoWithDBeta < 0.2179)
+	  &&
+	  ((*electrons)[ie].passConversionVeto())
+	  &&
+	  ((*electrons)[ie].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  )
+	 cuts = cuts | Lep2FullSelectionV1;
+     } 
+
+     //tight working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
+     if((*electrons)[ie].superCluster()->eta() < 2.5 && (*electrons)[ie].superCluster()->eta() > 1.479 ){
+       if(
+	  (fabs((*electrons)[ie].deltaEtaSuperClusterTrackAtVtx()) < 0.0106)
+	  &&
+	  ( fabs((*electrons)[ie].deltaPhiSuperClusterTrackAtVtx()) < 0.0359)
+	  &&
+	  ((*electrons)[ie].full5x5_sigmaIetaIeta() < 0.0305)
+	  &&
+	  ( (*electrons)[ie].hcalOverEcal() < 0.0835)
+	  &&
+	  ( fabs((-1) * (*electrons)[ie].gsfTrack()->dxy(PV.position())) < 0.0163)
+	  &&
+	  (  fabs((*electrons)[ie].gsfTrack()->dz( PV.position() )) < 0.5999)
+	  &&
+	  (fabs(ooEmooP) < 0.1126)
+	  &&
+	  (relIsoWithDBeta < 0.2075)
+	  &&
+	  ((*electrons)[ie].passConversionVeto())
+	  &&
+	  ((*electrons)[ie].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  )
+	 cuts = cuts | Lep2FullSelectionV2;
+     } else if ((*electrons)[ie].superCluster()->eta() < 1.479) {
+       if(
+	  (fabs((*electrons)[ie].deltaEtaSuperClusterTrackAtVtx()) < 0.0091)
+	  &&
+	  ( fabs((*electrons)[ie].deltaPhiSuperClusterTrackAtVtx()) < 0.031)
+	  &&
+	  ((*electrons)[ie].full5x5_sigmaIetaIeta() < 0.0106)
+	  &&
+	  ( (*electrons)[ie].hcalOverEcal() < 0.0532)
+	  &&
+	  ( fabs((-1) * (*electrons)[ie].gsfTrack()->dxy(PV.position())) < 0.0126)
+	  &&
+	  (  fabs((*electrons)[ie].gsfTrack()->dz( PV.position() )) < 0.0116)
+	  &&
+	  (fabs(ooEmooP) < 0.0609)
+	  &&
+	  (relIsoWithDBeta < 0.1649)
+	  &&
+	  ((*electrons)[ie].passConversionVeto())
+	  &&
+	  ((*electrons)[ie].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  )
+	 cuts = cuts | Lep2FullSelectionV2;
+     } 
+
+     lep2= (*electrons)[ie].p4();
+     lep2q = (*electrons)[ie].charge();
+     lep2id = (*electrons)[ie].pdgId();
+     
+     
+   } else if (loose_electron_indices.size() >= 2){
+
+     UInt_t i1 = loose_electron_indices[0];
+     UInt_t i2 = loose_electron_indices[1];
+
+     reco::GsfElectron::PflowIsolationVariables pfIso_1 = (*electrons)[i1].pfIsolationVariables();
+
+     Float_t absiso_1 = pfIso_1.sumChargedHadronPt + std::max(0.0 , pfIso_1.sumNeutralHadronEt + pfIso_1.sumPhotonEt - 0.5 * pfIso_1.sumPUPt );
+     Float_t relIsoWithDBeta_1 = absiso_1/(*electrons)[i1].pt();
+     Float_t ooEmooP_1 = 0;
+
+     if( (*electrons)[i1].ecalEnergy() == 0 ){
+       std::cout << "Electron energy is zero!" << std::endl;
+       ooEmooP_1 = 1e30;
+     }
+     else if (!std::isfinite((*electrons)[i1].ecalEnergy())){
+       std::cout << "Electron energy is not finite!" << std::endl;
+       ooEmooP_1 = 1e30;
+     }
+     else
+       ooEmooP_1 = fabs(1.0/(*electrons)[i1].ecalEnergy() - (*electrons)[i1].eSuperClusterOverP()/(*electrons)[i1].ecalEnergy() );
+
+     //loose working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
+     if((*electrons)[i1].superCluster()->eta() < 2.5 && (*electrons)[i1].superCluster()->eta() > 1.479 ){
+       if(
+	  (fabs((*electrons)[i1].deltaEtaSuperClusterTrackAtVtx()) < 0.0124)
+	  &&
+	  ( fabs((*electrons)[i1].deltaPhiSuperClusterTrackAtVtx()) < 0.0642)
+	  &&
+	  ((*electrons)[i1].full5x5_sigmaIetaIeta() < 0.035)
+	  &&
+	  ( (*electrons)[i1].hcalOverEcal() < 0.1115)
+	  &&
+	  ( fabs((-1) * (*electrons)[i1].gsfTrack()->dxy(PV.position())) < 0.098)
+	  &&
+	  (  fabs((*electrons)[i1].gsfTrack()->dz( PV.position() )) < 0.9187)
+	  &&
+	  (fabs(ooEmooP_1) < 0.1443)
+	  &&
+	  (relIsoWithDBeta_1 < 0.3529)
+	  &&
+	  ((*electrons)[i1].passConversionVeto())
+	  &&
+	  ((*electrons)[i1].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  )
+	 cuts = cuts | Lep1FullSelectionV3;
+     } else if ((*electrons)[i1].superCluster()->eta() < 1.479) {
+       if(
+	  (fabs((*electrons)[i1].deltaEtaSuperClusterTrackAtVtx()) < 0.0181)
+	  &&
+	  ( fabs((*electrons)[i1].deltaPhiSuperClusterTrackAtVtx()) < 0.0936)
+	  &&
+	  ((*electrons)[i1].full5x5_sigmaIetaIeta() < 0.0123)
+	  &&
+	  ( (*electrons)[i1].hcalOverEcal() < 0.141)
+	  &&
+	  ( fabs((-1) * (*electrons)[i1].gsfTrack()->dxy(PV.position())) < 0.0166)
+	  &&
+	  (  fabs((*electrons)[i1].gsfTrack()->dz( PV.position() )) < 0.54342)
+	  &&
+	  (fabs(ooEmooP_1) < 0.1353)
+	  &&
+	  (relIsoWithDBeta_1 < 0.24)
+	  &&
+	  ((*electrons)[i1].passConversionVeto())
+	  &&
+	  ((*electrons)[i1].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  )
+	 cuts = cuts | Lep1FullSelectionV3;
+     } 
+
+     //medium working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
+     if((*electrons)[i1].superCluster()->eta() < 2.5 && (*electrons)[i1].superCluster()->eta() > 1.479 ){
+       if(
+	  (fabs((*electrons)[i1].deltaEtaSuperClusterTrackAtVtx()) < 0.0108)
+	  &&
+	  ( fabs((*electrons)[i1].deltaPhiSuperClusterTrackAtVtx()) < 0.0455)
+	  &&
+	  ((*electrons)[i1].full5x5_sigmaIetaIeta() < 0.0318)
+	  &&
+	  ( (*electrons)[i1].hcalOverEcal() < 0.097)
+	  &&
+	  ( fabs((-1) * (*electrons)[i1].gsfTrack()->dxy(PV.position())) < 0.0845)
+	  &&
+	  (  fabs((*electrons)[i1].gsfTrack()->dz( PV.position() )) < 0.7523)
+	  &&
+	  (fabs(ooEmooP_1) < 0.1201)
+	  &&
+	  (relIsoWithDBeta_1 < 0.254)
+	  &&
+	  ((*electrons)[i1].passConversionVeto())
+	  &&
+	  ((*electrons)[i1].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  )
+	 cuts = cuts | Lep1FullSelectionV1;
+     } else if ((*electrons)[i1].superCluster()->eta() < 1.479) {
+       if(
+	  (fabs((*electrons)[i1].deltaEtaSuperClusterTrackAtVtx()) < 0.0106)
+	  &&
+	  ( fabs((*electrons)[i1].deltaPhiSuperClusterTrackAtVtx()) < 0.0323)
+	  &&
+	  ((*electrons)[i1].full5x5_sigmaIetaIeta() < 0.0107)
+	  &&
+	  ( (*electrons)[i1].hcalOverEcal() < 0.067)
+	  &&
+	  ( fabs((-1) * (*electrons)[i1].gsfTrack()->dxy(PV.position())) < 0.0131)
+	  &&
+	  (  fabs((*electrons)[i1].gsfTrack()->dz( PV.position() )) < 0.22310)
+	  &&
+	  (fabs(ooEmooP_1) < 0.1043)
+	  &&
+	  (relIsoWithDBeta_1 < 0.2179)
+	  &&
+	  ((*electrons)[i1].passConversionVeto())
+	  &&
+	  ((*electrons)[i1].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  )
+	 cuts = cuts | Lep1FullSelectionV1;
+     } 
+
+     //tight working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
+     if((*electrons)[i1].superCluster()->eta() < 2.5 && (*electrons)[i1].superCluster()->eta() > 1.479 ){
+       if(
+	  (fabs((*electrons)[i1].deltaEtaSuperClusterTrackAtVtx()) < 0.0106)
+	  &&
+	  ( fabs((*electrons)[i1].deltaPhiSuperClusterTrackAtVtx()) < 0.0359)
+	  &&
+	  ((*electrons)[i1].full5x5_sigmaIetaIeta() < 0.0305)
+	  &&
+	  ( (*electrons)[i1].hcalOverEcal() < 0.0835)
+	  &&
+	  ( fabs((-1) * (*electrons)[i1].gsfTrack()->dxy(PV.position())) < 0.0163)
+	  &&
+	  (  fabs((*electrons)[i1].gsfTrack()->dz( PV.position() )) < 0.5999)
+	  &&
+	  (fabs(ooEmooP_1) < 0.1126)
+	  &&
+	  (relIsoWithDBeta_1 < 0.2075)
+	  &&
+	  ((*electrons)[i1].passConversionVeto())
+	  &&
+	  ((*electrons)[i1].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  )
+	 cuts = cuts | Lep1FullSelectionV2;
+     } else if ((*electrons)[i1].superCluster()->eta() < 1.479) {
+       if(
+	  (fabs((*electrons)[i1].deltaEtaSuperClusterTrackAtVtx()) < 0.0091)
+	  &&
+	  ( fabs((*electrons)[i1].deltaPhiSuperClusterTrackAtVtx()) < 0.031)
+	  &&
+	  ((*electrons)[i1].full5x5_sigmaIetaIeta() < 0.0106)
+	  &&
+	  ( (*electrons)[i1].hcalOverEcal() < 0.0532)
+	  &&
+	  ( fabs((-1) * (*electrons)[i1].gsfTrack()->dxy(PV.position())) < 0.0126)
+	  &&
+	  (  fabs((*electrons)[i1].gsfTrack()->dz( PV.position() )) < 0.0116)
+	  &&
+	  (fabs(ooEmooP_1) < 0.0609)
+	  &&
+	  (relIsoWithDBeta_1 < 0.1649)
+	  &&
+	  ((*electrons)[i1].passConversionVeto())
+	  &&
+	  ((*electrons)[i1].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  )
+	 cuts = cuts | Lep1FullSelectionV2;
+     } 
+     
+     lep1= (*electrons)[i1].p4();
+     lep1q = (*electrons)[i1].charge();
+     lep1id = (*electrons)[i1].pdgId();
+
+     reco::GsfElectron::PflowIsolationVariables pfIso_2 = (*electrons)[i2].pfIsolationVariables();
+
+     Float_t absiso_2 = pfIso_2.sumChargedHadronPt + std::max(0.0 , pfIso_2.sumNeutralHadronEt + pfIso_2.sumPhotonEt - 0.5 * pfIso_2.sumPUPt );
+     Float_t relIsoWithDBeta_2 = absiso_2/(*electrons)[i2].pt();
+     Float_t ooEmooP_2 = 0;
+
+     if( (*electrons)[i2].ecalEnergy() == 0 ){
+       std::cout << "Electron energy is zero!" << std::endl;
+       ooEmooP_2 = 1e30;
+     }
+     else if (!std::isfinite((*electrons)[i2].ecalEnergy())){
+       std::cout << "Electron energy is not finite!" << std::endl;
+       ooEmooP_2 = 1e30;
+     }
+     else
+       ooEmooP_2 = fabs(1.0/(*electrons)[i2].ecalEnergy() - (*electrons)[i2].eSuperClusterOverP()/(*electrons)[i2].ecalEnergy() );
+
+
+     //loose working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
+     if((*electrons)[i2].superCluster()->eta() < 2.5 && (*electrons)[i2].superCluster()->eta() > 1.479 ){
+       if(
+	  (fabs((*electrons)[i2].deltaEtaSuperClusterTrackAtVtx()) < 0.0124)
+	  &&
+	  ( fabs((*electrons)[i2].deltaPhiSuperClusterTrackAtVtx()) < 0.0642)
+	  &&
+	  ((*electrons)[i2].full5x5_sigmaIetaIeta() < 0.035)
+	  &&
+	  ( (*electrons)[i2].hcalOverEcal() < 0.1115)
+	  &&
+	  ( fabs((-1) * (*electrons)[i2].gsfTrack()->dxy(PV.position())) < 0.098)
+	  &&
+	  (  fabs((*electrons)[i2].gsfTrack()->dz( PV.position() )) < 0.9187)
+	  &&
+	  (fabs(ooEmooP_2) < 0.1443)
+	  &&
+	  (relIsoWithDBeta_2 < 0.3529)
+	  &&
+	  ((*electrons)[i2].passConversionVeto())
+	  &&
+	  ((*electrons)[i2].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  )
+	 cuts = cuts | Lep2FullSelectionV3;
+     } else if ((*electrons)[i2].superCluster()->eta() < 1.479) {
+       if(
+	  (fabs((*electrons)[i2].deltaEtaSuperClusterTrackAtVtx()) < 0.0181)
+	  &&
+	  ( fabs((*electrons)[i2].deltaPhiSuperClusterTrackAtVtx()) < 0.0936)
+	  &&
+	  ((*electrons)[i2].full5x5_sigmaIetaIeta() < 0.0123)
+	  &&
+	  ( (*electrons)[i2].hcalOverEcal() < 0.141)
+	  &&
+	  ( fabs((-1) * (*electrons)[i2].gsfTrack()->dxy(PV.position())) < 0.0166)
+	  &&
+	  (  fabs((*electrons)[i2].gsfTrack()->dz( PV.position() )) < 0.54342)
+	  &&
+	  (fabs(ooEmooP_2) < 0.1353)
+	  &&
+	  (relIsoWithDBeta_2 < 0.24)
+	  &&
+	  ((*electrons)[i2].passConversionVeto())
+	  &&
+	  ((*electrons)[i2].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  )
+	 cuts = cuts | Lep2FullSelectionV3;
+     } 
+
+     //medium working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
+     if((*electrons)[i2].superCluster()->eta() < 2.5 && (*electrons)[i2].superCluster()->eta() > 1.479 ){
+       if(
+	  (fabs((*electrons)[i2].deltaEtaSuperClusterTrackAtVtx()) < 0.0108)
+	  &&
+	  ( fabs((*electrons)[i2].deltaPhiSuperClusterTrackAtVtx()) < 0.0455)
+	  &&
+	  ((*electrons)[i2].full5x5_sigmaIetaIeta() < 0.0318)
+	  &&
+	  ( (*electrons)[i2].hcalOverEcal() < 0.097)
+	  &&
+	  ( fabs((-1) * (*electrons)[i2].gsfTrack()->dxy(PV.position())) < 0.0845)
+	  &&
+	  (  fabs((*electrons)[i2].gsfTrack()->dz( PV.position() )) < 0.7523)
+	  &&
+	  (fabs(ooEmooP_2) < 0.1201)
+	  &&
+	  (relIsoWithDBeta_2 < 0.254)
+	  &&
+	  ((*electrons)[i2].passConversionVeto())
+	  &&
+	  ((*electrons)[i2].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  )
+	 cuts = cuts | Lep2FullSelectionV1;
+     } else if ((*electrons)[i2].superCluster()->eta() < 1.479) {
+       if(
+	  (fabs((*electrons)[i2].deltaEtaSuperClusterTrackAtVtx()) < 0.0106)
+	  &&
+	  ( fabs((*electrons)[i2].deltaPhiSuperClusterTrackAtVtx()) < 0.0323)
+	  &&
+	  ((*electrons)[i2].full5x5_sigmaIetaIeta() < 0.0107)
+	  &&
+	  ( (*electrons)[i2].hcalOverEcal() < 0.067)
+	  &&
+	  ( fabs((-1) * (*electrons)[i2].gsfTrack()->dxy(PV.position())) < 0.0131)
+	  &&
+	  (  fabs((*electrons)[i2].gsfTrack()->dz( PV.position() )) < 0.22310)
+	  &&
+	  (fabs(ooEmooP_2) < 0.1043)
+	  &&
+	  (relIsoWithDBeta_2 < 0.2179)
+	  &&
+	  ((*electrons)[i2].passConversionVeto())
+	  &&
+	  ((*electrons)[i2].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  )
+	 cuts = cuts | Lep2FullSelectionV1;
+     } 
+
+     //tight working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
+     if((*electrons)[i2].superCluster()->eta() < 2.5 && (*electrons)[i2].superCluster()->eta() > 1.479 ){
+       if(
+	  (fabs((*electrons)[i2].deltaEtaSuperClusterTrackAtVtx()) < 0.0106)
+	  &&
+	  ( fabs((*electrons)[i2].deltaPhiSuperClusterTrackAtVtx()) < 0.0359)
+	  &&
+	  ((*electrons)[i2].full5x5_sigmaIetaIeta() < 0.0305)
+	  &&
+	  ( (*electrons)[i2].hcalOverEcal() < 0.0835)
+	  &&
+	  ( fabs((-1) * (*electrons)[i2].gsfTrack()->dxy(PV.position())) < 0.0163)
+	  &&
+	  (  fabs((*electrons)[i2].gsfTrack()->dz( PV.position() )) < 0.5999)
+	  &&
+	  (fabs(ooEmooP_2) < 0.1126)
+	  &&
+	  (relIsoWithDBeta_2 < 0.2075)
+	  &&
+	  ((*electrons)[i2].passConversionVeto())
+	  &&
+	  ((*electrons)[i2].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  )
+	 cuts = cuts | Lep2FullSelectionV2;
+     } else if ((*electrons)[i2].superCluster()->eta() < 1.479) {
+       if(
+	  (fabs((*electrons)[i2].deltaEtaSuperClusterTrackAtVtx()) < 0.0091)
+	  &&
+	  ( fabs((*electrons)[i2].deltaPhiSuperClusterTrackAtVtx()) < 0.031)
+	  &&
+	  ((*electrons)[i2].full5x5_sigmaIetaIeta() < 0.0106)
+	  &&
+	  ( (*electrons)[i2].hcalOverEcal() < 0.0532)
+	  &&
+	  ( fabs((-1) * (*electrons)[i2].gsfTrack()->dxy(PV.position())) < 0.0126)
+	  &&
+	  (  fabs((*electrons)[i2].gsfTrack()->dz( PV.position() )) < 0.0116)
+	  &&
+	  (fabs(ooEmooP_2) < 0.0609)
+	  &&
+	  (relIsoWithDBeta_2 < 0.1649)
+	  &&
+	  ((*electrons)[i2].passConversionVeto())
+	  &&
+	  ((*electrons)[i2].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  )
+	 cuts = cuts | Lep2FullSelectionV2;
+     } 
+
+     lep2= (*electrons)[i2].p4();
+     lep2q = (*electrons)[i2].charge();
+     lep2id = (*electrons)[i2].pdgId();
+
+   } else 
+     return;
+   
+   
+
+   /*
+
+
      found_muon=kTRUE;
      break;
 
@@ -205,94 +826,25 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      //	    mu.pt(), mu.muonBestTrack()->dz(PV.position()), mu.isLooseMuon(), mu.isTightMuon(PV));
    }
 
+   
+
    if(!found_muon)
      return;
 
    Bool_t found_electron = kFALSE;
 
-   edm::Handle<pat::ElectronCollection> electrons;
-   iEvent.getByToken(electronToken_, electrons);
+   */
 
-   for (const pat::Electron &el : *electrons) {
-     if (el.pt() < 10 || el.chargedHadronIso()/el.pt() > 0.3) 
-       continue;
-     //if (el.chargedHadronIso()/el.pt() > 0.3)
-     //  continue;
 
-     reco::GsfElectron::PflowIsolationVariables pfIso = el.pfIsolationVariables();
 
-     Float_t absiso = pfIso.sumChargedHadronPt + std::max(0.0 , pfIso.sumNeutralHadronEt + pfIso.sumPhotonEt - 0.5 * pfIso.sumPUPt );
-     Float_t relIsoWithDBeta = absiso/el.pt();
-     Float_t ooEmooP = 0;
+   //   std::cout << "loose_electron_indices.size() = " << loose_electron_indices.size() << std::endl;
+   //   std::cout << "loose_muon_indices.size() = " << loose_muon_indices.size() << std::endl;
 
-     if( el.ecalEnergy() == 0 ){
-       std::cout << "Electron energy is zero!" << std::endl;
-       ooEmooP = 1e30;
-     }
-     else if (!std::isfinite(el.ecalEnergy())){
-       std::cout << "Electron energy is not finite!" << std::endl;
-       ooEmooP = 1e30;
-     }
-     else
-       ooEmooP = abs(1.0/el.ecalEnergy() - el.eSuperClusterOverP()/el.ecalEnergy() );
-       
+   //std::cout << "sum = " << loose_muon_indices.size()+ loose_electron_indices.size() << std::endl;
 
-     Bool_t lep2passfullselection = kTRUE;
+   /*
 
-     //medium working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
-     if(el.superCluster()->eta() < 2.5 && el.superCluster()->eta() > 1.479 ){
-       if (abs(el.deltaEtaSuperClusterTrackAtVtx()) > 0.0108)
-	 lep2passfullselection = kFALSE;
-       if ( abs(el.deltaPhiSuperClusterTrackAtVtx()) > 0.0455)
-	 lep2passfullselection = kFALSE;
-       if (el.full5x5_sigmaIetaIeta() > 0.0318)
-	 lep2passfullselection = kFALSE;
-       if ( el.hcalOverEcal() > 0.097)
-	 lep2passfullselection = kFALSE;
-       if( abs((-1) * el.gsfTrack()->dxy(PV.position())) > 0.0845)
-	 lep2passfullselection = kFALSE;
-       if(  abs(el.gsfTrack()->dz( PV.position() )) > 0.7523)
-	 lep2passfullselection = kFALSE;
-       if(abs(ooEmooP) > 0.1201)
-	 lep2passfullselection = kFALSE;
-       if(relIsoWithDBeta > 0.254)
-	 lep2passfullselection = kFALSE;
-       if(!el.passConversionVeto())
-	 lep2passfullselection = kFALSE;
-       if(el.gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() > 1)
-	 lep2passfullselection = kFALSE;
-     } else if (el.superCluster()->eta() < 1.479) {
-       if (abs(el.deltaEtaSuperClusterTrackAtVtx()) > 0.0106)
-	 lep2passfullselection = kFALSE;
-       if ( abs(el.deltaPhiSuperClusterTrackAtVtx()) > 0.0323)
-	 lep2passfullselection = kFALSE;
-       if (el.full5x5_sigmaIetaIeta() > 0.0107)
-	 lep2passfullselection = kFALSE;
-       if ( el.hcalOverEcal() > 0.067)
-	 lep2passfullselection = kFALSE;
-       if( abs((-1) * el.gsfTrack()->dxy(PV.position())) > 0.0131)
-	 lep2passfullselection = kFALSE;
-       if(  abs(el.gsfTrack()->dz( PV.position() )) > 0.22310)
-	 lep2passfullselection = kFALSE;
-       if(abs(ooEmooP) > 0.1043)
-	 lep2passfullselection = kFALSE;
-       if(relIsoWithDBeta > 0.2179)
-	 lep2passfullselection = kFALSE;
-       if(!el.passConversionVeto())
-	 lep2passfullselection = kFALSE;
-       if(el.gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() > 1)
-	 lep2passfullselection = kFALSE;
-     } else
-       continue;
-     
-     if (lep2passfullselection)
-       cuts = cuts | Lep2FullSelection;
 
-     lep2= el.p4();
-     lep2q = el.charge();
-     lep2id = el.pdgId();
-     found_electron=true;
-     break;
 
      //printf("elec with pt %4.1f, supercluster eta %+5.3f, sigmaIetaIeta %.3f (%.3f with full5x5 shower shapes), lost hits %d, pass conv veto %d\n",
      //	    el.pt(), el.superCluster()->eta(), el.sigmaIetaIeta(), el.full5x5_sigmaIetaIeta(), el.gsfTrack()->trackerExpectedHitsInner().numberOfLostHits(), el.passConversionVeto());
@@ -317,6 +869,8 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      printf("tau  with pt %4.1f, dxy signif %.1f, ID(byMediumCombinedIsolationDeltaBetaCorr3Hits) %.1f, lead candidate pt %.1f, pdgId %d \n",
 	    tau.pt(), tau.dxy_Sig(), tau.tauID("byMediumCombinedIsolationDeltaBetaCorr3Hits"), tau.leadCand()->pt(), tau.leadCand()->pdgId());
    }
+
+   */
 
 
    edm::Handle<pat::JetCollection> jets;
@@ -344,6 +898,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    }
 
+   /*
 
    edm::Handle<pat::JetCollection> fatjets;
    iEvent.getByToken(fatjetToken_, fatjets);
@@ -352,17 +907,17 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
             j.pt(), j.pt()*j.jecFactor("Uncorrected"), j.eta(), j.mass(), j.userFloat("ak8PFJetsCHSPrunedLinks"), j.userFloat("ak8PFJetsCHSTrimmedLinks"), j.userFloat("ak8PFJetsCHSFilteredLinks"), j.userFloat("cmsTopTagPFJetsCHSLinksAK8"));
    }
 
-   
+   */
  
    edm::Handle<pat::METCollection> mets;
    iEvent.getByToken(metToken_, mets);
    const pat::MET &met = mets->front();
-   printf("MET: pt %5.1f, phi %+4.2f, sumEt (%.1f). genMET %.1f. MET with JES up/down: %.1f/%.1f\n",
-	  met.pt(), met.phi(), met.sumEt(),
-	  met.genMET()->pt(),
-	  met.shiftedPt(pat::MET::JetEnUp), met.shiftedPt(pat::MET::JetEnDown));
+   //printf("MET: pt %5.1f, phi %+4.2f, sumEt (%.1f). genMET %.1f. MET with JES up/down: %.1f/%.1f\n",
+   //	  met.pt(), met.phi(), met.sumEt(),
+   //	  met.genMET()->pt(),
+   //	  met.shiftedPt(pat::MET::JetEnUp), met.shiftedPt(pat::MET::JetEnDown));
 
-   printf("\n");
+   //   printf("\n");
 
    metpt = met.pt();
    metphi = met.phi();
@@ -391,6 +946,8 @@ ntuple_maker::beginJob()
 {
 
   edm::Service<TFileService> fs;
+
+  n_events_run_over= fs->make<TH1F>("n_events_run_over","n_events_run_over",1,0,1);
 
   tree = fs->make<TTree>( "events"  , "events");
 

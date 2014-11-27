@@ -2,7 +2,7 @@ from WMCore.Configuration import Configuration
 config = Configuration()
 
 config.section_("General")
-config.General.requestName = 'tutorial_MC_analysis_test8'
+config.General.requestName = 'flattish_nuples_v3'
 config.General.workArea = 'crab_projects'
 
 config.section_("JobType")
@@ -18,7 +18,7 @@ config.Data.unitsPerJob = 1000
 #config.Data.lumiMask = 'lumi_mask_JSON.txt'
 config.Data.publication = True
 config.Data.publishDbsUrl = 'phys03'
-config.Data.publishDataName = 'CRAB3_tutorial_MC_analysis_test8'
+config.Data.publishDataName = 'flattish_ntuples_v3'
 
 config.section_("Site")
 config.Site.storageSite = 'T2_CH_CERN'
