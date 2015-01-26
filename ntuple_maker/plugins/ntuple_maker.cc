@@ -46,6 +46,8 @@
 #include "TTree.h"
 #include "Math/LorentzVector.h"
 
+#include "ntuple_maker/ntuple_maker/interface/enum_definition.h"
+
 //
 // class declaration
 //
@@ -60,20 +62,6 @@ public:
       ~ntuple_maker();
 
       static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
-
-  enum Cuts {
-    Lep1FullSelectionV1  = 1UL<<1, 
-    Lep1FullSelectionV2  = 1UL<<2, 
-    Lep1FullSelectionV3  = 1UL<<3,
-    Lep1FullSelectionV4  = 1UL<<4, 
-    Lep1FullSelectionV5  = 1UL<<5, 
-    Lep2FullSelectionV1  = 1UL<<6, 
-    Lep2FullSelectionV2  = 1UL<<7, 
-    Lep2FullSelectionV3  = 1UL<<8, 
-    Lep2FullSelectionV4  = 1UL<<9, 
-    Lep2FullSelectionV5  = 1UL<<10 
-  };
-
 
    private:
       virtual void beginJob() override;
@@ -338,7 +326,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  &&
 	  ((*electrons)[ie].passConversionVeto())
 	  &&
-	  ((*electrons)[ie].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  ((*electrons)[ie].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1 )
 	  )
 	 cuts = cuts | Lep2FullSelectionV3;
      } else if ((*electrons)[ie].superCluster()->eta() < 1.479) {
@@ -361,7 +349,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  &&
 	  ((*electrons)[ie].passConversionVeto())
 	  &&
-	  ((*electrons)[ie].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  ((*electrons)[ie].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1 )
 	  )
 	 cuts = cuts | Lep2FullSelectionV3;
      } 
@@ -387,7 +375,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  &&
 	  ((*electrons)[ie].passConversionVeto())
 	  &&
-	  ((*electrons)[ie].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  ((*electrons)[ie].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1 )
 	  )
 	 cuts = cuts | Lep2FullSelectionV1;
      } else if ((*electrons)[ie].superCluster()->eta() < 1.479) {
@@ -410,7 +398,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  &&
 	  ((*electrons)[ie].passConversionVeto())
 	  &&
-	  ((*electrons)[ie].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  ((*electrons)[ie].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1  )
 	  )
 	 cuts = cuts | Lep2FullSelectionV1;
      } 
@@ -436,7 +424,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  &&
 	  ((*electrons)[ie].passConversionVeto())
 	  &&
-	  ((*electrons)[ie].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  ((*electrons)[ie].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS)<= 1  )
 	  )
 	 cuts = cuts | Lep2FullSelectionV2;
      } else if ((*electrons)[ie].superCluster()->eta() < 1.479) {
@@ -459,7 +447,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  &&
 	  ((*electrons)[ie].passConversionVeto())
 	  &&
-	  ((*electrons)[ie].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  ((*electrons)[ie].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1 )
 	  )
 	 cuts = cuts | Lep2FullSelectionV2;
      } 
@@ -512,7 +500,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  &&
 	  ((*electrons)[i1].passConversionVeto())
 	  &&
-	  ((*electrons)[i1].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  ((*electrons)[i1].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1  )
 	  )
 	 cuts = cuts | Lep1FullSelectionV3;
      } else if ((*electrons)[i1].superCluster()->eta() < 1.479) {
@@ -535,7 +523,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  &&
 	  ((*electrons)[i1].passConversionVeto())
 	  &&
-	  ((*electrons)[i1].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  ((*electrons)[i1].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1 )
 	  )
 	 cuts = cuts | Lep1FullSelectionV3;
      } 
@@ -561,7 +549,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  &&
 	  ((*electrons)[i1].passConversionVeto())
 	  &&
-	  ((*electrons)[i1].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  ((*electrons)[i1].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1  )
 	  )
 	 cuts = cuts | Lep1FullSelectionV1;
      } else if ((*electrons)[i1].superCluster()->eta() < 1.479) {
@@ -584,7 +572,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  &&
 	  ((*electrons)[i1].passConversionVeto())
 	  &&
-	  ((*electrons)[i1].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  ((*electrons)[i1].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1  )
 	  )
 	 cuts = cuts | Lep1FullSelectionV1;
      } 
@@ -610,7 +598,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  &&
 	  ((*electrons)[i1].passConversionVeto())
 	  &&
-	  ((*electrons)[i1].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  ((*electrons)[i1].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1 )
 	  )
 	 cuts = cuts | Lep1FullSelectionV2;
      } else if ((*electrons)[i1].superCluster()->eta() < 1.479) {
@@ -633,7 +621,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  &&
 	  ((*electrons)[i1].passConversionVeto())
 	  &&
-	  ((*electrons)[i1].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  ((*electrons)[i1].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1 )
 	  )
 	 cuts = cuts | Lep1FullSelectionV2;
      } 
@@ -681,7 +669,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  &&
 	  ((*electrons)[i2].passConversionVeto())
 	  &&
-	  ((*electrons)[i2].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  ((*electrons)[i2].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1  )
 	  )
 	 cuts = cuts | Lep2FullSelectionV3;
      } else if ((*electrons)[i2].superCluster()->eta() < 1.479) {
@@ -704,7 +692,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  &&
 	  ((*electrons)[i2].passConversionVeto())
 	  &&
-	  ((*electrons)[i2].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  ((*electrons)[i2].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1 )
 	  )
 	 cuts = cuts | Lep2FullSelectionV3;
      } 
@@ -730,7 +718,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  &&
 	  ((*electrons)[i2].passConversionVeto())
 	  &&
-	  ((*electrons)[i2].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  ((*electrons)[i2].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1  )
 	  )
 	 cuts = cuts | Lep2FullSelectionV1;
      } else if ((*electrons)[i2].superCluster()->eta() < 1.479) {
@@ -753,7 +741,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  &&
 	  ((*electrons)[i2].passConversionVeto())
 	  &&
-	  ((*electrons)[i2].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  ((*electrons)[i2].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1 )
 	  )
 	 cuts = cuts | Lep2FullSelectionV1;
      } 
@@ -779,7 +767,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  &&
 	  ((*electrons)[i2].passConversionVeto())
 	  &&
-	  ((*electrons)[i2].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  ((*electrons)[i2].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1 )
 	  )
 	 cuts = cuts | Lep2FullSelectionV2;
      } else if ((*electrons)[i2].superCluster()->eta() < 1.479) {
@@ -802,7 +790,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  &&
 	  ((*electrons)[i2].passConversionVeto())
 	  &&
-	  ((*electrons)[i2].gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() <= 1)
+	  ((*electrons)[i2].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1  )
 	  )
 	 cuts = cuts | Lep2FullSelectionV2;
      } 

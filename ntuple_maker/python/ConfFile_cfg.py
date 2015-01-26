@@ -14,7 +14,7 @@ process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use
     fileNames = cms.untracked.vstring(
 #        '/store/mc/Spring14miniaod/TTJets_MSDecaysCKM_central_Tune4C_13TeV-madgraph-tauola/MINIAODSIM/PU40bx25_POSTLS170_V5-v2/00000/00CAA728-D626-E411-9112-00215AD4D6E2.root'
-        '/store/user/anlevin/data/MINIAOD/wpwp_13_tev_qed_4_qcd_0_v3/Merged.root'
+        '/store/user/anlevin/data/MINIAOD/wpwp_13_tev_qed_4_qcd_0_v3/step5_output_9501.root'
 #        'file:/afs/cern.ch/work/a/anlevin/tmp/Merged.root'
     )
 )
