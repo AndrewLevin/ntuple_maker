@@ -13,9 +13,10 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10000) )
 process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use
     fileNames = cms.untracked.vstring(
+        '/store/mc/Phys14DR/TTJets_MSDecaysCKM_central_Tune4C_13TeV-madgraph-tauola/MINIAODSIM/PU20bx25_PHYS14_25_V1-v1/00000/00C90EFC-3074-E411-A845-002590DB9262.root'
 #        '/store/mc/Spring14miniaod/TTJets_MSDecaysCKM_central_Tune4C_13TeV-madgraph-tauola/MINIAODSIM/PU40bx25_POSTLS170_V5-v2/00000/00CAA728-D626-E411-9112-00215AD4D6E2.root'
-        '/store/user/anlevin/data/MINIAOD/wpwp_13_tev_qed_4_qcd_0_v3/step5_output_9501.root'
-#        'file:/afs/cern.ch/work/a/anlevin/tmp/Merged.root'
+#        '/store/user/anlevin/data/MINIAOD/wpwp_13_tev_qed_4_qcd_0_v3/step5_output_9601.root'
+#        'file:/afs/cern.ch/work/a/anlevin/VBS/13_tev/Merged.root'
     )
 )
 
@@ -28,6 +29,9 @@ process.demo = cms.EDAnalyzer('ntuple_maker',
   jets = cms.InputTag("slimmedJets"),
   fatjets = cms.InputTag("slimmedJetsAK8"),
   mets = cms.InputTag("slimmedMETs"),  
+  prunedgenparticles = cms.InputTag("prunedGenParticles"),  
+  packedgenparticles = cms.InputTag("packedGenParticles"),  
+                              
 )
 
 

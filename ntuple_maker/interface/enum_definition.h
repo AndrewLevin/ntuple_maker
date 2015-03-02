@@ -1,3 +1,6 @@
+#ifndef NTUPLEMAKER_ENUM_DEFINITION_H
+#define NTUPLEMAKER_ENUM_DEFINITION_H
+
 enum Cuts {
   Lep1FullSelectionV1  = 1UL<<1,
   Lep1FullSelectionV2  = 1UL<<2,
@@ -10,3 +13,5 @@ enum Cuts {
   Lep2FullSelectionV4  = 1UL<<9,
   Lep2FullSelectionV5  = 1UL<<10
 };
+
+#endif

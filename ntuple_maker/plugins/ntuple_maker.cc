@@ -47,6 +47,12 @@
 #include "Math/LorentzVector.h"
 
 #include "ntuple_maker/ntuple_maker/interface/enum_definition.h"
+#include "ntuple_maker/ntuple_maker/interface/lepton_ids.h"
+
+#include "DataFormats/PatCandidates/interface/PackedGenParticle.h"
+#include "DataFormats/Candidate/interface/Candidate.h"
+#include "DataFormats/HepMCCandidate/interface/GenParticle.h"
+
 
 //
 // class declaration
@@ -68,6 +74,7 @@ public:
       virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
       virtual void endJob() override;
 
+
   //virtual void beginRun(edm::Run const&, edm::EventSetup const&) override;
       //virtual void endRun(edm::Run const&, edm::EventSetup const&) override;
       //virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
@@ -84,7 +91,8 @@ public:
   edm::EDGetTokenT<pat::JetCollection> jetToken_;
   edm::EDGetTokenT<pat::JetCollection> fatjetToken_;
   edm::EDGetTokenT<pat::METCollection> metToken_;
-
+  edm::EDGetTokenT<edm::View<reco::GenParticle> > prunedGenToken_;
+  edm::EDGetTokenT<edm::View<pat::PackedGenParticle> > packedGenToken_;
 
   TH1F * n_events_run_over;
   UInt_t cuts;
@@ -96,10 +104,8 @@ public:
   Float_t jetpt;
   Float_t jet1pujetid;
   Float_t jet1btag;
-  Float_t jet1btagincl;
   Float_t jet2pujetid;
   Float_t jet2btag;
-  Float_t jet2btagincl;
   Float_t metpt;
   Float_t metphi;
   Float_t metsumet;
@@ -136,7 +142,9 @@ ntuple_maker::ntuple_maker(const edm::ParameterSet& iConfig):
   photonToken_(consumes<pat::PhotonCollection>(iConfig.getParameter<edm::InputTag>("photons"))),
   jetToken_(consumes<pat::JetCollection>(iConfig.getParameter<edm::InputTag>("jets"))),
   fatjetToken_(consumes<pat::JetCollection>(iConfig.getParameter<edm::InputTag>("fatjets"))),
-  metToken_(consumes<pat::METCollection>(iConfig.getParameter<edm::InputTag>("mets")))
+  metToken_(consumes<pat::METCollection>(iConfig.getParameter<edm::InputTag>("mets"))),
+  prunedGenToken_(consumes<edm::View<reco::GenParticle> >(iConfig.getParameter<edm::InputTag>("prunedgenparticles"))),
+  packedGenToken_(consumes<edm::View<pat::PackedGenParticle> >(iConfig.getParameter<edm::InputTag>("packedgenparticles")))
 {
   //now do what ever initialization is needed
 
@@ -162,6 +170,18 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
 
   n_events_run_over->Fill(0.5);
+
+  edm::Handle<pat::JetCollection> jets;
+  iEvent.getByToken(jetToken_, jets);
+   
+  for (const pat::Jet &j : *jets) {
+    if (j.pt() < 20) continue;
+
+    //see here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation53XReReco
+    if( std::max(0.f,j.bDiscriminator("combinedInclusiveSecondaryVertexV2BJetTags")) > 0.814)
+      return;
+    
+  }
 
   std::vector<UInt_t> loose_muon_indices;
   std::vector<UInt_t> loose_electron_indices;
@@ -288,170 +308,9 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      lep1q = (*muons)[im].charge();
      lep1id = (*muons)[im].pdgId();
 
-     reco::GsfElectron::PflowIsolationVariables pfIso = (*electrons)[ie].pfIsolationVariables();
-
-     Float_t absiso = pfIso.sumChargedHadronPt + std::max(0.0 , pfIso.sumNeutralHadronEt + pfIso.sumPhotonEt - 0.5 * pfIso.sumPUPt );
-     Float_t relIsoWithDBeta = absiso/(*electrons)[ie].pt();
-     Float_t ooEmooP = 0;
-
-     if( (*electrons)[ie].ecalEnergy() == 0 ){
-       std::cout << "Electron energy is zero!" << std::endl;
-       ooEmooP = 1e30;
-     }
-     else if (!std::isfinite((*electrons)[ie].ecalEnergy())){
-       std::cout << "Electron energy is not finite!" << std::endl;
-       ooEmooP = 1e30;
-     }
-     else
-       ooEmooP = fabs(1.0/(*electrons)[ie].ecalEnergy() - (*electrons)[ie].eSuperClusterOverP()/(*electrons)[ie].ecalEnergy() );
-
-     //loose working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
-     if((*electrons)[ie].superCluster()->eta() < 2.5 && (*electrons)[ie].superCluster()->eta() > 1.479 ){
-       if(
-	  (fabs((*electrons)[ie].deltaEtaSuperClusterTrackAtVtx()) < 0.0124)
-	  &&
-	  ( fabs((*electrons)[ie].deltaPhiSuperClusterTrackAtVtx()) < 0.0642)
-	  &&
-	  ((*electrons)[ie].full5x5_sigmaIetaIeta() < 0.035)
-	  &&
-	  ( (*electrons)[ie].hcalOverEcal() < 0.1115)
-	  &&
-	  ( fabs((-1) * (*electrons)[ie].gsfTrack()->dxy(PV.position())) < 0.098)
-	  &&
-	  (  fabs((*electrons)[ie].gsfTrack()->dz( PV.position() )) < 0.9187)
-	  &&
-	  (fabs(ooEmooP) < 0.1443)
-	  &&
-	  (relIsoWithDBeta < 0.3529)
-	  &&
-	  ((*electrons)[ie].passConversionVeto())
-	  &&
-	  ((*electrons)[ie].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1 )
-	  )
-	 cuts = cuts | Lep2FullSelectionV3;
-     } else if ((*electrons)[ie].superCluster()->eta() < 1.479) {
-       if(
-	  (fabs((*electrons)[ie].deltaEtaSuperClusterTrackAtVtx()) < 0.0181)
-	  &&
-	  ( fabs((*electrons)[ie].deltaPhiSuperClusterTrackAtVtx()) < 0.0936)
-	  &&
-	  ((*electrons)[ie].full5x5_sigmaIetaIeta() < 0.0123)
-	  &&
-	  ( (*electrons)[ie].hcalOverEcal() < 0.141)
-	  &&
-	  ( fabs((-1) * (*electrons)[ie].gsfTrack()->dxy(PV.position())) < 0.0166)
-	  &&
-	  (  fabs((*electrons)[ie].gsfTrack()->dz( PV.position() )) < 0.54342)
-	  &&
-	  (fabs(ooEmooP) < 0.1353)
-	  &&
-	  (relIsoWithDBeta < 0.24)
-	  &&
-	  ((*electrons)[ie].passConversionVeto())
-	  &&
-	  ((*electrons)[ie].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1 )
-	  )
-	 cuts = cuts | Lep2FullSelectionV3;
-     } 
+     if (passElectronId((*electrons)[ie], PV))
+       cuts = cuts | Lep2FullSelectionV1;
        
-     //medium working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
-     if((*electrons)[ie].superCluster()->eta() < 2.5 && (*electrons)[ie].superCluster()->eta() > 1.479 ){
-       if(
-	  (fabs((*electrons)[ie].deltaEtaSuperClusterTrackAtVtx()) < 0.0108)
-	  &&
-	  ( fabs((*electrons)[ie].deltaPhiSuperClusterTrackAtVtx()) < 0.0455)
-	  &&
-	  ((*electrons)[ie].full5x5_sigmaIetaIeta() < 0.0318)
-	  &&
-	  ( (*electrons)[ie].hcalOverEcal() < 0.097)
-	  &&
-	  ( fabs((-1) * (*electrons)[ie].gsfTrack()->dxy(PV.position())) < 0.0845)
-	  &&
-	  (  fabs((*electrons)[ie].gsfTrack()->dz( PV.position() )) < 0.7523)
-	  &&
-	  (fabs(ooEmooP) < 0.1201)
-	  &&
-	  (relIsoWithDBeta < 0.254)
-	  &&
-	  ((*electrons)[ie].passConversionVeto())
-	  &&
-	  ((*electrons)[ie].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1 )
-	  )
-	 cuts = cuts | Lep2FullSelectionV1;
-     } else if ((*electrons)[ie].superCluster()->eta() < 1.479) {
-       if(
-	  (fabs((*electrons)[ie].deltaEtaSuperClusterTrackAtVtx()) < 0.0106)
-	  &&
-	  ( fabs((*electrons)[ie].deltaPhiSuperClusterTrackAtVtx()) < 0.0323)
-	  &&
-	  ((*electrons)[ie].full5x5_sigmaIetaIeta() < 0.0107)
-	  &&
-	  ( (*electrons)[ie].hcalOverEcal() < 0.067)
-	  &&
-	  ( fabs((-1) * (*electrons)[ie].gsfTrack()->dxy(PV.position())) < 0.0131)
-	  &&
-	  (  fabs((*electrons)[ie].gsfTrack()->dz( PV.position() )) < 0.22310)
-	  &&
-	  (fabs(ooEmooP) < 0.1043)
-	  &&
-	  (relIsoWithDBeta < 0.2179)
-	  &&
-	  ((*electrons)[ie].passConversionVeto())
-	  &&
-	  ((*electrons)[ie].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1  )
-	  )
-	 cuts = cuts | Lep2FullSelectionV1;
-     } 
-
-     //tight working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
-     if((*electrons)[ie].superCluster()->eta() < 2.5 && (*electrons)[ie].superCluster()->eta() > 1.479 ){
-       if(
-	  (fabs((*electrons)[ie].deltaEtaSuperClusterTrackAtVtx()) < 0.0106)
-	  &&
-	  ( fabs((*electrons)[ie].deltaPhiSuperClusterTrackAtVtx()) < 0.0359)
-	  &&
-	  ((*electrons)[ie].full5x5_sigmaIetaIeta() < 0.0305)
-	  &&
-	  ( (*electrons)[ie].hcalOverEcal() < 0.0835)
-	  &&
-	  ( fabs((-1) * (*electrons)[ie].gsfTrack()->dxy(PV.position())) < 0.0163)
-	  &&
-	  (  fabs((*electrons)[ie].gsfTrack()->dz( PV.position() )) < 0.5999)
-	  &&
-	  (fabs(ooEmooP) < 0.1126)
-	  &&
-	  (relIsoWithDBeta < 0.2075)
-	  &&
-	  ((*electrons)[ie].passConversionVeto())
-	  &&
-	  ((*electrons)[ie].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS)<= 1  )
-	  )
-	 cuts = cuts | Lep2FullSelectionV2;
-     } else if ((*electrons)[ie].superCluster()->eta() < 1.479) {
-       if(
-	  (fabs((*electrons)[ie].deltaEtaSuperClusterTrackAtVtx()) < 0.0091)
-	  &&
-	  ( fabs((*electrons)[ie].deltaPhiSuperClusterTrackAtVtx()) < 0.031)
-	  &&
-	  ((*electrons)[ie].full5x5_sigmaIetaIeta() < 0.0106)
-	  &&
-	  ( (*electrons)[ie].hcalOverEcal() < 0.0532)
-	  &&
-	  ( fabs((-1) * (*electrons)[ie].gsfTrack()->dxy(PV.position())) < 0.0126)
-	  &&
-	  (  fabs((*electrons)[ie].gsfTrack()->dz( PV.position() )) < 0.0116)
-	  &&
-	  (fabs(ooEmooP) < 0.0609)
-	  &&
-	  (relIsoWithDBeta < 0.1649)
-	  &&
-	  ((*electrons)[ie].passConversionVeto())
-	  &&
-	  ((*electrons)[ie].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1 )
-	  )
-	 cuts = cuts | Lep2FullSelectionV2;
-     } 
-
      lep2= (*electrons)[ie].p4();
      lep2q = (*electrons)[ie].charge();
      lep2id = (*electrons)[ie].pdgId();
@@ -462,342 +321,18 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      UInt_t i1 = loose_electron_indices[0];
      UInt_t i2 = loose_electron_indices[1];
 
-     reco::GsfElectron::PflowIsolationVariables pfIso_1 = (*electrons)[i1].pfIsolationVariables();
-
-     Float_t absiso_1 = pfIso_1.sumChargedHadronPt + std::max(0.0 , pfIso_1.sumNeutralHadronEt + pfIso_1.sumPhotonEt - 0.5 * pfIso_1.sumPUPt );
-     Float_t relIsoWithDBeta_1 = absiso_1/(*electrons)[i1].pt();
-     Float_t ooEmooP_1 = 0;
-
-     if( (*electrons)[i1].ecalEnergy() == 0 ){
-       std::cout << "Electron energy is zero!" << std::endl;
-       ooEmooP_1 = 1e30;
-     }
-     else if (!std::isfinite((*electrons)[i1].ecalEnergy())){
-       std::cout << "Electron energy is not finite!" << std::endl;
-       ooEmooP_1 = 1e30;
-     }
-     else
-       ooEmooP_1 = fabs(1.0/(*electrons)[i1].ecalEnergy() - (*electrons)[i1].eSuperClusterOverP()/(*electrons)[i1].ecalEnergy() );
-
-     //loose working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
-     if((*electrons)[i1].superCluster()->eta() < 2.5 && (*electrons)[i1].superCluster()->eta() > 1.479 ){
-       if(
-	  (fabs((*electrons)[i1].deltaEtaSuperClusterTrackAtVtx()) < 0.0124)
-	  &&
-	  ( fabs((*electrons)[i1].deltaPhiSuperClusterTrackAtVtx()) < 0.0642)
-	  &&
-	  ((*electrons)[i1].full5x5_sigmaIetaIeta() < 0.035)
-	  &&
-	  ( (*electrons)[i1].hcalOverEcal() < 0.1115)
-	  &&
-	  ( fabs((-1) * (*electrons)[i1].gsfTrack()->dxy(PV.position())) < 0.098)
-	  &&
-	  (  fabs((*electrons)[i1].gsfTrack()->dz( PV.position() )) < 0.9187)
-	  &&
-	  (fabs(ooEmooP_1) < 0.1443)
-	  &&
-	  (relIsoWithDBeta_1 < 0.3529)
-	  &&
-	  ((*electrons)[i1].passConversionVeto())
-	  &&
-	  ((*electrons)[i1].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1  )
-	  )
-	 cuts = cuts | Lep1FullSelectionV3;
-     } else if ((*electrons)[i1].superCluster()->eta() < 1.479) {
-       if(
-	  (fabs((*electrons)[i1].deltaEtaSuperClusterTrackAtVtx()) < 0.0181)
-	  &&
-	  ( fabs((*electrons)[i1].deltaPhiSuperClusterTrackAtVtx()) < 0.0936)
-	  &&
-	  ((*electrons)[i1].full5x5_sigmaIetaIeta() < 0.0123)
-	  &&
-	  ( (*electrons)[i1].hcalOverEcal() < 0.141)
-	  &&
-	  ( fabs((-1) * (*electrons)[i1].gsfTrack()->dxy(PV.position())) < 0.0166)
-	  &&
-	  (  fabs((*electrons)[i1].gsfTrack()->dz( PV.position() )) < 0.54342)
-	  &&
-	  (fabs(ooEmooP_1) < 0.1353)
-	  &&
-	  (relIsoWithDBeta_1 < 0.24)
-	  &&
-	  ((*electrons)[i1].passConversionVeto())
-	  &&
-	  ((*electrons)[i1].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1 )
-	  )
-	 cuts = cuts | Lep1FullSelectionV3;
-     } 
-
-     //medium working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
-     if((*electrons)[i1].superCluster()->eta() < 2.5 && (*electrons)[i1].superCluster()->eta() > 1.479 ){
-       if(
-	  (fabs((*electrons)[i1].deltaEtaSuperClusterTrackAtVtx()) < 0.0108)
-	  &&
-	  ( fabs((*electrons)[i1].deltaPhiSuperClusterTrackAtVtx()) < 0.0455)
-	  &&
-	  ((*electrons)[i1].full5x5_sigmaIetaIeta() < 0.0318)
-	  &&
-	  ( (*electrons)[i1].hcalOverEcal() < 0.097)
-	  &&
-	  ( fabs((-1) * (*electrons)[i1].gsfTrack()->dxy(PV.position())) < 0.0845)
-	  &&
-	  (  fabs((*electrons)[i1].gsfTrack()->dz( PV.position() )) < 0.7523)
-	  &&
-	  (fabs(ooEmooP_1) < 0.1201)
-	  &&
-	  (relIsoWithDBeta_1 < 0.254)
-	  &&
-	  ((*electrons)[i1].passConversionVeto())
-	  &&
-	  ((*electrons)[i1].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1  )
-	  )
-	 cuts = cuts | Lep1FullSelectionV1;
-     } else if ((*electrons)[i1].superCluster()->eta() < 1.479) {
-       if(
-	  (fabs((*electrons)[i1].deltaEtaSuperClusterTrackAtVtx()) < 0.0106)
-	  &&
-	  ( fabs((*electrons)[i1].deltaPhiSuperClusterTrackAtVtx()) < 0.0323)
-	  &&
-	  ((*electrons)[i1].full5x5_sigmaIetaIeta() < 0.0107)
-	  &&
-	  ( (*electrons)[i1].hcalOverEcal() < 0.067)
-	  &&
-	  ( fabs((-1) * (*electrons)[i1].gsfTrack()->dxy(PV.position())) < 0.0131)
-	  &&
-	  (  fabs((*electrons)[i1].gsfTrack()->dz( PV.position() )) < 0.22310)
-	  &&
-	  (fabs(ooEmooP_1) < 0.1043)
-	  &&
-	  (relIsoWithDBeta_1 < 0.2179)
-	  &&
-	  ((*electrons)[i1].passConversionVeto())
-	  &&
-	  ((*electrons)[i1].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1  )
-	  )
-	 cuts = cuts | Lep1FullSelectionV1;
-     } 
-
-     //tight working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
-     if((*electrons)[i1].superCluster()->eta() < 2.5 && (*electrons)[i1].superCluster()->eta() > 1.479 ){
-       if(
-	  (fabs((*electrons)[i1].deltaEtaSuperClusterTrackAtVtx()) < 0.0106)
-	  &&
-	  ( fabs((*electrons)[i1].deltaPhiSuperClusterTrackAtVtx()) < 0.0359)
-	  &&
-	  ((*electrons)[i1].full5x5_sigmaIetaIeta() < 0.0305)
-	  &&
-	  ( (*electrons)[i1].hcalOverEcal() < 0.0835)
-	  &&
-	  ( fabs((-1) * (*electrons)[i1].gsfTrack()->dxy(PV.position())) < 0.0163)
-	  &&
-	  (  fabs((*electrons)[i1].gsfTrack()->dz( PV.position() )) < 0.5999)
-	  &&
-	  (fabs(ooEmooP_1) < 0.1126)
-	  &&
-	  (relIsoWithDBeta_1 < 0.2075)
-	  &&
-	  ((*electrons)[i1].passConversionVeto())
-	  &&
-	  ((*electrons)[i1].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1 )
-	  )
-	 cuts = cuts | Lep1FullSelectionV2;
-     } else if ((*electrons)[i1].superCluster()->eta() < 1.479) {
-       if(
-	  (fabs((*electrons)[i1].deltaEtaSuperClusterTrackAtVtx()) < 0.0091)
-	  &&
-	  ( fabs((*electrons)[i1].deltaPhiSuperClusterTrackAtVtx()) < 0.031)
-	  &&
-	  ((*electrons)[i1].full5x5_sigmaIetaIeta() < 0.0106)
-	  &&
-	  ( (*electrons)[i1].hcalOverEcal() < 0.0532)
-	  &&
-	  ( fabs((-1) * (*electrons)[i1].gsfTrack()->dxy(PV.position())) < 0.0126)
-	  &&
-	  (  fabs((*electrons)[i1].gsfTrack()->dz( PV.position() )) < 0.0116)
-	  &&
-	  (fabs(ooEmooP_1) < 0.0609)
-	  &&
-	  (relIsoWithDBeta_1 < 0.1649)
-	  &&
-	  ((*electrons)[i1].passConversionVeto())
-	  &&
-	  ((*electrons)[i1].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1 )
-	  )
-	 cuts = cuts | Lep1FullSelectionV2;
-     } 
-     
      lep1= (*electrons)[i1].p4();
      lep1q = (*electrons)[i1].charge();
      lep1id = (*electrons)[i1].pdgId();
 
-     reco::GsfElectron::PflowIsolationVariables pfIso_2 = (*electrons)[i2].pfIsolationVariables();
-
-     Float_t absiso_2 = pfIso_2.sumChargedHadronPt + std::max(0.0 , pfIso_2.sumNeutralHadronEt + pfIso_2.sumPhotonEt - 0.5 * pfIso_2.sumPUPt );
-     Float_t relIsoWithDBeta_2 = absiso_2/(*electrons)[i2].pt();
-     Float_t ooEmooP_2 = 0;
-
-     if( (*electrons)[i2].ecalEnergy() == 0 ){
-       std::cout << "Electron energy is zero!" << std::endl;
-       ooEmooP_2 = 1e30;
-     }
-     else if (!std::isfinite((*electrons)[i2].ecalEnergy())){
-       std::cout << "Electron energy is not finite!" << std::endl;
-       ooEmooP_2 = 1e30;
-     }
-     else
-       ooEmooP_2 = fabs(1.0/(*electrons)[i2].ecalEnergy() - (*electrons)[i2].eSuperClusterOverP()/(*electrons)[i2].ecalEnergy() );
-
-
-     //loose working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
-     if((*electrons)[i2].superCluster()->eta() < 2.5 && (*electrons)[i2].superCluster()->eta() > 1.479 ){
-       if(
-	  (fabs((*electrons)[i2].deltaEtaSuperClusterTrackAtVtx()) < 0.0124)
-	  &&
-	  ( fabs((*electrons)[i2].deltaPhiSuperClusterTrackAtVtx()) < 0.0642)
-	  &&
-	  ((*electrons)[i2].full5x5_sigmaIetaIeta() < 0.035)
-	  &&
-	  ( (*electrons)[i2].hcalOverEcal() < 0.1115)
-	  &&
-	  ( fabs((-1) * (*electrons)[i2].gsfTrack()->dxy(PV.position())) < 0.098)
-	  &&
-	  (  fabs((*electrons)[i2].gsfTrack()->dz( PV.position() )) < 0.9187)
-	  &&
-	  (fabs(ooEmooP_2) < 0.1443)
-	  &&
-	  (relIsoWithDBeta_2 < 0.3529)
-	  &&
-	  ((*electrons)[i2].passConversionVeto())
-	  &&
-	  ((*electrons)[i2].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1  )
-	  )
-	 cuts = cuts | Lep2FullSelectionV3;
-     } else if ((*electrons)[i2].superCluster()->eta() < 1.479) {
-       if(
-	  (fabs((*electrons)[i2].deltaEtaSuperClusterTrackAtVtx()) < 0.0181)
-	  &&
-	  ( fabs((*electrons)[i2].deltaPhiSuperClusterTrackAtVtx()) < 0.0936)
-	  &&
-	  ((*electrons)[i2].full5x5_sigmaIetaIeta() < 0.0123)
-	  &&
-	  ( (*electrons)[i2].hcalOverEcal() < 0.141)
-	  &&
-	  ( fabs((-1) * (*electrons)[i2].gsfTrack()->dxy(PV.position())) < 0.0166)
-	  &&
-	  (  fabs((*electrons)[i2].gsfTrack()->dz( PV.position() )) < 0.54342)
-	  &&
-	  (fabs(ooEmooP_2) < 0.1353)
-	  &&
-	  (relIsoWithDBeta_2 < 0.24)
-	  &&
-	  ((*electrons)[i2].passConversionVeto())
-	  &&
-	  ((*electrons)[i2].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1 )
-	  )
-	 cuts = cuts | Lep2FullSelectionV3;
-     } 
-
-     //medium working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
-     if((*electrons)[i2].superCluster()->eta() < 2.5 && (*electrons)[i2].superCluster()->eta() > 1.479 ){
-       if(
-	  (fabs((*electrons)[i2].deltaEtaSuperClusterTrackAtVtx()) < 0.0108)
-	  &&
-	  ( fabs((*electrons)[i2].deltaPhiSuperClusterTrackAtVtx()) < 0.0455)
-	  &&
-	  ((*electrons)[i2].full5x5_sigmaIetaIeta() < 0.0318)
-	  &&
-	  ( (*electrons)[i2].hcalOverEcal() < 0.097)
-	  &&
-	  ( fabs((-1) * (*electrons)[i2].gsfTrack()->dxy(PV.position())) < 0.0845)
-	  &&
-	  (  fabs((*electrons)[i2].gsfTrack()->dz( PV.position() )) < 0.7523)
-	  &&
-	  (fabs(ooEmooP_2) < 0.1201)
-	  &&
-	  (relIsoWithDBeta_2 < 0.254)
-	  &&
-	  ((*electrons)[i2].passConversionVeto())
-	  &&
-	  ((*electrons)[i2].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1  )
-	  )
-	 cuts = cuts | Lep2FullSelectionV1;
-     } else if ((*electrons)[i2].superCluster()->eta() < 1.479) {
-       if(
-	  (fabs((*electrons)[i2].deltaEtaSuperClusterTrackAtVtx()) < 0.0106)
-	  &&
-	  ( fabs((*electrons)[i2].deltaPhiSuperClusterTrackAtVtx()) < 0.0323)
-	  &&
-	  ((*electrons)[i2].full5x5_sigmaIetaIeta() < 0.0107)
-	  &&
-	  ( (*electrons)[i2].hcalOverEcal() < 0.067)
-	  &&
-	  ( fabs((-1) * (*electrons)[i2].gsfTrack()->dxy(PV.position())) < 0.0131)
-	  &&
-	  (  fabs((*electrons)[i2].gsfTrack()->dz( PV.position() )) < 0.22310)
-	  &&
-	  (fabs(ooEmooP_2) < 0.1043)
-	  &&
-	  (relIsoWithDBeta_2 < 0.2179)
-	  &&
-	  ((*electrons)[i2].passConversionVeto())
-	  &&
-	  ((*electrons)[i2].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1 )
-	  )
-	 cuts = cuts | Lep2FullSelectionV1;
-     } 
-
-     //tight working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
-     if((*electrons)[i2].superCluster()->eta() < 2.5 && (*electrons)[i2].superCluster()->eta() > 1.479 ){
-       if(
-	  (fabs((*electrons)[i2].deltaEtaSuperClusterTrackAtVtx()) < 0.0106)
-	  &&
-	  ( fabs((*electrons)[i2].deltaPhiSuperClusterTrackAtVtx()) < 0.0359)
-	  &&
-	  ((*electrons)[i2].full5x5_sigmaIetaIeta() < 0.0305)
-	  &&
-	  ( (*electrons)[i2].hcalOverEcal() < 0.0835)
-	  &&
-	  ( fabs((-1) * (*electrons)[i2].gsfTrack()->dxy(PV.position())) < 0.0163)
-	  &&
-	  (  fabs((*electrons)[i2].gsfTrack()->dz( PV.position() )) < 0.5999)
-	  &&
-	  (fabs(ooEmooP_2) < 0.1126)
-	  &&
-	  (relIsoWithDBeta_2 < 0.2075)
-	  &&
-	  ((*electrons)[i2].passConversionVeto())
-	  &&
-	  ((*electrons)[i2].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1 )
-	  )
-	 cuts = cuts | Lep2FullSelectionV2;
-     } else if ((*electrons)[i2].superCluster()->eta() < 1.479) {
-       if(
-	  (fabs((*electrons)[i2].deltaEtaSuperClusterTrackAtVtx()) < 0.0091)
-	  &&
-	  ( fabs((*electrons)[i2].deltaPhiSuperClusterTrackAtVtx()) < 0.031)
-	  &&
-	  ((*electrons)[i2].full5x5_sigmaIetaIeta() < 0.0106)
-	  &&
-	  ( (*electrons)[i2].hcalOverEcal() < 0.0532)
-	  &&
-	  ( fabs((-1) * (*electrons)[i2].gsfTrack()->dxy(PV.position())) < 0.0126)
-	  &&
-	  (  fabs((*electrons)[i2].gsfTrack()->dz( PV.position() )) < 0.0116)
-	  &&
-	  (fabs(ooEmooP_2) < 0.0609)
-	  &&
-	  (relIsoWithDBeta_2 < 0.1649)
-	  &&
-	  ((*electrons)[i2].passConversionVeto())
-	  &&
-	  ((*electrons)[i2].gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1  )
-	  )
-	 cuts = cuts | Lep2FullSelectionV2;
-     } 
-
      lep2= (*electrons)[i2].p4();
      lep2q = (*electrons)[i2].charge();
      lep2id = (*electrons)[i2].pdgId();
+
+     if (passElectronId((*electrons)[i1],PV))
+	 cuts = cuts | Lep1FullSelectionV1;
+     if (passElectronId((*electrons)[i2],PV))
+	 cuts = cuts | Lep2FullSelectionV1;
 
    } else 
      return;
@@ -861,8 +396,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    */
 
 
-   edm::Handle<pat::JetCollection> jets;
-   iEvent.getByToken(jetToken_, jets);
+
 
    if (jets->size() < 2) 
      return;
@@ -870,21 +404,13 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      return;
    jet1=(*jets)[0].p4();
    jet2=(*jets)[1].p4();   
-   jet1btag = std::max(0.f,(*jets)[0].bDiscriminator("combinedSecondaryVertexBJetTags"));
-   jet1btagincl = std::max(0.f,(*jets)[0].bDiscriminator("combinedInclusiveSecondaryVertexBJetTags"));
-   jet2btag = std::max(0.f,(*jets)[1].bDiscriminator("combinedSecondaryVertexBJetTags"));
-   jet2btagincl = std::max(0.f,(*jets)[1].bDiscriminator("combinedInclusiveSecondaryVertexBJetTags"));
+   jet1btag = std::max(0.f,(*jets)[0].bDiscriminator("combinedInclusiveSecondaryVertexV2BJetTags"));
+   jet2btag = std::max(0.f,(*jets)[1].bDiscriminator("combinedInclusiveSecondaryVertexV2BJetTags"));
    jet1pujetid = (*jets)[0].userFloat("pileupJetId:fullDiscriminant");
    jet2pujetid = (*jets)[1].userFloat("pileupJetId:fullDiscriminant");
 
 
-   for (const pat::Jet &j : *jets) {
-     if (j.pt() < 20) continue;
 
-     if( std::max(0.f,j.bDiscriminator("combinedSecondaryVertexBJetTags")) > 0.5)
-       return;
-
-   }
 
    /*
 
@@ -915,6 +441,43 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    metptshiftdown = met.shiftedPt(pat::MET::JetEnDown);
 
    tree->Fill();
+
+   /*
+
+   Handle<edm::View<reco::GenParticle> > pruned;
+   iEvent.getByToken(prunedGenToken_,pruned);
+
+   // Packed particles are all the status 1, so usable to remake jets
+   // The navigation from status 1 to pruned is possible (the other direction should be made by hand)
+   Handle<edm::View<pat::PackedGenParticle> > packed;
+
+
+   iEvent.getByToken(packedGenToken_,packed);
+
+
+   for(size_t j=0; j<pruned->size();j++){
+
+
+     if ((*pruned)[j].mother(0)){
+       if ((*pruned)[j].mother(0)->pdgId() == 24 || (*pruned)[j].mother(0)->pdgId() == -24){
+	 std::cout << "(*pruned)[j].pdfId() = " << (*pruned)[j].pdgId() << std::endl;
+	 std::cout << "    (*pruned)[j].mother(0)->pdfId() = " << (*pruned)[j].mother(0)->pdgId() << std::endl;
+       }
+     }
+       //if ( abs((*pruned)[j].pdgId()) == 1 || abs((*pruned)[j].pdgId()) == 2 || abs((*pruned)[j].pdgId()) == 3 || abs((*pruned)[j].pdgId()) == 4 || abs((*pruned)[j].pdgId()) == 5 )
+       
+   }
+
+   for(size_t j=0; j<packed->size();j++){
+
+
+     if ( abs((*packed)[j].pdgId()) == 1 || abs((*packed)[j].pdgId()) == 2 || abs((*packed)[j].pdgId()) == 3 || abs((*packed)[j].pdgId()) == 4 || abs((*packed)[j].pdgId()) == 5 )
+       std::cout << "(*packed)[j].mother(0)->pdfId() = " << (*packed)[j].mother(0)->pdgId() << std::endl;
+
+     //get the pointer to the first survied ancestor of a given packed GenParticle in the prunedCollection 
+   }
+
+   */
 
 #ifdef THIS_IS_AN_EVENT_EXAMPLE
    Handle<ExampleData> pIn;
@@ -957,8 +520,6 @@ ntuple_maker::beginJob()
   tree->Branch("jet2pujetid",&jet2pujetid);
   tree->Branch("jet1btag",&jet1btag);
   tree->Branch("jet2btag",&jet2btag);
-  tree->Branch("jet1btagincl",&jet1btagincl);
-  tree->Branch("jet2btagincl",&jet2btagincl);
   tree->Branch("lep1",&lep1);
   tree->Branch("lep2",&lep2);
   tree->Branch("nvtx",&nvtx);
