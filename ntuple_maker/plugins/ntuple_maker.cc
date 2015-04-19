@@ -53,16 +53,72 @@
 #include "DataFormats/Candidate/interface/Candidate.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 
+#include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
 
 //
 // class declaration
 //
 
+typedef ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> > LorentzVector;
+
+reco::GenParticle find_nearest_parton(LorentzVector &lepton_4mom, edm::Handle<edm::View<reco::GenParticle> > pruned)
+{
+
+  Float_t minpartondR = std::numeric_limits<Float_t>::max();
+
+  reco::GenParticle nearest_parton;
+
+  for(size_t j=0; j<pruned->size();j++){
+    
+    if ( abs((*pruned)[j].pdgId()) == 1 || abs((*pruned)[j].pdgId()) == 2 || abs((*pruned)[j].pdgId()) == 3 || abs((*pruned)[j].pdgId()) == 4 || abs((*pruned)[j].pdgId()) == 5 || abs((*pruned)[j].pdgId()) == 21 ){
+      
+      //status 23 means outgoing: http://home.thep.lu.se/~torbjorn/pythia81html/ParticleProperties.html
+      if (((*pruned)[j].status() == 23 || (*pruned)[j].status() == 71) && reco::deltaR((*pruned)[j].p4(),lepton_4mom) < minpartondR){
+	minpartondR = reco::deltaR((*pruned)[j].p4(),lepton_4mom);
+	nearest_parton = (*pruned)[j];
+      }
+    }
+  }
+
+  return nearest_parton;
+
+};
+
+
+Float_t find_nearest_gen_lepton(LorentzVector &lepton_4mom, edm::Handle<edm::View<pat::PackedGenParticle> > packed, std::string flavor)
+{
+
+  assert(flavor == "muon" || flavor == "electron");
+
+  Int_t abspdgid;
+
+  if (flavor == "muon")
+    abspdgid = 13;
+  else
+    abspdgid = 11;
+
+  Float_t minleptondR = std::numeric_limits<Float_t>::max();
+
+  for(size_t j=0; j<packed->size();j++){
+    
+    if ( abs((*packed)[j].pdgId()) == abspdgid ){
+      
+      if ((*packed)[j].status() == 1 && reco::deltaR((*packed)[j].p4(),lepton_4mom) < minleptondR){
+	minleptondR = reco::deltaR((*packed)[j].p4(),lepton_4mom);
+      }
+    }
+  }
+
+  return minleptondR;
+
+};
+
+
 
 
 class ntuple_maker : public edm::EDAnalyzer {
 public:
-  typedef ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> > LorentzVector;
+
   
       explicit ntuple_maker(const edm::ParameterSet&);
       ~ntuple_maker();
@@ -83,6 +139,7 @@ public:
       // ----------member data ---------------------------
 
   // ----------member data ---------------------------
+  edm::EDGetTokenT<LHEEventProduct> lheEvtToken_;
   edm::EDGetTokenT<reco::VertexCollection> vtxToken_;
   edm::EDGetTokenT<pat::MuonCollection> muonToken_;
   edm::EDGetTokenT<pat::ElectronCollection> electronToken_;
@@ -95,7 +152,7 @@ public:
   edm::EDGetTokenT<edm::View<pat::PackedGenParticle> > packedGenToken_;
 
   TH1F * n_events_run_over;
-  UInt_t cuts;
+  UInt_t flags;
   UInt_t event;
   UInt_t run;
   UInt_t lumi;
@@ -120,6 +177,20 @@ public:
   Int_t lep2id;
   Int_t lep1q;
   Int_t lep2q;
+  LorentzVector lep1_nearestparton_4mom;
+  LorentzVector lep2_nearestparton_4mom;
+  Int_t lep1_nearestparton_pdgid;
+  Int_t lep2_nearestparton_pdgid;
+  Int_t lep1_matching_real_gen_lepton_pdgid;
+  Int_t lep2_matching_real_gen_lepton_pdgid;
+  Int_t lep1_matching_real_gen_lepton_q;
+  Int_t lep2_matching_real_gen_lepton_q;
+  Float_t lep1_nearest_gen_electron_dr;
+  Float_t lep2_nearest_gen_electron_dr;
+  Float_t lep1_nearest_gen_muon_dr;
+  Float_t lep2_nearest_gen_muon_dr;
+  std::vector<Float_t> * lhe_weights;  
+  Float_t lhe_weight_orig;
 
 };
 
@@ -135,6 +206,7 @@ public:
 // constructors and destructor
 //
 ntuple_maker::ntuple_maker(const edm::ParameterSet& iConfig):
+  lheEvtToken_(consumes<LHEEventProduct>(iConfig.getParameter<edm::InputTag>("lheevent"))),
   vtxToken_(consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>("vertices"))),
   muonToken_(consumes<pat::MuonCollection>(iConfig.getParameter<edm::InputTag>("muons"))),
   electronToken_(consumes<pat::ElectronCollection>(iConfig.getParameter<edm::InputTag>("electrons"))),
@@ -171,6 +243,17 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   n_events_run_over->Fill(0.5);
 
+  edm::Handle<LHEEventProduct> hLheEvt;
+  iEvent.getByToken(lheEvtToken_,hLheEvt);
+
+  lhe_weights = new std::vector<Float_t>();
+
+  lhe_weight_orig = hLheEvt->originalXWGTUP();
+
+  for(unsigned int i = 0; i < hLheEvt->weights().size(); i++){
+    lhe_weights->push_back(hLheEvt->weights()[i].wgt);
+  }
+
   edm::Handle<pat::JetCollection> jets;
   iEvent.getByToken(jetToken_, jets);
    
@@ -186,7 +269,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   std::vector<UInt_t> loose_muon_indices;
   std::vector<UInt_t> loose_electron_indices;
 
-  cuts = 0;
+  flags = 0;
 
    using namespace edm;
 
@@ -207,7 +290,10 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    //   for (const pat::Electron &el : *electrons) {
    for(UInt_t i = 0; i < electrons->size(); i++){
 
-     if( (*electrons)[i].pt() < 10 || (*electrons)[i].chargedHadronIso()/(*electrons)[i].pt() > 0.3) 
+     if( (*electrons)[i].pt() < 10) 
+       continue;
+
+     if (!passLooseElectronId((*electrons)[i],PV))
        continue;
 
      loose_electron_indices.push_back(i);
@@ -225,8 +311,14 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    
 
    for(UInt_t i = 0; i < muons->size(); i++){
-     if ((*muons)[i].pt() < 10 || !(*muons)[i].isLooseMuon() || (*muons)[i].chargedHadronIso()/(*muons)[i].pt() > 0.3)
+     if ((*muons)[i].pt() < 10)
        continue;
+
+     Float_t relative_isolation = ((*muons)[i].pfIsolationR04().sumChargedHadronPt+ std::max(0.0,(*muons)[i].pfIsolationR04().sumNeutralHadronEt + (*muons)[i].pfIsolationR04().sumPhotonEt - 0.5 * (*muons)[i].pfIsolationR04().sumPUPt))/(*muons)[i].pt();
+
+     if (! (passLooseMuonId((*muons)[i],PV) && relative_isolation < 1.0) )
+       continue;
+
 
      //std::cout << "(*muons)[i].pt() = " << (*muons)[i].pt() << std::endl;
 
@@ -239,38 +331,15 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      UInt_t i1 = loose_muon_indices[0];
      UInt_t i2 = loose_muon_indices[1];
 
-     Float_t relative_isolation_1 = ((*muons)[i1].pfIsolationR04().sumChargedHadronPt+ std::max(0.0,(*muons)[i1].pfIsolationR04().sumNeutralHadronEt + (*muons)[i1].pfIsolationR04().sumPhotonEt - 0.5 * (*muons)[i1].pfIsolationR04().sumChargedHadronPt))/(*muons)[i1].pt();
-     Float_t relative_isolation_2 = ((*muons)[i2].pfIsolationR04().sumChargedHadronPt+ std::max(0.0,(*muons)[i2].pfIsolationR04().sumNeutralHadronEt + (*muons)[i2].pfIsolationR04().sumPhotonEt - 0.5 * (*muons)[i2].pfIsolationR04().sumChargedHadronPt))/(*muons)[i2].pt();
+     Float_t relative_isolation_1 = ((*muons)[i1].pfIsolationR04().sumChargedHadronPt+ std::max(0.0,(*muons)[i1].pfIsolationR04().sumNeutralHadronEt + (*muons)[i1].pfIsolationR04().sumPhotonEt - 0.5 * (*muons)[i1].pfIsolationR04().sumPUPt))/(*muons)[i1].pt();
+     Float_t relative_isolation_2 = ((*muons)[i2].pfIsolationR04().sumChargedHadronPt+ std::max(0.0,(*muons)[i2].pfIsolationR04().sumNeutralHadronEt + (*muons)[i2].pfIsolationR04().sumPhotonEt - 0.5 * (*muons)[i2].pfIsolationR04().sumPUPt))/(*muons)[i2].pt();
 
-     if ((*muons)[i1].isTightMuon(PV) && relative_isolation_1 < 0.12) 
-       cuts = cuts | Lep1FullSelectionV1;
+     if (passTightMuonId((*muons)[i1],PV) && relative_isolation_1 < 0.12) 
+       flags = flags | Lep1TightSelectionV1;
 
-     if ((*muons)[i2].isTightMuon(PV) && relative_isolation_2 < 0.12) 
-       cuts = cuts | Lep2FullSelectionV1;
+     if (passTightMuonId((*muons)[i2],PV) && relative_isolation_2 < 0.12) 
+       flags = flags | Lep2TightSelectionV1;
 
-     if ((*muons)[i1].isTightMuon(PV) && relative_isolation_1 < 0.2) 
-       cuts = cuts | Lep1FullSelectionV2;
-
-     if ((*muons)[i2].isTightMuon(PV) && relative_isolation_2 < 0.2) 
-       cuts = cuts | Lep2FullSelectionV2;
-
-     if ((*muons)[i1].isTightMuon(PV) && relative_isolation_1 < 0.3) 
-       cuts = cuts | Lep1FullSelectionV3;
-
-     if ((*muons)[i2].isTightMuon(PV) && relative_isolation_2 < 0.3) 
-       cuts = cuts | Lep2FullSelectionV3;
-
-     if ((*muons)[i1].isTightMuon(PV) && relative_isolation_1 < 0.4) 
-       cuts = cuts | Lep1FullSelectionV4;
-
-     if ((*muons)[i2].isTightMuon(PV) && relative_isolation_2 < 0.4) 
-       cuts = cuts | Lep2FullSelectionV4;
-
-     if (relative_isolation_1 < 0.2) 
-       cuts = cuts | Lep1FullSelectionV5;
-
-     if (relative_isolation_2 < 0.2) 
-       cuts = cuts | Lep2FullSelectionV5;
      
      lep1 = (*muons)[i1].p4();
      lep1q = (*muons)[i1].charge();
@@ -289,27 +358,15 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
      Float_t relative_isolation_1 = ((*muons)[im].pfIsolationR04().sumChargedHadronPt+ std::max(0.0,(*muons)[im].pfIsolationR04().sumNeutralHadronEt + (*muons)[im].pfIsolationR04().sumPhotonEt - 0.5 * (*muons)[im].pfIsolationR04().sumChargedHadronPt))/(*muons)[im].pt();
 
-     if ((*muons)[im].isTightMuon(PV) && relative_isolation_1 < 0.12) 
-       cuts = cuts | Lep1FullSelectionV1;
-
-     if ((*muons)[im].isTightMuon(PV) && relative_isolation_1 < 0.2) 
-       cuts = cuts | Lep1FullSelectionV2;
-
-     if ((*muons)[im].isTightMuon(PV) && relative_isolation_1 < 0.3) 
-       cuts = cuts | Lep1FullSelectionV3;
-
-     if ((*muons)[im].isTightMuon(PV) && relative_isolation_1 < 0.4) 
-       cuts = cuts | Lep1FullSelectionV4;
-
-     if (relative_isolation_1 < 0.2) 
-       cuts = cuts | Lep1FullSelectionV5;
+     if (passTightMuonId((*muons)[im],PV) && relative_isolation_1 < 0.12) 
+       flags = flags | Lep1TightSelectionV1;
 
      lep1 = (*muons)[im].p4();
      lep1q = (*muons)[im].charge();
      lep1id = (*muons)[im].pdgId();
 
-     if (passElectronId((*electrons)[ie], PV))
-       cuts = cuts | Lep2FullSelectionV1;
+     if (passTightElectronId((*electrons)[ie], PV))
+       flags = flags | Lep2TightSelectionV1;
        
      lep2= (*electrons)[ie].p4();
      lep2q = (*electrons)[ie].charge();
@@ -329,15 +386,86 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      lep2q = (*electrons)[i2].charge();
      lep2id = (*electrons)[i2].pdgId();
 
-     if (passElectronId((*electrons)[i1],PV))
-	 cuts = cuts | Lep1FullSelectionV1;
-     if (passElectronId((*electrons)[i2],PV))
-	 cuts = cuts | Lep2FullSelectionV1;
+     if (passTightElectronId((*electrons)[i1],PV))
+	 flags = flags | Lep1TightSelectionV1;
+     if (passTightElectronId((*electrons)[i2],PV))
+	 flags = flags | Lep2TightSelectionV1;
 
    } else 
      return;
+
+   Handle<edm::View<pat::PackedGenParticle> > packed;
+   iEvent.getByToken(packedGenToken_,packed);
+
+   lep1_nearest_gen_electron_dr = std::numeric_limits<Float_t>::max();
+   lep2_nearest_gen_electron_dr = std::numeric_limits<Float_t>::max();
+   lep1_nearest_gen_muon_dr = std::numeric_limits<Float_t>::max();
+   lep2_nearest_gen_muon_dr = std::numeric_limits<Float_t>::max();
+
+   lep1_nearest_gen_muon_dr = find_nearest_gen_lepton(lep1, packed, "muon");
+   lep1_nearest_gen_electron_dr = find_nearest_gen_lepton(lep1, packed,"electron");
+   lep2_nearest_gen_muon_dr = find_nearest_gen_lepton(lep1, packed, "muon");
+   lep2_nearest_gen_electron_dr = find_nearest_gen_lepton(lep2, packed, "electron");
    
+   Handle<edm::View<reco::GenParticle> > pruned;
+   iEvent.getByToken(prunedGenToken_,pruned);
+
+   reco::GenParticle lep1_nearest_parton;
+   reco::GenParticle lep2_nearest_parton;
+
+   lep1_nearest_parton=find_nearest_parton(lep1,pruned);
+   lep2_nearest_parton=find_nearest_parton(lep2,pruned);
+
+   lep1_matching_real_gen_lepton_pdgid=0;
+   lep1_matching_real_gen_lepton_q=0;
+   lep2_matching_real_gen_lepton_pdgid=0;
+   lep2_matching_real_gen_lepton_q=0;
+
+   for(size_t j=0; j<pruned->size();j++){
+     if ( (abs((*pruned)[j].pdgId()) == 11 || abs((*pruned)[j].pdgId()) == 13) && reco::deltaR((*pruned)[j].p4(),lep1) < 0.3 ){
+
+       if (! (*pruned)[j].mother())
+	 continue;
+
+       const reco::GenParticle * ancestor = dynamic_cast<const reco::GenParticle *>((*pruned)[j].mother());
+
+       while(abs(ancestor->pdgId()) == 15){
+	 ancestor = dynamic_cast<const reco::GenParticle *>(ancestor->mother());
+       }
+
+       if (abs(ancestor->pdgId()) != 24)
+	 continue;
+
+       lep1_matching_real_gen_lepton_pdgid=(*pruned)[j].pdgId();
+       lep1_matching_real_gen_lepton_q=(*pruned)[j].charge();
+     }
+   }
+
+   for(size_t j=0; j<pruned->size();j++){
+     if ( (abs((*pruned)[j].pdgId()) == 11 || abs((*pruned)[j].pdgId()) == 13) && reco::deltaR((*pruned)[j].p4(),lep2) < 0.3 ){
+
+       if (! (*pruned)[j].mother())
+	 continue;
+
+       const reco::GenParticle * ancestor = dynamic_cast<const reco::GenParticle *>((*pruned)[j].mother());
+
+       while(abs(ancestor->pdgId()) == 15){
+	 ancestor = dynamic_cast<const reco::GenParticle *>(ancestor->mother());
+       }
+
+       if (abs(ancestor->pdgId()) != 24)
+	 continue;
+
+       lep2_matching_real_gen_lepton_pdgid=(*pruned)[j].pdgId();
+       lep2_matching_real_gen_lepton_q=(*pruned)[j].charge();
+     }
+   }
+
    
+   lep1_nearestparton_4mom = lep1_nearest_parton.p4();
+   lep2_nearestparton_4mom = lep2_nearest_parton.p4();
+   lep1_nearestparton_pdgid = lep1_nearest_parton.pdgId();
+   lep2_nearestparton_pdgid = lep2_nearest_parton.pdgId();
 
    /*
 
@@ -396,21 +524,28 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    */
 
 
+   std::vector<const pat::Jet *> cleaned_jets;
 
+   for (const pat::Jet &j : *jets) {
 
-   if (jets->size() < 2) 
+     if ( reco::deltaR(j.p4(),lep1) < 0.5 || reco::deltaR(j.p4(),lep2) < 0.5 ){
+       continue;
+
+     }
+     cleaned_jets.push_back(&j);
+   }
+
+   if (cleaned_jets.size() < 2) 
      return;
-   else if ((*jets)[1].pt() < 20)
+   else if (cleaned_jets[1]->pt() < 20)
      return;
-   jet1=(*jets)[0].p4();
-   jet2=(*jets)[1].p4();   
-   jet1btag = std::max(0.f,(*jets)[0].bDiscriminator("combinedInclusiveSecondaryVertexV2BJetTags"));
-   jet2btag = std::max(0.f,(*jets)[1].bDiscriminator("combinedInclusiveSecondaryVertexV2BJetTags"));
-   jet1pujetid = (*jets)[0].userFloat("pileupJetId:fullDiscriminant");
-   jet2pujetid = (*jets)[1].userFloat("pileupJetId:fullDiscriminant");
 
-
-
+   jet1=cleaned_jets[0]->p4();
+   jet2=cleaned_jets[1]->p4();   
+   jet1btag = std::max(0.f,cleaned_jets[0]->bDiscriminator("combinedInclusiveSecondaryVertexV2BJetTags"));
+   jet2btag = std::max(0.f,cleaned_jets[1]->bDiscriminator("combinedInclusiveSecondaryVertexV2BJetTags"));
+   jet1pujetid = cleaned_jets[0]->userFloat("pileupJetId:fullDiscriminant");
+   jet2pujetid = cleaned_jets[1]->userFloat("pileupJetId:fullDiscriminant");
 
    /*
 
@@ -444,6 +579,21 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    /*
 
+   for(size_t j=0; j<pruned->size();j++){
+
+     std::cout << "(*pruned)[j].pdfId() = " << (*pruned)[j].pdgId() << std::endl;
+     //std::cout << "    (*pruned)[j].mother(0)->pdfId() = " << (*pruned)[j].mother(0)->pdgId() << std::endl;
+
+   }
+   
+   */
+       //if ( abs((*pruned)[j].pdgId()) == 1 || abs((*pruned)[j].pdgId()) == 2 || abs((*pruned)[j].pdgId()) == 3 || abs((*pruned)[j].pdgId()) == 4 || abs((*pruned)[j].pdgId()) == 5 )
+       
+
+
+
+   /*
+
    Handle<edm::View<reco::GenParticle> > pruned;
    iEvent.getByToken(prunedGenToken_,pruned);
 
@@ -455,18 +605,6 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    iEvent.getByToken(packedGenToken_,packed);
 
 
-   for(size_t j=0; j<pruned->size();j++){
-
-
-     if ((*pruned)[j].mother(0)){
-       if ((*pruned)[j].mother(0)->pdgId() == 24 || (*pruned)[j].mother(0)->pdgId() == -24){
-	 std::cout << "(*pruned)[j].pdfId() = " << (*pruned)[j].pdgId() << std::endl;
-	 std::cout << "    (*pruned)[j].mother(0)->pdfId() = " << (*pruned)[j].mother(0)->pdgId() << std::endl;
-       }
-     }
-       //if ( abs((*pruned)[j].pdgId()) == 1 || abs((*pruned)[j].pdgId()) == 2 || abs((*pruned)[j].pdgId()) == 3 || abs((*pruned)[j].pdgId()) == 4 || abs((*pruned)[j].pdgId()) == 5 )
-       
-   }
 
    for(size_t j=0; j<packed->size();j++){
 
@@ -479,15 +617,6 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    */
 
-#ifdef THIS_IS_AN_EVENT_EXAMPLE
-   Handle<ExampleData> pIn;
-   iEvent.getByLabel("example",pIn);
-#endif
-   
-#ifdef THIS_IS_AN_EVENTSETUP_EXAMPLE
-   ESHandle<SetupData> pSetup;
-   iSetup.get<SetupRecord>().get(pSetup);
-#endif
 }
 
 
@@ -502,11 +631,13 @@ ntuple_maker::beginJob()
 
   tree = fs->make<TTree>( "events"  , "events");
 
-  tree->Branch("cuts",&cuts);
+  tree->Branch("flags",&flags);
 
   tree->Branch("event",&event);
   tree->Branch("lumi",&lumi);
   tree->Branch("run",&run);
+
+  tree->Branch("lhe_weight_orig",&lhe_weight_orig);
 
   tree->Branch("metpt",&metpt);
   tree->Branch("metphi",&metphi);
@@ -527,6 +658,19 @@ ntuple_maker::beginJob()
   tree->Branch("lep1id",&lep1id);
   tree->Branch("lep2q",&lep2q);
   tree->Branch("lep2id",&lep2id);
+  tree->Branch("lep1_nearestparton_4mom",&lep1_nearestparton_4mom);
+  tree->Branch("lep1_nearestparton_pdgid",&lep1_nearestparton_pdgid);
+  tree->Branch("lep2_nearestparton_4mom",&lep2_nearestparton_4mom);
+  tree->Branch("lep2_nearestparton_pdgid",&lep2_nearestparton_pdgid);
+  tree->Branch("lep1_matching_real_gen_lepton_pdgid",&lep1_matching_real_gen_lepton_pdgid);
+  tree->Branch("lep2_matching_real_gen_lepton_pdgid",&lep2_matching_real_gen_lepton_pdgid);
+  tree->Branch("lep1_matching_real_gen_lepton_q",&lep1_matching_real_gen_lepton_q);
+  tree->Branch("lep2_matching_real_gen_lepton_q",&lep2_matching_real_gen_lepton_q);
+  tree->Branch("lep1_nearest_gen_electron_dr",&lep1_nearest_gen_electron_dr);
+  tree->Branch("lep2_nearest_gen_electron_dr",&lep2_nearest_gen_electron_dr);
+  tree->Branch("lep1_nearest_gen_muon_dr",&lep1_nearest_gen_muon_dr);
+  tree->Branch("lep2_nearest_gen_muon_dr",&lep2_nearest_gen_muon_dr);
+  tree->Branch("lhe_weights",&lhe_weights);
 
 }
 

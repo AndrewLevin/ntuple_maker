@@ -48,8 +48,13 @@
 
 #include "DataFormats/Math/interface/deltaR.h"
 
-#include "ntuple_maker/ntuple_maker/interface/enum_definition.h"
+#include "ntuple_maker/ntuple_maker/interface/fr_enum_definition.h"
 #include "ntuple_maker/ntuple_maker/interface/lepton_ids.h"
+
+#include "DataFormats/PatCandidates/interface/PackedGenParticle.h"
+#include "DataFormats/Candidate/interface/Candidate.h"
+#include "DataFormats/HepMCCandidate/interface/GenParticle.h"
+
 
 //
 // class declaration
@@ -87,10 +92,12 @@ public:
   edm::EDGetTokenT<pat::JetCollection> jetToken_;
   edm::EDGetTokenT<pat::JetCollection> fatjetToken_;
   edm::EDGetTokenT<pat::METCollection> metToken_;
+  edm::EDGetTokenT<edm::View<reco::GenParticle> > prunedGenToken_;
+  edm::EDGetTokenT<edm::View<pat::PackedGenParticle> > packedGenToken_;
 
 
   TH1F * n_events_run_over;
-  UInt_t cuts;
+  UInt_t flags;
   UInt_t event;
   UInt_t run;
   UInt_t lumi;
@@ -103,6 +110,8 @@ public:
   TTree * muon_tree;
   TTree * electron_tree;
   Float_t jetpt;
+  Float_t drnearestgenmuon;
+  Float_t drnearestgenelectron;
 
   //the pt of the highest pt jet that is at least delta R = 1 away from the lepton
   Float_t ptjetaway;
@@ -116,6 +125,8 @@ public:
   Float_t metptshiftdown;
   LorentzVector jet1;
   LorentzVector jet2;
+  LorentzVector nearestparton_4mom;
+  Int_t nearestparton_pdgid;
   LorentzVector electron_4mom;
   LorentzVector muon_4mom;
   LorentzVector lep2;
@@ -123,8 +134,8 @@ public:
   Int_t lep2id;
   Int_t lep1q;
   Int_t lep2q;
-  Bool_t pass_full_muon_id;
-  Bool_t pass_full_electron_id;
+  Bool_t pass_tight_muon_id;
+  Bool_t pass_tight_electron_id;
 
 
 };
@@ -148,7 +159,10 @@ make_loose_lepton_trees::make_loose_lepton_trees(const edm::ParameterSet& iConfi
   photonToken_(consumes<pat::PhotonCollection>(iConfig.getParameter<edm::InputTag>("photons"))),
   jetToken_(consumes<pat::JetCollection>(iConfig.getParameter<edm::InputTag>("jets"))),
   fatjetToken_(consumes<pat::JetCollection>(iConfig.getParameter<edm::InputTag>("fatjets"))),
-  metToken_(consumes<pat::METCollection>(iConfig.getParameter<edm::InputTag>("mets")))
+  metToken_(consumes<pat::METCollection>(iConfig.getParameter<edm::InputTag>("mets"))),
+  prunedGenToken_(consumes<edm::View<reco::GenParticle> >(iConfig.getParameter<edm::InputTag>("prunedgenparticles"))),
+  packedGenToken_(consumes<edm::View<pat::PackedGenParticle> >(iConfig.getParameter<edm::InputTag>("packedgenparticles")))
+
 {
   //now do what ever initialization is needed
 
@@ -178,13 +192,16 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
   std::vector<UInt_t> loose_muon_indices;
   std::vector<UInt_t> loose_electron_indices;
 
-  cuts = 0;
+  flags = 0;
 
    using namespace edm;
 
    run=iEvent.eventAuxiliary().run(); 
    lumi=iEvent.eventAuxiliary().luminosityBlock();
    event=iEvent.eventAuxiliary().event();
+
+   //if (event != 6612489)
+   //  return;
 
    edm::Handle<reco::VertexCollection> vertices;
    iEvent.getByToken(vtxToken_, vertices);
@@ -206,37 +223,54 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
    n_loose_muons = 0;
    n_loose_electrons = 0;
 
-   pass_full_muon_id = kFALSE;
-   pass_full_electron_id = kFALSE;
+   pass_tight_muon_id = kFALSE;
+   pass_tight_electron_id = kFALSE;
 
    for(UInt_t i = 0; i < muons->size(); i++){
 
-     if ((*muons)[i].pt() < 10 || !(*muons)[i].isLooseMuon() || (*muons)[i].chargedHadronIso()/(*muons)[i].pt() > 0.3)
+     if( (*muons)[i].pt() < 10)
+       continue;
+
+     Float_t relative_isolation = ((*muons)[i].pfIsolationR04().sumChargedHadronPt+ std::max(0.0,(*muons)[i].pfIsolationR04().sumNeutralHadronEt + (*muons)[i].pfIsolationR04().sumPhotonEt - 0.5 * (*muons)[i].pfIsolationR04().sumPUPt))/(*muons)[i].pt();
+
+     if ( passLooseMuonId((*muons)[i],PV) && relative_isolation < 1.0)
+       flags = flags | LepLooseSelectionV1;
+
+     if ( !(flags & LepLooseSelectionV1)  )
        continue;
 
      n_loose_muons++;
 
      muon_4mom = (*muons)[i].p4();
 
-     Float_t relative_isolation = ((*muons)[i].pfIsolationR04().sumChargedHadronPt+ std::max(0.0,(*muons)[i].pfIsolationR04().sumNeutralHadronEt + (*muons)[i].pfIsolationR04().sumPhotonEt - 0.5 * (*muons)[i].pfIsolationR04().sumChargedHadronPt))/(*muons)[i].pt();
-
-     if ((*muons)[i].isTightMuon(PV) && relative_isolation < 0.4) {
-       pass_full_muon_id = kTRUE;
-
+     if (passTightMuonId((*muons)[i],PV) && relative_isolation < 0.4) {
+       flags = flags | LepTightSelectionV1;
      }
+     if (passTightMuonId((*muons)[i],PV) && relative_isolation < 0.2) {
+       flags = flags | LepTightSelectionV2;
+     }
+     if (passTightMuonId((*muons)[i],PV) && relative_isolation < 0.12) {
+       flags = flags | LepTightSelectionV3;
+     }
+
    }
 
    for(UInt_t i = 0; i < electrons->size(); i++){
 
-     if( (*electrons)[i].pt() < 10 || (*electrons)[i].chargedHadronIso()/(*electrons)[i].pt() > 0.3) 
+     if( (*electrons)[i].pt() < 10)
        continue;
+
+     if (! passLooseElectronId((*electrons)[i], PV))
+       continue;
+
+     flags = flags | LepLooseSelectionV1;
 
      n_loose_electrons++;
 
      electron_4mom = (*electrons)[i].p4();
      
-     if (passElectronId((*electrons)[i], PV))
-	 pass_full_electron_id = kTRUE;
+     if (passTightElectronId((*electrons)[i], PV))
+       flags = flags | LepTightSelectionV1;
      
    }
    
@@ -266,9 +300,51 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
    metptshiftup = met.shiftedPt(pat::MET::JetEnUp);
    metptshiftdown = met.shiftedPt(pat::MET::JetEnDown);
 
+   Handle<edm::View<reco::GenParticle> > pruned;
+   iEvent.getByToken(prunedGenToken_,pruned);
+   // Packed particles are all the status 1, so usable to remake jets
+   // The navigation from status 1 to pruned is possible (the other direction should be made by hand)
+   Handle<edm::View<pat::PackedGenParticle> > packed;
+   iEvent.getByToken(packedGenToken_,packed);
+   
+   nearestparton_pdgid=0;
+
    if (n_loose_electrons + n_loose_muons > 1)
      std::cout  << "warning: n_loose_leptons > 1, not saving the event" << std::endl;
    else if (n_loose_electrons == 1){
+
+     drnearestgenmuon = std::numeric_limits<Float_t>::max();
+     drnearestgenelectron = std::numeric_limits<Float_t>::max();
+
+     for(size_t j=0; j<packed->size();j++){
+       if (abs((*packed)[j].pdgId()) == 11 && (*packed)[j].status() == 1){
+	 if (reco::deltaR((*packed)[j].p4(),electron_4mom) < drnearestgenelectron)
+	   drnearestgenelectron = reco::deltaR((*packed)[j].p4(),electron_4mom);
+	 flags = flags | GenElectronInTheEvent;
+	 }
+       if (abs((*packed)[j].pdgId()) == 13 && (*packed)[j].status() == 1){
+	 if (reco::deltaR((*packed)[j].p4(),electron_4mom) < drnearestgenmuon)
+	   drnearestgenmuon = reco::deltaR((*packed)[j].p4(),electron_4mom);
+	 flags = flags | GenMuonInTheEvent;
+	 }
+     }
+
+     Float_t minpartondR = std::numeric_limits<Float_t>::max();
+     
+     for(size_t j=0; j<pruned->size();j++){
+       if ( abs((*pruned)[j].pdgId()) == 1 || abs((*pruned)[j].pdgId()) == 2 || abs((*pruned)[j].pdgId()) == 3 || abs((*pruned)[j].pdgId()) == 4 || abs((*pruned)[j].pdgId()) == 5 || abs((*pruned)[j].pdgId()) == 21 ){
+	 
+	 //status 23 means outgoing: http://home.thep.lu.se/~torbjorn/pythia81html/ParticleProperties.html
+	 if (   (     (*pruned)[j].status() == 23 || (*pruned)[j].status() == 71 )  && reco::deltaR((*pruned)[j].p4(),electron_4mom) < minpartondR){
+	   minpartondR = reco::deltaR((*pruned)[j].p4(),electron_4mom);
+	   nearestparton_pdgid=(*pruned)[j].pdgId();
+	   nearestparton_4mom=(*pruned)[j].p4();
+	   
+	 }
+	 
+       //std::cout << (*pruned)[j].pdgId()  << " " << (*pruned)[j].status() << std::endl;
+       }
+     }
 
      Float_t maxptjetaway = -1;
 
@@ -282,6 +358,40 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
      electron_tree->Fill();
    }
    else if (n_loose_muons == 1){
+
+     drnearestgenelectron = std::numeric_limits<Float_t>::max();
+     drnearestgenmuon = std::numeric_limits<Float_t>::max();
+
+     for(size_t j=0; j<packed->size();j++){
+       if (abs((*packed)[j].pdgId()) == 11 && (*packed)[j].status() == 1){
+	 if (reco::deltaR((*packed)[j].p4(),muon_4mom) < drnearestgenelectron)
+	   drnearestgenelectron = reco::deltaR((*packed)[j].p4(),muon_4mom);
+	 flags = flags | GenElectronInTheEvent;
+	 }
+       if (abs((*packed)[j].pdgId()) == 13 && (*packed)[j].status() == 1){
+	 if (reco::deltaR((*packed)[j].p4(),muon_4mom) < drnearestgenmuon)
+	   drnearestgenmuon = reco::deltaR((*packed)[j].p4(),muon_4mom);
+	 flags = flags | GenMuonInTheEvent;
+	 }
+     }
+
+     Float_t minpartondR = std::numeric_limits<Float_t>::max();
+     
+     for(size_t j=0; j<pruned->size();j++){
+       
+       if ( abs((*pruned)[j].pdgId()) == 1 || abs((*pruned)[j].pdgId()) == 2 || abs((*pruned)[j].pdgId()) == 3 || abs((*pruned)[j].pdgId()) == 4 || abs((*pruned)[j].pdgId()) == 5 || abs((*pruned)[j].pdgId()) == 21 ){
+
+	 //status 23 means outgoing: http://home.thep.lu.se/~torbjorn/pythia81html/ParticleProperties.html
+	 if ( (  (*pruned)[j].status() == 23 || (*pruned)[j].status() == 71 )  && reco::deltaR((*pruned)[j].p4(),muon_4mom) < minpartondR){
+	   
+	   minpartondR = reco::deltaR((*pruned)[j].p4(),muon_4mom);
+	   nearestparton_pdgid=(*pruned)[j].pdgId();
+	   nearestparton_4mom=(*pruned)[j].p4();
+	 }
+	 
+       //std::cout << (*pruned)[j].pdgId()  << " " << (*pruned)[j].status() << std::endl;
+       }
+     }
 
      Float_t maxptjetaway = -1;
 
@@ -297,6 +407,8 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
 
    }
        
+
+
 }
 
 
@@ -316,20 +428,29 @@ make_loose_lepton_trees::beginJob()
   muon_tree->Branch("lumi",&lumi);
   muon_tree->Branch("run",&run);
   muon_tree->Branch("maxjetbtag",&maxjetbtag);
+  muon_tree->Branch("nearestparton_4mom",&nearestparton_4mom);
+  muon_tree->Branch("nearestparton_pdgid",&nearestparton_pdgid);
   muon_tree->Branch("muon_4mom",&muon_4mom);
-  muon_tree->Branch("pass_full_muon_id",&pass_full_muon_id);
+  muon_tree->Branch("pass_tight_muon_id",&pass_tight_muon_id);
   muon_tree->Branch("ptjetaway",&ptjetaway);
+  muon_tree->Branch("metpt",&metpt);
+  muon_tree->Branch("flags",&flags);
+  muon_tree->Branch("drnearestgenmuon",&drnearestgenmuon);
+  muon_tree->Branch("drnearestgenelectron",&drnearestgenelectron);
 
   electron_tree->Branch("event",&event);
   electron_tree->Branch("lumi",&lumi);
   electron_tree->Branch("run",&run);
   electron_tree->Branch("maxjetbtag",&maxjetbtag);
+  electron_tree->Branch("nearestparton_4mom",&nearestparton_4mom);
+  electron_tree->Branch("nearestparton_pdgid",&nearestparton_pdgid);
   electron_tree->Branch("electron_4mom",&electron_4mom);
-  electron_tree->Branch("pass_full_electron_id",&pass_full_electron_id);
+  electron_tree->Branch("pass_tight_electron_id",&pass_tight_electron_id);
   electron_tree->Branch("ptjetaway",&ptjetaway);
-
-  muon_tree->Branch("metpt",&metpt);
   electron_tree->Branch("metpt",&metpt);
+  electron_tree->Branch("flags",&flags);
+  electron_tree->Branch("drnearestgenelectron",&drnearestgenelectron);
+  electron_tree->Branch("drnearestgenmuon",&drnearestgenmuon);
 
 }
 
