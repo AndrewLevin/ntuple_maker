@@ -55,6 +55,12 @@
 
 #include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
 
+#include "FWCore/Common/interface/TriggerNames.h"
+#include "DataFormats/Common/interface/TriggerResults.h"
+#include "DataFormats/PatCandidates/interface/TriggerObjectStandAlone.h"
+#include "DataFormats/PatCandidates/interface/PackedTriggerPrescales.h"
+#include "DataFormats/PatCandidates/interface/TriggerEvent.h"
+
 //
 // class declaration
 //
@@ -150,6 +156,8 @@ public:
   edm::EDGetTokenT<pat::METCollection> metToken_;
   edm::EDGetTokenT<edm::View<reco::GenParticle> > prunedGenToken_;
   edm::EDGetTokenT<edm::View<pat::PackedGenParticle> > packedGenToken_;
+  edm::EDGetTokenT< edm::TriggerResults > triggerResultsToken_;
+  edm::EDGetTokenT< pat::TriggerObjectStandAloneCollection > triggerObjectToken_;
 
   TH1F * n_events_run_over;
   UInt_t flags;
@@ -216,7 +224,9 @@ ntuple_maker::ntuple_maker(const edm::ParameterSet& iConfig):
   fatjetToken_(consumes<pat::JetCollection>(iConfig.getParameter<edm::InputTag>("fatjets"))),
   metToken_(consumes<pat::METCollection>(iConfig.getParameter<edm::InputTag>("mets"))),
   prunedGenToken_(consumes<edm::View<reco::GenParticle> >(iConfig.getParameter<edm::InputTag>("prunedgenparticles"))),
-  packedGenToken_(consumes<edm::View<pat::PackedGenParticle> >(iConfig.getParameter<edm::InputTag>("packedgenparticles")))
+  packedGenToken_(consumes<edm::View<pat::PackedGenParticle> >(iConfig.getParameter<edm::InputTag>("packedgenparticles"))),
+  triggerResultsToken_(consumes< edm::TriggerResults >(edm::InputTag("TriggerResults","","HLT"))),
+  triggerObjectToken_( consumes< pat::TriggerObjectStandAloneCollection >(edm::InputTag("selectedPatTrigger")))
 {
   //now do what ever initialization is needed
 
@@ -242,6 +252,45 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
 
   n_events_run_over->Fill(0.5);
+
+  edm::Handle< edm::TriggerResults> triggerResultsHandle;
+
+  iEvent.getByToken(triggerResultsToken_,triggerResultsHandle);
+
+  std::vector<std::string> triggerNames;
+
+  triggerNames.push_back("HLT_Mu17_Mu8");
+
+  const edm::TriggerNames &names = iEvent.triggerNames(*triggerResultsHandle);
+
+  edm::Handle<pat::TriggerObjectStandAloneCollection > triggerObjectHandle;
+
+  std::cout << "names.size() = " << names.size() << std::endl;
+
+  for (unsigned int i = 0; i < names.size(); i++) {
+    for(unsigned int j=0;j< triggerNames.size() ;++j){
+      std::string name = names.triggerName(i);
+      if (name.find( (triggerNames)[j]) != std::string::npos){
+
+	std::cout << "trigger fired" << std::endl;
+	
+      }
+    }
+  }
+
+  iEvent.getByToken(triggerObjectToken_,triggerObjectHandle);
+
+  for (pat::TriggerObjectStandAlone obj : *triggerObjectHandle) { 
+
+    obj.unpackPathNames(names);
+
+    for (unsigned h = 0; h < obj.filterIds().size(); ++h){
+
+      std::cout << "obj.filterIds()[h] = " << obj.filterIds()[h] << std::endl;
+
+    }
+
+  }
 
   edm::Handle<LHEEventProduct> hLheEvt;
   iEvent.getByToken(lheEvtToken_,hLheEvt);
