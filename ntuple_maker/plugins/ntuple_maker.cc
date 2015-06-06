@@ -336,7 +336,6 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    edm::Handle<pat::ElectronCollection> electrons;
    iEvent.getByToken(electronToken_, electrons);
 
-   //   for (const pat::Electron &el : *electrons) {
    for(UInt_t i = 0; i < electrons->size(); i++){
 
      if( (*electrons)[i].pt() < 10) 
@@ -347,17 +346,10 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
      loose_electron_indices.push_back(i);
 
-     //if (el.chargedHadronIso()/el.pt() > 0.3)
-     //  continue;
-
    }
 
    edm::Handle<pat::MuonCollection> muons;
    iEvent.getByToken(muonToken_, muons);
-
-   //Bool_t found_muon = kFALSE;
-
-   
 
    for(UInt_t i = 0; i < muons->size(); i++){
      if ((*muons)[i].pt() < 10)
@@ -367,9 +359,6 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
      if (! (passLooseMuonId((*muons)[i],PV) && relative_isolation < 1.0) )
        continue;
-
-
-     //std::cout << "(*muons)[i].pt() = " << (*muons)[i].pt() << std::endl;
 
      loose_muon_indices.push_back(i);
 
@@ -516,62 +505,6 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    lep1_nearestparton_pdgid = lep1_nearest_parton.pdgId();
    lep2_nearestparton_pdgid = lep2_nearest_parton.pdgId();
 
-   /*
-
-
-     found_muon=kTRUE;
-     break;
-
-     //printf("muon with pt %4.1f, dz(PV) %+5.3f, POG loose id %d, tight id %d\n",
-     //	    mu.pt(), mu.muonBestTrack()->dz(PV.position()), mu.isLooseMuon(), mu.isTightMuon(PV));
-   }
-
-   
-
-   if(!found_muon)
-     return;
-
-   Bool_t found_electron = kFALSE;
-
-   */
-
-
-
-   //   std::cout << "loose_electron_indices.size() = " << loose_electron_indices.size() << std::endl;
-   //   std::cout << "loose_muon_indices.size() = " << loose_muon_indices.size() << std::endl;
-
-   //std::cout << "sum = " << loose_muon_indices.size()+ loose_electron_indices.size() << std::endl;
-
-   /*
-
-
-
-     //printf("elec with pt %4.1f, supercluster eta %+5.3f, sigmaIetaIeta %.3f (%.3f with full5x5 shower shapes), lost hits %d, pass conv veto %d\n",
-     //	    el.pt(), el.superCluster()->eta(), el.sigmaIetaIeta(), el.full5x5_sigmaIetaIeta(), el.gsfTrack()->trackerExpectedHitsInner().numberOfLostHits(), el.passConversionVeto());
-   }
-
-  if(!found_electron)
-     return;
-
-   edm::Handle<pat::PhotonCollection> photons;
-   iEvent.getByToken(photonToken_, photons);
-   for (const pat::Photon &pho : *photons) {
-     if (pho.pt() < 20 or pho.chargedHadronIso()/pho.pt() > 0.3) continue;
-     printf("phot with pt %4.1f, supercluster eta %+5.3f, sigmaIetaIeta %.3f (%.3f with full5x5 shower shapes)\n",
-	    pho.pt(), pho.superCluster()->eta(), pho.sigmaIetaIeta(), pho.full5x5_sigmaIetaIeta());
-   }
-
-
-   edm::Handle<pat::TauCollection> taus;
-   iEvent.getByToken(tauToken_, taus);
-   for (const pat::Tau &tau : *taus) {
-     if (tau.pt() < 20) continue;
-     printf("tau  with pt %4.1f, dxy signif %.1f, ID(byMediumCombinedIsolationDeltaBetaCorr3Hits) %.1f, lead candidate pt %.1f, pdgId %d \n",
-	    tau.pt(), tau.dxy_Sig(), tau.tauID("byMediumCombinedIsolationDeltaBetaCorr3Hits"), tau.leadCand()->pt(), tau.leadCand()->pdgId());
-   }
-
-   */
-
 
    std::vector<const pat::Jet *> cleaned_jets;
 
@@ -596,26 +529,9 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    jet1pujetid = cleaned_jets[0]->userFloat("pileupJetId:fullDiscriminant");
    jet2pujetid = cleaned_jets[1]->userFloat("pileupJetId:fullDiscriminant");
 
-   /*
-
-   edm::Handle<pat::JetCollection> fatjets;
-   iEvent.getByToken(fatjetToken_, fatjets);
-   for (const pat::Jet &j : *fatjets) {
-     printf("AK8j with pt %5.1f (raw pt %5.1f), eta %+4.2f, mass %5.1f ungroomed, %5.1f pruned, %5.1f trimmed, %5.1f filtered. CMS TopTagger %.1f\n",
-            j.pt(), j.pt()*j.jecFactor("Uncorrected"), j.eta(), j.mass(), j.userFloat("ak8PFJetsCHSPrunedLinks"), j.userFloat("ak8PFJetsCHSTrimmedLinks"), j.userFloat("ak8PFJetsCHSFilteredLinks"), j.userFloat("cmsTopTagPFJetsCHSLinksAK8"));
-   }
-
-   */
- 
    edm::Handle<pat::METCollection> mets;
    iEvent.getByToken(metToken_, mets);
    const pat::MET &met = mets->front();
-   //printf("MET: pt %5.1f, phi %+4.2f, sumEt (%.1f). genMET %.1f. MET with JES up/down: %.1f/%.1f\n",
-   //	  met.pt(), met.phi(), met.sumEt(),
-   //	  met.genMET()->pt(),
-   //	  met.shiftedPt(pat::MET::JetEnUp), met.shiftedPt(pat::MET::JetEnDown));
-
-   //   printf("\n");
 
    metpt = met.pt();
    metphi = met.phi();
@@ -625,46 +541,6 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    metptshiftdown = met.shiftedPt(pat::MET::JetEnDown);
 
    tree->Fill();
-
-   /*
-
-   for(size_t j=0; j<pruned->size();j++){
-
-     std::cout << "(*pruned)[j].pdfId() = " << (*pruned)[j].pdgId() << std::endl;
-     //std::cout << "    (*pruned)[j].mother(0)->pdfId() = " << (*pruned)[j].mother(0)->pdgId() << std::endl;
-
-   }
-   
-   */
-       //if ( abs((*pruned)[j].pdgId()) == 1 || abs((*pruned)[j].pdgId()) == 2 || abs((*pruned)[j].pdgId()) == 3 || abs((*pruned)[j].pdgId()) == 4 || abs((*pruned)[j].pdgId()) == 5 )
-       
-
-
-
-   /*
-
-   Handle<edm::View<reco::GenParticle> > pruned;
-   iEvent.getByToken(prunedGenToken_,pruned);
-
-   // Packed particles are all the status 1, so usable to remake jets
-   // The navigation from status 1 to pruned is possible (the other direction should be made by hand)
-   Handle<edm::View<pat::PackedGenParticle> > packed;
-
-
-   iEvent.getByToken(packedGenToken_,packed);
-
-
-
-   for(size_t j=0; j<packed->size();j++){
-
-
-     if ( abs((*packed)[j].pdgId()) == 1 || abs((*packed)[j].pdgId()) == 2 || abs((*packed)[j].pdgId()) == 3 || abs((*packed)[j].pdgId()) == 4 || abs((*packed)[j].pdgId()) == 5 )
-       std::cout << "(*packed)[j].mother(0)->pdfId() = " << (*packed)[j].mother(0)->pdgId() << std::endl;
-
-     //get the pointer to the first survied ancestor of a given packed GenParticle in the prunedCollection 
-   }
-
-   */
 
 }
 
