@@ -55,6 +55,11 @@
 #include "DataFormats/Candidate/interface/Candidate.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 
+#include "FWCore/Common/interface/TriggerNames.h"
+#include "DataFormats/Common/interface/TriggerResults.h"
+#include "DataFormats/PatCandidates/interface/TriggerObjectStandAlone.h"
+#include "DataFormats/PatCandidates/interface/PackedTriggerPrescales.h"
+#include "DataFormats/PatCandidates/interface/TriggerEvent.h"
 
 //
 // class declaration
@@ -94,7 +99,8 @@ public:
   edm::EDGetTokenT<pat::METCollection> metToken_;
   edm::EDGetTokenT<edm::View<reco::GenParticle> > prunedGenToken_;
   edm::EDGetTokenT<edm::View<pat::PackedGenParticle> > packedGenToken_;
-
+  edm::EDGetTokenT< edm::TriggerResults > triggerResultsToken_;
+  edm::EDGetTokenT< pat::TriggerObjectStandAloneCollection > triggerObjectToken_;
 
   TH1F * n_events_run_over;
   UInt_t flags;
@@ -161,7 +167,9 @@ make_loose_lepton_trees::make_loose_lepton_trees(const edm::ParameterSet& iConfi
   fatjetToken_(consumes<pat::JetCollection>(iConfig.getParameter<edm::InputTag>("fatjets"))),
   metToken_(consumes<pat::METCollection>(iConfig.getParameter<edm::InputTag>("mets"))),
   prunedGenToken_(consumes<edm::View<reco::GenParticle> >(iConfig.getParameter<edm::InputTag>("prunedgenparticles"))),
-  packedGenToken_(consumes<edm::View<pat::PackedGenParticle> >(iConfig.getParameter<edm::InputTag>("packedgenparticles")))
+  packedGenToken_(consumes<edm::View<pat::PackedGenParticle> >(iConfig.getParameter<edm::InputTag>("packedgenparticles"))),
+  triggerResultsToken_(consumes< edm::TriggerResults >(edm::InputTag("TriggerResults","","HLT"))),
+  triggerObjectToken_( consumes< pat::TriggerObjectStandAloneCollection >(edm::InputTag("selectedPatTrigger")))
 
 {
   //now do what ever initialization is needed
@@ -188,6 +196,66 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
 {
 
   n_events_run_over->Fill(0.5);
+
+  edm::Handle< edm::TriggerResults> triggerResultsHandle;
+
+  iEvent.getByToken(triggerResultsToken_,triggerResultsHandle);
+
+  std::vector<std::string> triggerNames;
+
+  //triggerNames.push_back("HLT_IsoMu20_eta2p1_IterTrk02_v1"); //what does the itertrk02 mean
+  triggerNames.push_back("HLT_Ele32_eta2p1_WP85_Gsf_v1");
+
+  const edm::TriggerNames &names = iEvent.triggerNames(*triggerResultsHandle);
+
+  edm::Handle<pat::TriggerObjectStandAloneCollection > triggerObjectHandle;
+
+  Bool_t trigger_fired = kFALSE; 
+
+  //  std::cout << "names.size() = " << names.size() << std::endl;
+
+  for (unsigned int i = 0; i < names.size(); i++) { 
+
+    std::cout << "names.triggerName(i) = " << names.triggerName(i) << std::endl;
+
+    //    std::cout << "triggerResultsHandle->accept(i) = " << triggerResultsHandle->accept(i) << std::endl;
+
+    for(unsigned int j=0;j< triggerNames.size() ;++j){ 
+      std::string name = names.triggerName(i);
+
+      if (name.find( (triggerNames)[j]) != std::string::npos && triggerResultsHandle->accept(i)){ 
+	trigger_fired = kTRUE;
+      }
+    }
+  }
+
+  if (! trigger_fired)
+    return;
+
+  std::cout << "trigger fired" << std::endl;
+
+  iEvent.getByToken(triggerObjectToken_,triggerObjectHandle);
+
+  for (pat::TriggerObjectStandAlone obj : *triggerObjectHandle) {
+
+    obj.unpackPathNames(names);
+
+    std::cout << "obj.pathNames(false).size() = " << obj.pathNames(false).size() << std::endl;
+
+    for (unsigned h = 0; h < obj.pathNames(false).size();h++)  
+      std::cout << "obj.pathNames(false)[h] = " << obj.pathNames(false)[h] << std::endl;
+
+    for (unsigned h = 0; h < obj.filterIds().size(); ++h){
+
+      std::cout << "obj.filterIds()[h] = " << obj.filterIds()[h] << std::endl;
+
+      std::cout << "trigger::TriggerElectron = " << trigger::TriggerElectron << std::endl;
+      std::cout << "trigger::TriggerMuon = " << trigger::TriggerMuon << std::endl;
+
+    }
+
+  }
+
 
   std::vector<UInt_t> loose_muon_indices;
   std::vector<UInt_t> loose_electron_indices;
