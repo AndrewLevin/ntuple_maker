@@ -204,7 +204,7 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
   std::vector<std::string> triggerNames;
 
   //triggerNames.push_back("HLT_IsoMu20_eta2p1_IterTrk02_v1"); //what does the itertrk02 mean
-  triggerNames.push_back("HLT_Ele32_eta2p1_WP85_Gsf_v1");
+  triggerNames.push_back("HLT_Mu8_v1");
 
   const edm::TriggerNames &names = iEvent.triggerNames(*triggerResultsHandle);
 
@@ -216,7 +216,7 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
 
   for (unsigned int i = 0; i < names.size(); i++) { 
 
-    std::cout << "names.triggerName(i) = " << names.triggerName(i) << std::endl;
+    // std::cout << "names.triggerName(i) = " << names.triggerName(i) << std::endl;
 
     //    std::cout << "triggerResultsHandle->accept(i) = " << triggerResultsHandle->accept(i) << std::endl;
 
@@ -242,15 +242,24 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
 
     std::cout << "obj.pathNames(false).size() = " << obj.pathNames(false).size() << std::endl;
 
-    for (unsigned h = 0; h < obj.pathNames(false).size();h++)  
-      std::cout << "obj.pathNames(false)[h] = " << obj.pathNames(false)[h] << std::endl;
+    for (unsigned h = 0, n =  obj.pathNames(false).size(); h < n; ++h) {
+      bool isBoth = obj.hasPathName( obj.pathNames(false)[h], true, true ); 
+      bool isL3   = obj.hasPathName( obj.pathNames(false)[h], false, true ); 
+      bool isLF   = obj.hasPathName( obj.pathNames(false)[h], true, false ); 
+      bool isNone = obj.hasPathName( obj.pathNames(false)[h], false, false ); 
 
-    for (unsigned h = 0; h < obj.filterIds().size(); ++h){
+      if (isNone && !isBoth && !isL3 && !isLF) 
+      	continue;
 
-      std::cout << "obj.filterIds()[h] = " << obj.filterIds()[h] << std::endl;
+      if (obj.filterIds()[h] == trigger::TriggerMuon){
 
-      std::cout << "trigger::TriggerElectron = " << trigger::TriggerElectron << std::endl;
-      std::cout << "trigger::TriggerMuon = " << trigger::TriggerMuon << std::endl;
+	if( obj.pathNames(false)[h].find("HLT_Mu8_v1") != std::string::npos ){
+
+	  std::cout << "obj.pt() = " << obj.pt() << std::endl;
+
+	 }
+
+      }
 
     }
 
