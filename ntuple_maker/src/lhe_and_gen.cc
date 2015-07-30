@@ -18,9 +18,16 @@ void lhe_and_gen::defineBranches(TTree *tree){
   tree->Branch("lep2_nearest_gen_muon_dr",&lep2_nearest_gen_muon_dr);
 
   tree->Branch("lhe_weight_orig",&lhe_weight_orig);
+
+  tree->Branch("qcd_pdf_weight_orig",&qcd_pdf_weight_orig);
+
   tree->Branch("lhe_weights",&lhe_weights);
 
+  tree->Branch("pdf_weights",&pdf_weights);
 
+  tree->Branch("qcd_weight_down",&qcd_weight_down);
+
+  tree->Branch("qcd_weight_up",&qcd_weight_up);
 
 }
 
@@ -80,19 +87,37 @@ lhe_and_gen::lhe_and_gen()
 
 }
 
-int lhe_and_gen::analyze(const edm::Event& iEvent, LorentzVector & lep1, LorentzVector & lep2){
+int lhe_and_gen::analyze(const edm::Event& iEvent, LorentzVector & lep1, LorentzVector & lep2, std::vector<int> & pdf_weights_indices, int qcd_weight_up_index, int qcd_weight_down_index){
 
 
   edm::Handle<LHEEventProduct> hLheEvt;
   iEvent.getByToken(lheEvtToken_,hLheEvt);
 
+
+
   lhe_weights = new std::vector<Float_t>();
+  pdf_weights = new std::vector<Float_t>();
 
   lhe_weight_orig = hLheEvt->originalXWGTUP();
+
+  if (syscalcinfo_){
+
+    qcd_pdf_weight_orig = hLheEvt->weights()[0].wgt;
+    
+    qcd_weight_up = hLheEvt->weights()[qcd_weight_up_index].wgt;
+    
+    qcd_weight_down = hLheEvt->weights()[qcd_weight_down_index].wgt;
+
+    for (unsigned int i = 0; i < pdf_weights_indices.size(); i++){
+      pdf_weights->push_back(hLheEvt->weights()[pdf_weights_indices[i]].wgt);
+    }
+
+  }
 
   for(unsigned int i = 0; i < hLheEvt->weights().size(); i++){
     lhe_weights->push_back(hLheEvt->weights()[i].wgt);
   }
+
 
   edm::Handle<edm::View<pat::PackedGenParticle> > packed;
   iEvent.getByToken(packedGenToken_,packed);
@@ -161,6 +186,7 @@ int lhe_and_gen::analyze(const edm::Event& iEvent, LorentzVector & lep1, Lorentz
     }
   }
   
+
   lep1_nearestparton_4mom = lep1_nearest_parton.p4();
   lep2_nearestparton_4mom = lep2_nearest_parton.p4();
   lep1_nearestparton_pdgid = lep1_nearest_parton.pdgId();

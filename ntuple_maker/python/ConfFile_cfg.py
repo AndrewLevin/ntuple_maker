@@ -6,23 +6,44 @@ process.load("FWCore.MessageService.MessageLogger_cfi")
 
 process.TFileService = cms.Service("TFileService", fileName = cms.string("output_tree.root") )
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10000) )
+process.maxEvents = cms.untracked.PSet( 
+#input = cms.untracked.int32(100) ,
+input = cms.untracked.int32(-1) ,
+
+)
 
 #process.load('EgammaAnalysis/ElectronTools/egmGsfElectronIDs_cff')
 
 process.source = cms.Source("PoolSource",
+
+#skipEvents= cms.untracked.uint32(1),
+
     # replace 'myfile.root' with the source file you want to use
+#    duplicateCheckMode = cms.untracked.string('noDuplicateCheck'),
     fileNames = cms.untracked.vstring(
-        '/store/mc/Phys14DR/TTJets_MSDecaysCKM_central_Tune4C_13TeV-madgraph-tauola/MINIAODSIM/PU20bx25_PHYS14_25_V1-v1/00000/00C90EFC-3074-E411-A845-002590DB9262.root'
-#        '/store/mc/Spring14miniaod/TTJets_MSDecaysCKM_central_Tune4C_13TeV-madgraph-tauola/MINIAODSIM/PU40bx25_POSTLS170_V5-v2/00000/00CAA728-D626-E411-9112-00215AD4D6E2.root'
-#        '/store/user/anlevin/data/MINIAOD/wpwp_13_tev_qed_4_qcd_0_v3/step5_output_9601.root'
-#        'file:/afs/cern.ch/work/a/anlevin/VBS/13_tev/Merged.root'
-    )
+
+'/store/mc/RunIISpring15DR74/WW_DoubleScattering_13TeV-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/30000/04DCEB17-A12F-E511-8BFB-782BCB161FC2.root'
+    ),
+#eventsToProcess = cms.untracked.VEventRange('1:11:2092-1:11:2092'),
+
 )
 
+process.cleanedMu = cms.EDProducer("PATMuonCleanerBySegments",
+   src = cms.InputTag("slimmedMuons"),
+   preselection = cms.string("track.isNonnull"),
+   passthrough = cms.string("isGlobalMuon && numberOfMatches >= 2"),
+   fractionOfSharedSegments = cms.double(0.499))
+
 process.demo = cms.EDAnalyzer('ntuple_maker',
+
+  syscalcinfo = cms.untracked.bool (False), #fill the information from syscalc
   vertices = cms.InputTag("offlineSlimmedPrimaryVertices"),
-  muons = cms.InputTag("slimmedMuons"),
+  muons = cms.InputTag("cleanedMu"),
+#  lheevent = cms.InputTag("externalLHEProducer"),
+#  lheruninfo = cms.InputTag("externalLHEProducer"),
+  lheruninfo = cms.InputTag("source"),
+  lheevent = cms.InputTag("source"),
+  #muons = cms.InputTag("slimmedMuons"),
   electrons = cms.InputTag("slimmedElectrons"),
   taus = cms.InputTag("slimmedTaus"),
   photons = cms.InputTag("slimmedPhotons"),
@@ -34,5 +55,6 @@ process.demo = cms.EDAnalyzer('ntuple_maker',
                               
 )
 
+process.p = cms.Path(process.cleanedMu*process.demo)
 
-process.p = cms.Path(process.demo)
+

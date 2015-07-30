@@ -43,6 +43,7 @@ using namespace std;
 #include "DataFormats/JetReco/interface/GenJet.h"
 #include "DataFormats/JetReco/interface/GenJetCollection.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/LHERunInfoProduct.h"
 
 
 #include "DataFormats/PatCandidates/interface/PackedGenParticle.h"
@@ -81,7 +82,7 @@ class lhe_and_gen
 {
  public:
   lhe_and_gen();
-  int analyze(const edm::Event& iEvent, LorentzVector & lep1, LorentzVector & lep2);
+  int analyze(const edm::Event& iEvent, LorentzVector & lep1, LorentzVector & lep2, std::vector<int> & pdf_weight_indices, int qcd_weight_up_index, int qcd_weight_down_index);
   void defineBranches(TTree * tree);
 
   edm::EDGetTokenT<LHEEventProduct> lheEvtToken_;
@@ -102,7 +103,13 @@ class lhe_and_gen
   Float_t lep2_nearest_gen_muon_dr;
 
   std::vector<Float_t> * lhe_weights;  
+  std::vector<Float_t> * pdf_weights;  
   Float_t lhe_weight_orig;
+  Float_t qcd_pdf_weight_orig;
+  Float_t qcd_weight_up;
+  Float_t qcd_weight_down;
+
+  bool syscalcinfo_;
 
 };
 
