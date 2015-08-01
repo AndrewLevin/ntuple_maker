@@ -25,9 +25,19 @@ void lhe_and_gen::defineBranches(TTree *tree){
 
   tree->Branch("pdf_weights",&pdf_weights);
 
-  tree->Branch("qcd_weight_down",&qcd_weight_down);
+  tree->Branch("qcd_weight_mur1muf2",&qcd_weight_mur1muf2);
+  tree->Branch("qcd_weight_mur1muf0p5",&qcd_weight_mur1muf0p5);
+  tree->Branch("qcd_weight_mur2muf1",&qcd_weight_mur2muf1);
+  tree->Branch("qcd_weight_mur2muf2",&qcd_weight_mur2muf2);
+  tree->Branch("qcd_weight_mur2muf0p5",&qcd_weight_mur2muf0p5);
+  tree->Branch("qcd_weight_mur0p5muf1",&qcd_weight_mur0p5muf1);
+  tree->Branch("qcd_weight_mur0p5muf2",&qcd_weight_mur0p5muf2);
+  tree->Branch("qcd_weight_mur0p5muf0p5",&qcd_weight_mur0p5muf0p5);
 
-  tree->Branch("qcd_weight_up",&qcd_weight_up);
+
+  //  tree->Branch("qcd_weight_down",&qcd_weight_down);
+
+  //  tree->Branch("qcd_weight_up",&qcd_weight_up);
 
 }
 
@@ -87,16 +97,19 @@ lhe_and_gen::lhe_and_gen()
 
 }
 
-int lhe_and_gen::analyze(const edm::Event& iEvent, LorentzVector & lep1, LorentzVector & lep2, std::vector<int> & pdf_weights_indices, int qcd_weight_up_index, int qcd_weight_down_index){
+int lhe_and_gen::analyze(const edm::Event& iEvent, LorentzVector & lep1, LorentzVector & lep2){
 
+  lhe_weights = new std::vector<Float_t>();
+  pdf_weights = new std::vector<Float_t>();
+
+
+  if(lheinfo_){
 
   edm::Handle<LHEEventProduct> hLheEvt;
   iEvent.getByToken(lheEvtToken_,hLheEvt);
 
 
 
-  lhe_weights = new std::vector<Float_t>();
-  pdf_weights = new std::vector<Float_t>();
 
   lhe_weight_orig = hLheEvt->originalXWGTUP();
 
@@ -104,9 +117,15 @@ int lhe_and_gen::analyze(const edm::Event& iEvent, LorentzVector & lep1, Lorentz
 
     qcd_pdf_weight_orig = hLheEvt->weights()[0].wgt;
     
-    qcd_weight_up = hLheEvt->weights()[qcd_weight_up_index].wgt;
-    
-    qcd_weight_down = hLheEvt->weights()[qcd_weight_down_index].wgt;
+    qcd_weight_mur1muf2 = hLheEvt->weights()[qcd_weight_mur1muf2_index].wgt;
+    qcd_weight_mur1muf0p5 = hLheEvt->weights()[qcd_weight_mur1muf0p5_index].wgt;
+    qcd_weight_mur2muf1 = hLheEvt->weights()[qcd_weight_mur2muf1_index].wgt;
+    qcd_weight_mur2muf2 = hLheEvt->weights()[qcd_weight_mur2muf2_index].wgt;
+    qcd_weight_mur2muf0p5 = hLheEvt->weights()[qcd_weight_mur2muf0p5_index].wgt;
+    qcd_weight_mur0p5muf1 = hLheEvt->weights()[qcd_weight_mur0p5muf1_index].wgt;
+    qcd_weight_mur0p5muf2 = hLheEvt->weights()[qcd_weight_mur0p5muf2_index].wgt;
+    qcd_weight_mur0p5muf0p5 = hLheEvt->weights()[qcd_weight_mur0p5muf0p5_index].wgt;
+
 
     for (unsigned int i = 0; i < pdf_weights_indices.size(); i++){
       pdf_weights->push_back(hLheEvt->weights()[pdf_weights_indices[i]].wgt);
@@ -118,6 +137,7 @@ int lhe_and_gen::analyze(const edm::Event& iEvent, LorentzVector & lep1, Lorentz
     lhe_weights->push_back(hLheEvt->weights()[i].wgt);
   }
 
+  }
 
   edm::Handle<edm::View<pat::PackedGenParticle> > packed;
   iEvent.getByToken(packedGenToken_,packed);
@@ -134,7 +154,7 @@ int lhe_and_gen::analyze(const edm::Event& iEvent, LorentzVector & lep1, Lorentz
 
   edm::Handle<edm::View<reco::GenParticle> > pruned;
   iEvent.getByToken(prunedGenToken_,pruned);
-  
+
   reco::GenParticle lep1_nearest_parton;
   reco::GenParticle lep2_nearest_parton;
 
@@ -196,3 +216,129 @@ int lhe_and_gen::analyze(const edm::Event& iEvent, LorentzVector & lep1, Lorentz
 
 }
 
+void 
+lhe_and_gen::beginRun(edm::Run const& iRun)
+{
+
+  if(lheinfo_){
+
+  edm::Handle<LHERunInfoProduct> hLheRun;
+  iRun.getByLabel(lheRunInfoLabel_,hLheRun);
+
+  for ( LHERunInfoProduct::headers_const_iterator lheruniter = hLheRun.product()->headers_begin(); lheruniter != hLheRun.product()->headers_end(); lheruniter++ ) {
+    
+    if (lheruniter->tag() != "initrwgt")
+      continue;
+
+    bool in_NNPDF23_lo_as_0130_qed = false;
+
+    for ( LHERunInfoProduct::Header::const_iterator iter = lheruniter->begin(); iter != lheruniter->end(); iter++ ) {
+
+      //std::cout << (*iter) << std::endl;
+
+      if ( (*iter).find("mur=1 muf=2") != std::string::npos){
+
+	std::stringstream ss;
+	ss << (*iter).substr((*iter).find("<weight id=")+12,(*iter).find("> mu") - (*iter).find("<weight id=") - 13);
+	ss >> qcd_weight_mur1muf2_index;
+	qcd_weight_mur1muf2_index=qcd_weight_mur1muf2_index-1;
+	continue;
+      }
+
+      if ( (*iter).find("mur=2 muf=2") != std::string::npos){
+
+	std::stringstream ss;
+	ss << (*iter).substr((*iter).find("<weight id=")+12,(*iter).find("> mu") - (*iter).find("<weight id=") - 13);
+	ss >> qcd_weight_mur2muf2_index;
+	qcd_weight_mur2muf2_index=qcd_weight_mur2muf2_index-1;
+	continue;
+      }
+
+      if ( (*iter).find("mur=2 muf=1") != std::string::npos){
+
+	std::stringstream ss;
+	ss << (*iter).substr((*iter).find("<weight id=")+12,(*iter).find("> mu") - (*iter).find("<weight id=") - 13);
+	ss >> qcd_weight_mur2muf1_index;
+	qcd_weight_mur2muf1_index=qcd_weight_mur2muf1_index-1;
+	continue;
+      }
+
+      if ( (*iter).find("mur=2 muf=0.5") != std::string::npos){
+
+	std::stringstream ss;
+	ss << (*iter).substr((*iter).find("<weight id=")+12,(*iter).find("> mu") - (*iter).find("<weight id=") - 13);
+	ss >> qcd_weight_mur2muf0p5_index;
+	qcd_weight_mur2muf0p5_index=qcd_weight_mur2muf0p5_index-1;
+	continue;
+      }
+
+      if ( (*iter).find("mur=0.5 muf=2") != std::string::npos){
+
+	std::stringstream ss;
+	ss << (*iter).substr((*iter).find("<weight id=")+12,(*iter).find("> mu") - (*iter).find("<weight id=") - 13);
+	ss >> qcd_weight_mur0p5muf2_index;
+	qcd_weight_mur0p5muf2_index=qcd_weight_mur0p5muf2_index-1;
+	continue;
+      }
+
+      if ( (*iter).find("mur=0.5 muf=0.5") != std::string::npos){
+
+	std::stringstream ss;
+	ss << (*iter).substr((*iter).find("<weight id=")+12,(*iter).find("> mu") - (*iter).find("<weight id=") - 13);
+	ss >> qcd_weight_mur0p5muf0p5_index;
+	qcd_weight_mur0p5muf0p5_index=qcd_weight_mur0p5muf0p5_index-1;
+	continue;
+      }
+
+      if ( (*iter).find("mur=1 muf=0.5") != std::string::npos){
+
+	std::stringstream ss;
+	ss << (*iter).substr((*iter).find("<weight id=")+12,(*iter).find("> mu") - (*iter).find("<weight id=") - 13);
+	ss >> qcd_weight_mur1muf0p5_index;
+	qcd_weight_mur1muf0p5_index=qcd_weight_mur1muf0p5_index-1;
+	continue;
+      }
+
+      if ( (*iter).find("mur=0.5 muf=1") != std::string::npos){
+
+	std::stringstream ss;
+	ss << (*iter).substr((*iter).find("<weight id=")+12,(*iter).find("> mu") - (*iter).find("<weight id=") - 13);
+	ss >> qcd_weight_mur0p5muf1_index;
+	qcd_weight_mur0p5muf1_index=qcd_weight_mur0p5muf1_index-1;
+	continue;
+      }
+
+      if ( (*iter).find("NNPDF23_lo_as_0130_qed.LHgrid") != std::string::npos){
+	in_NNPDF23_lo_as_0130_qed = true;
+	continue;
+      }
+
+      if (in_NNPDF23_lo_as_0130_qed){
+	if ( (*iter).find("/weightgroup") != std::string::npos){
+	  in_NNPDF23_lo_as_0130_qed = false;
+	  continue;
+	}
+
+	assert((*iter).find("Member") != std::string::npos);
+
+	//std::cout << (*iter).substr((*iter).find("<weight id=")+12,(*iter).find(">Member") - (*iter).find("<weight id=") - 13) << std::endl;
+
+	int weight_index;
+
+	std::stringstream ss;
+	ss << (*iter).substr((*iter).find("<weight id=")+12,(*iter).find(">Member") - (*iter).find("<weight id=") - 13);
+	ss >> weight_index;
+
+	//need to subtract one because the weight numbers start from 1
+	pdf_weights_indices.push_back(weight_index-1);
+
+      }
+
+      //std::cout << (*iter) << std::endl;
+    }
+
+  }
+
+  }
+
+}

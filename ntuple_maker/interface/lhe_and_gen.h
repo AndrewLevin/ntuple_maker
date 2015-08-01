@@ -82,12 +82,17 @@ class lhe_and_gen
 {
  public:
   lhe_and_gen();
-  int analyze(const edm::Event& iEvent, LorentzVector & lep1, LorentzVector & lep2, std::vector<int> & pdf_weight_indices, int qcd_weight_up_index, int qcd_weight_down_index);
+  int analyze(const edm::Event& iEvent, LorentzVector & lep1, LorentzVector & lep2);
   void defineBranches(TTree * tree);
+  void beginRun(edm::Run const&);
+  
 
   edm::EDGetTokenT<LHEEventProduct> lheEvtToken_;
   edm::EDGetTokenT<edm::View<reco::GenParticle> > prunedGenToken_;
   edm::EDGetTokenT<edm::View<pat::PackedGenParticle> > packedGenToken_;
+
+  //using a token instead of label does not work for the lheruninfo, see here: https://hypernews.cern.ch/HyperNews/CMS/get/edmFramework/3319/2.html
+  edm::InputTag lheRunInfoLabel_;
 
   LorentzVector lep1_nearestparton_4mom;
   LorentzVector lep2_nearestparton_4mom;
@@ -106,10 +111,30 @@ class lhe_and_gen
   std::vector<Float_t> * pdf_weights;  
   Float_t lhe_weight_orig;
   Float_t qcd_pdf_weight_orig;
-  Float_t qcd_weight_up;
-  Float_t qcd_weight_down;
+  Float_t qcd_weight_mur1muf2;
+  Float_t qcd_weight_mur1muf0p5;
+  Float_t qcd_weight_mur2muf1;
+  Float_t qcd_weight_mur2muf2;
+  Float_t qcd_weight_mur2muf0p5;
+  Float_t qcd_weight_mur0p5muf1;
+  Float_t qcd_weight_mur0p5muf2;
+  Float_t qcd_weight_mur0p5muf0p5;
+
+  std::vector<int> pdf_weights_indices;
+  //  int qcd_weight_up_index;
+  //  int qcd_weight_down_index;
+
+  int qcd_weight_mur1muf2_index;
+  int qcd_weight_mur1muf0p5_index;
+  int qcd_weight_mur2muf1_index;
+  int qcd_weight_mur2muf2_index;
+  int qcd_weight_mur2muf0p5_index;
+  int qcd_weight_mur0p5muf1_index;
+  int qcd_weight_mur0p5muf2_index;
+  int qcd_weight_mur0p5muf0p5_index;
 
   bool syscalcinfo_;
+  bool lheinfo_;
 
 };
 

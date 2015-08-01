@@ -105,9 +105,6 @@ public:
   edm::EDGetTokenT< edm::TriggerResults > triggerResultsToken_;
   edm::EDGetTokenT< pat::TriggerObjectStandAloneCollection > triggerObjectToken_;
 
-  //using a token instead of label does not work for the lheruninfo, see here: https://hypernews.cern.ch/HyperNews/CMS/get/edmFramework/3319/2.html
-  edm::InputTag lheRunInfoLabel_;
-
   TH1F * n_events_run_over;
   UInt_t flags;
   UInt_t event;
@@ -139,11 +136,8 @@ public:
   Int_t lep2q;
   lhe_and_gen lhe_and_gen_object; //separate the part that runs over the generator and lhe information
 
-  std::vector<int> pdf_weight_indices;
-  int qcd_weight_up_index;
-  int qcd_weight_down_index;
-
   bool syscalcinfo_;
+  bool lheinfo_;
 
 };
 
@@ -169,16 +163,22 @@ ntuple_maker::ntuple_maker(const edm::ParameterSet& iConfig):
   metToken_(consumes<pat::METCollection>(iConfig.getParameter<edm::InputTag>("mets"))),
   triggerResultsToken_(consumes< edm::TriggerResults >(edm::InputTag("TriggerResults","","HLT"))),
   triggerObjectToken_( consumes< pat::TriggerObjectStandAloneCollection >(edm::InputTag("selectedPatTrigger"))),
-  lheRunInfoLabel_(iConfig.getParameter<edm::InputTag>("lheruninfo")),
-  syscalcinfo_(iConfig.getUntrackedParameter<bool>("syscalcinfo"))
+  //  lheRunInfoLabel_(iConfig.getParameter<edm::InputTag>("lheruninfo")),
+  syscalcinfo_(iConfig.getUntrackedParameter<bool>("syscalcinfo")),
+  lheinfo_(iConfig.getUntrackedParameter<bool>("lheinfo"))
 {
   //now do what ever initialization is needed
+
+  //if lhe_info_ is false, syscalcinfo_ should also be false
+  assert(!syscalcinfo_ || lheinfo_);
 
   lhe_and_gen_object.prunedGenToken_ = consumes<edm::View<reco::GenParticle> >(iConfig.getParameter<edm::InputTag>("prunedgenparticles"));
   lhe_and_gen_object.packedGenToken_ = consumes<edm::View<pat::PackedGenParticle> >(iConfig.getParameter<edm::InputTag>("packedgenparticles"));
   lhe_and_gen_object.lheEvtToken_ = consumes<LHEEventProduct>(iConfig.getParameter<edm::InputTag>("lheevent"));
   lhe_and_gen_object.syscalcinfo_ = syscalcinfo_;
-
+  lhe_and_gen_object.lheinfo_ = lheinfo_;
+  lhe_and_gen_object.lheRunInfoLabel_ = iConfig.getParameter<edm::InputTag>("lheruninfo");
+  
 }
 
 
@@ -397,7 +397,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      return;
 
 
-   lhe_and_gen_object.analyze(iEvent,lep1,lep2,pdf_weight_indices,qcd_weight_up_index,qcd_weight_down_index);
+   lhe_and_gen_object.analyze(iEvent,lep1,lep2);
 
    std::vector<const pat::Jet *> cleaned_jets;
 
@@ -494,69 +494,7 @@ void
 ntuple_maker::beginRun(edm::Run const& iRun, edm::EventSetup const&)
 {
 
-  edm::Handle<LHERunInfoProduct> hLheRun;
-  iRun.getByLabel(lheRunInfoLabel_,hLheRun);
-
-
-  for ( LHERunInfoProduct::headers_const_iterator lheruniter = hLheRun.product()->headers_begin(); lheruniter != hLheRun.product()->headers_end(); lheruniter++ ) {
-    
-    std::cout << "lheruniter->tag() = " << lheruniter->tag() << std::endl;
-
-    if (lheruniter->tag() != "initrwgt")
-      continue;
-
-    bool in_NNPDF23_lo_as_0130_qed = false;
-
-    for ( LHERunInfoProduct::Header::const_iterator iter = lheruniter->begin(); iter != lheruniter->end(); iter++ ) {
-
-      if ( (*iter).find("mur=2 muf=2") != std::string::npos){
-
-	std::stringstream ss;
-	ss << (*iter).substr((*iter).find("<weight id=")+12,(*iter).find("> mu") - (*iter).find("<weight id=") - 13);
-	ss >> qcd_weight_up_index;
-	qcd_weight_up_index=qcd_weight_up_index-1;
-	continue;
-      }
-
-      if ( (*iter).find("mur=0.5 muf=0.5") != std::string::npos){
-
-	std::stringstream ss;
-	ss << (*iter).substr((*iter).find("<weight id=")+12,(*iter).find("> mu") - (*iter).find("<weight id=") - 13);
-	ss >> qcd_weight_down_index;
-	qcd_weight_down_index=qcd_weight_down_index-1;
-	continue;
-      }
-
-      if ( (*iter).find("NNPDF23_lo_as_0130_qed.LHgrid") != std::string::npos){
-	in_NNPDF23_lo_as_0130_qed = true;
-	continue;
-      }
-
-      if (in_NNPDF23_lo_as_0130_qed){
-	if ( (*iter).find("/weightgroup") != std::string::npos){
-	  in_NNPDF23_lo_as_0130_qed = false;
-	  continue;
-	}
-
-	assert((*iter).find("Member") != std::string::npos);
-
-	//std::cout << (*iter).substr((*iter).find("<weight id=")+12,(*iter).find(">Member") - (*iter).find("<weight id=") - 13) << std::endl;
-
-	int weight_index;
-
-	std::stringstream ss;
-	ss << (*iter).substr((*iter).find("<weight id=")+12,(*iter).find(">Member") - (*iter).find("<weight id=") - 13);
-	ss >> weight_index;
-
-	//need to subtract one because the weight numbers start from 1
-	pdf_weight_indices.push_back(weight_index-1);
-
-      }
-
-      //std::cout << (*iter) << std::endl;
-    }
-
-  }
+  lhe_and_gen_object.beginRun(iRun);
 
 }
 
