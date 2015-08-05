@@ -447,6 +447,10 @@ ntuple_maker::beginJob()
 
   n_events_run_over= fs->make<TH1F>("n_events_run_over","n_events_run_over",1,0,1);
 
+  lhe_and_gen_object.initrwgt_header_tree_ = fs->make<TTree >("initrwgt_header","initrwgt_header");
+
+  lhe_and_gen_object.slha_header_tree_ = fs->make<TTree >("slha_header","slha_header");
+
   tree = fs->make<TTree>( "events"  , "events");
 
   tree->Branch("flags",&flags);

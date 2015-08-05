@@ -4,6 +4,10 @@ typedef ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> > LorentzVector;
 
 void lhe_and_gen::defineBranches(TTree *tree){
 
+  initrwgt_header_tree_->Branch("initrwgt_header_line",&initrwgt_header_line_);
+
+  slha_header_tree_->Branch("slha_header_line",&slha_header_line_);
+
   tree->Branch("lep1_nearestparton_4mom",&lep1_nearestparton_4mom);
   tree->Branch("lep1_nearestparton_pdgid",&lep1_nearestparton_pdgid);
   tree->Branch("lep2_nearestparton_4mom",&lep2_nearestparton_4mom);
@@ -101,7 +105,6 @@ int lhe_and_gen::analyze(const edm::Event& iEvent, LorentzVector & lep1, Lorentz
 
   lhe_weights = new std::vector<Float_t>();
   pdf_weights = new std::vector<Float_t>();
-
 
   if(lheinfo_){
 
@@ -225,6 +228,36 @@ lhe_and_gen::beginRun(edm::Run const& iRun)
   edm::Handle<LHERunInfoProduct> hLheRun;
   iRun.getByLabel(lheRunInfoLabel_,hLheRun);
 
+
+  for ( LHERunInfoProduct::headers_const_iterator lheruniter = hLheRun.product()->headers_begin(); lheruniter != hLheRun.product()->headers_end(); lheruniter++ ) {
+    
+    if (lheruniter->tag() != "slha")
+      continue;
+
+
+
+    bool leading= true;
+
+   for ( LHERunInfoProduct::Header::const_iterator iter = lheruniter->begin(); iter != lheruniter->end(); iter++ ) {
+
+      slha_header_line_ = (*iter);
+
+      //remove trailing empty line
+      if (slha_header_line_ == "\n" && leading){
+	leading = false;
+	continue;
+      }
+
+      leading= false;
+
+      slha_header_tree_->Fill();
+
+
+
+   }
+
+  }
+
   for ( LHERunInfoProduct::headers_const_iterator lheruniter = hLheRun.product()->headers_begin(); lheruniter != hLheRun.product()->headers_end(); lheruniter++ ) {
     
     if (lheruniter->tag() != "initrwgt")
@@ -232,7 +265,21 @@ lhe_and_gen::beginRun(edm::Run const& iRun)
 
     bool in_NNPDF23_lo_as_0130_qed = false;
 
+    bool leading = true;
+
     for ( LHERunInfoProduct::Header::const_iterator iter = lheruniter->begin(); iter != lheruniter->end(); iter++ ) {
+
+      initrwgt_header_line_ = (*iter);
+
+      //skip leading empty line
+      if (initrwgt_header_line_ == "\n" && leading){
+	leading = false;
+	continue;
+      }
+
+      leading = false;
+
+      initrwgt_header_tree_->Fill();
 
       //std::cout << (*iter) << std::endl;
 

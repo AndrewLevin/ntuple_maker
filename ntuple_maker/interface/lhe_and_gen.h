@@ -107,6 +107,14 @@ class lhe_and_gen
   Float_t lep1_nearest_gen_muon_dr;
   Float_t lep2_nearest_gen_muon_dr;
 
+  TTree * initrwgt_header_tree_;
+
+  std::string initrwgt_header_line_;
+
+  TTree * slha_header_tree_;
+
+  std::string slha_header_line_;
+
   std::vector<Float_t> * lhe_weights;  
   std::vector<Float_t> * pdf_weights;  
   Float_t lhe_weight_orig;
