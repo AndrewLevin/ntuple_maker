@@ -252,18 +252,23 @@ lhe_and_gen::beginRun(edm::Run const& iRun)
 
       slha_header_tree_->Fill();
 
-
-
    }
 
+   slha_header_line_ = "END_SLHA_HEADER\n";
+
+   slha_header_tree_->Fill();
+
+   
+
   }
+
+
+
 
   for ( LHERunInfoProduct::headers_const_iterator lheruniter = hLheRun.product()->headers_begin(); lheruniter != hLheRun.product()->headers_end(); lheruniter++ ) {
     
     if (lheruniter->tag() != "initrwgt")
       continue;
-
-    bool in_NNPDF23_lo_as_0130_qed = false;
 
     bool leading = true;
 
@@ -280,6 +285,23 @@ lhe_and_gen::beginRun(edm::Run const& iRun)
       leading = false;
 
       initrwgt_header_tree_->Fill();
+
+    }
+
+    initrwgt_header_line_ = "END_INITRWGT_HEADER\n";
+
+    initrwgt_header_tree_->Fill();
+
+  }
+
+  for ( LHERunInfoProduct::headers_const_iterator lheruniter = hLheRun.product()->headers_begin(); lheruniter != hLheRun.product()->headers_end(); lheruniter++ ) {
+    
+    if (lheruniter->tag() != "initrwgt")
+      continue;
+
+    bool in_NNPDF23_lo_as_0130_qed = false;
+
+    for ( LHERunInfoProduct::Header::const_iterator iter = lheruniter->begin(); iter != lheruniter->end(); iter++ ) {
 
       //std::cout << (*iter) << std::endl;
 
