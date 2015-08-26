@@ -143,6 +143,8 @@ class lhe_and_gen
 
   bool syscalcinfo_;
   bool lheinfo_;
+  bool isMC_;
+
 
 };
 

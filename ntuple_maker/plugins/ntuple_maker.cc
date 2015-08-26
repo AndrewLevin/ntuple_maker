@@ -139,6 +139,8 @@ public:
   bool syscalcinfo_;
   bool lheinfo_;
 
+  bool isMC_;
+
 };
 
 //
@@ -165,13 +167,15 @@ ntuple_maker::ntuple_maker(const edm::ParameterSet& iConfig):
   triggerObjectToken_( consumes< pat::TriggerObjectStandAloneCollection >(edm::InputTag("selectedPatTrigger"))),
   //  lheRunInfoLabel_(iConfig.getParameter<edm::InputTag>("lheruninfo")),
   syscalcinfo_(iConfig.getUntrackedParameter<bool>("syscalcinfo")),
-  lheinfo_(iConfig.getUntrackedParameter<bool>("lheinfo"))
+  lheinfo_(iConfig.getUntrackedParameter<bool>("lheinfo")),
+  isMC_(iConfig.getUntrackedParameter<bool>("isMC"))
 {
   //now do what ever initialization is needed
 
   //if lhe_info_ is false, syscalcinfo_ should also be false
   assert(!syscalcinfo_ || lheinfo_);
 
+  lhe_and_gen_object.isMC_ = isMC_;
   lhe_and_gen_object.prunedGenToken_ = consumes<edm::View<reco::GenParticle> >(iConfig.getParameter<edm::InputTag>("prunedgenparticles"));
   lhe_and_gen_object.packedGenToken_ = consumes<edm::View<pat::PackedGenParticle> >(iConfig.getParameter<edm::InputTag>("packedgenparticles"));
   lhe_and_gen_object.lheEvtToken_ = consumes<LHEEventProduct>(iConfig.getParameter<edm::InputTag>("lheevent"));
@@ -203,7 +207,9 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   //if (iEvent.eventAuxiliary().luminosityBlock() != 11 || iEvent.eventAuxiliary().event() != 2092)
   //  return;
 
-  n_events_run_over->Fill(0.5);
+
+  if (isMC_)
+    n_events_run_over->Fill(0.5);
 
   edm::Handle< edm::TriggerResults> triggerResultsHandle;
 
@@ -396,7 +402,6 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    } else 
      return;
 
-
    lhe_and_gen_object.analyze(iEvent,lep1,lep2);
 
    std::vector<const pat::Jet *> cleaned_jets;
@@ -429,8 +434,14 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    metpt = met.pt();
    metphi = met.phi();
    metsumet = met.sumEt();
-   metgenmetpt = met.genMET()->pt();
+
+   if (isMC_)
+     metgenmetpt = met.genMET()->pt();
+   else
+     metgenmetpt = 0;
+
    metptshiftup = met.shiftedPt(pat::MET::JetEnUp);
+
    metptshiftdown = met.shiftedPt(pat::MET::JetEnDown);
 
    tree->Fill();
@@ -445,7 +456,8 @@ ntuple_maker::beginJob()
 
   edm::Service<TFileService> fs;
 
-  n_events_run_over= fs->make<TH1F>("n_events_run_over","n_events_run_over",1,0,1);
+  if (isMC_)
+    n_events_run_over= fs->make<TH1F>("n_events_run_over","n_events_run_over",1,0,1);
 
   lhe_and_gen_object.initrwgt_header_tree_ = fs->make<TTree >("initrwgt_header","initrwgt_header");
 

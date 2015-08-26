@@ -106,6 +106,9 @@ int lhe_and_gen::analyze(const edm::Event& iEvent, LorentzVector & lep1, Lorentz
   lhe_weights = new std::vector<Float_t>();
   pdf_weights = new std::vector<Float_t>();
 
+  if (! isMC_)
+    return 0;
+
   if(lheinfo_){
 
   edm::Handle<LHEEventProduct> hLheEvt;
