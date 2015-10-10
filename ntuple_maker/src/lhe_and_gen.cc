@@ -269,7 +269,7 @@ lhe_and_gen::beginRun(edm::Run const& iRun)
 
 
   for ( LHERunInfoProduct::headers_const_iterator lheruniter = hLheRun.product()->headers_begin(); lheruniter != hLheRun.product()->headers_end(); lheruniter++ ) {
-    
+
     if (lheruniter->tag() != "initrwgt")
       continue;
 
