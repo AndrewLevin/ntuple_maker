@@ -11,10 +11,6 @@
 <use name="DataFormats/Candidate" />
 <use name="DataFormats/HepMCCandidate" />
 
-<use name="RecoEgamma/ElectronIdentification" />
-<use name="RecoEgamma/EgammaTools" />
-
-
 <!--  -->
 <use name="CommonTools/UtilAlgos"/>
 <use name="CommonTools/Utils"/>
