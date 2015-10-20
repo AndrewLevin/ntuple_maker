@@ -110,8 +110,8 @@ public:
   UInt_t nvtx;
   UInt_t njets;
   UInt_t nmuons;
-  UInt_t n_loose_muons;
-  UInt_t n_loose_electrons;
+  UInt_t n_veryloose_muons;
+  UInt_t n_veryloose_electrons;
   UInt_t nelectrons;
   TTree * muon_tree;
   TTree * electron_tree;
@@ -310,33 +310,31 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
 
    nmuons = muons->size();
 
-   n_loose_muons = 0;
-   n_loose_electrons = 0;
+   n_veryloose_muons = 0;
+   n_veryloose_electrons = 0;
 
    for(UInt_t i = 0; i < muons->size(); i++){
 
      if( (*muons)[i].pt() < 10)
        continue;
 
-     Float_t relative_isolation = ((*muons)[i].pfIsolationR04().sumChargedHadronPt+ std::max(0.0,(*muons)[i].pfIsolationR04().sumNeutralHadronEt + (*muons)[i].pfIsolationR04().sumPhotonEt - 0.5 * (*muons)[i].pfIsolationR04().sumPUPt))/(*muons)[i].pt();
-
-     if ( passLooseMuonId((*muons)[i],PV) && relative_isolation < 1.0)
-       flags = flags | LepLooseSelectionV1;
-
-     if ( !(flags & LepLooseSelectionV1)  )
+     if ( ! passVeryLooseMuonSelection((*muons)[i],PV)  )
        continue;
 
-     n_loose_muons++;
+     n_veryloose_muons++;
+
+     if ( passLooseMuonSelection((*muons)[i],PV))
+       flags = flags | LepLooseSelectionV1;
 
      muon_4mom = (*muons)[i].p4();
 
-     if (passTightMuonId((*muons)[i],PV) && relative_isolation < 0.4) {
+     if (passTightMuonSelectionV1((*muons)[i],PV)) {
        flags = flags | LepTightSelectionV1;
      }
-     if (passTightMuonId((*muons)[i],PV) && relative_isolation < 0.2) {
+     if (passTightMuonSelectionV2((*muons)[i],PV)) {
        flags = flags | LepTightSelectionV2;
      }
-     if (passTightMuonId((*muons)[i],PV) && relative_isolation < 0.12) {
+     if (passTightMuonSelectionV3((*muons)[i],PV)) {
        flags = flags | LepTightSelectionV3;
      }
 
@@ -347,16 +345,19 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
      if( (*electrons)[i].pt() < 10)
        continue;
 
-     if (! passLooseElectronId((*electrons)[i], PV))
+     if (! passVeryLooseElectronSelection((*electrons)[i], PV))
        continue;
 
-     flags = flags | LepLooseSelectionV1;
+     n_veryloose_electrons++;
 
-     n_loose_electrons++;
+     if (passLooseElectronSelectionV1((*electrons)[i], PV))
+       flags = flags | LepLooseSelectionV1;
+     if (passLooseElectronSelectionV2((*electrons)[i], PV))
+       flags = flags | LepLooseSelectionV2;
 
      electron_4mom = (*electrons)[i].p4();
 
-     if (passTightElectronId((*electrons)[i], PV))
+     if (passTightElectronSelection((*electrons)[i], PV))
        flags = flags | LepTightSelectionV1;
      
    }
@@ -391,7 +392,6 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
 
    if (isMC_){
 
-
      iEvent.getByToken(prunedGenToken_,pruned);
      // Packed particles are all the status 1, so usable to remake jets
      // The navigation from status 1 to pruned is possible (the other direction should be made by hand)
@@ -401,9 +401,9 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
      nearestparton_pdgid=0;
    }
 
-   if (n_loose_electrons + n_loose_muons > 1)
+   if (n_veryloose_electrons + n_veryloose_muons > 1)
      std::cout  << "warning: n_loose_leptons > 1, not saving the event" << std::endl;
-   else if (n_loose_electrons == 1){
+   else if (n_veryloose_electrons == 1){
 
      if (isMC_){
 
@@ -453,7 +453,7 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
      ptjetaway=maxptjetaway;
      electron_tree->Fill();
    }
-   else if (n_loose_muons == 1){
+   else if (n_veryloose_muons == 1){
 
      if(isMC_){
 
