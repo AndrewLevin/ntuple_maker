@@ -94,45 +94,6 @@ public:
   edm::EDGetTokenT<edm::View<reco::GenParticle> > prunedGenToken_;
   edm::EDGetTokenT<edm::View<pat::PackedGenParticle> > packedGenToken_;
 
-  TH1F * n_events_run_over;
-  UInt_t flags;
-  UInt_t event;
-  UInt_t run;
-  UInt_t lumi;
-  UInt_t nvtx;
-  TTree * tree;
-  Float_t jetpt;
-  Float_t jet1pujetid;
-  Float_t jet1btag;
-  Float_t jet2pujetid;
-  Float_t jet2btag;
-  Float_t metpt;
-  Float_t metphi;
-  Float_t metsumet;
-  Float_t metgenmetpt;
-  Float_t metptshiftup;
-  Float_t metptshiftdown;
-  LorentzVector jet1;
-  LorentzVector jet2;
-  LorentzVector lep1;
-  LorentzVector lep2;
-  Int_t lep1id;
-  Int_t lep2id;
-  Int_t lep1q;
-  Int_t lep2q;
-  LorentzVector lep1_nearestparton_4mom;
-  LorentzVector lep2_nearestparton_4mom;
-  Int_t lep1_nearestparton_pdgid;
-  Int_t lep2_nearestparton_pdgid;
-  Int_t lep1_matching_real_gen_lepton_pdgid;
-  Int_t lep2_matching_real_gen_lepton_pdgid;
-  Int_t lep1_matching_real_gen_lepton_q;
-  Int_t lep2_matching_real_gen_lepton_q;
-  Float_t lep1_nearest_gen_electron_dr;
-  Float_t lep2_nearest_gen_electron_dr;
-  Float_t lep1_nearest_gen_muon_dr;
-  Float_t lep2_nearest_gen_muon_dr;
-
 };
 
 //
@@ -181,18 +142,14 @@ void
 test_lepton_ids::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
 
-  n_events_run_over->Fill(0.5);
-
   edm::Handle<pat::JetCollection> jets;
   iEvent.getByToken(jetToken_, jets);
    
-  flags = 0;
-
    using namespace edm;
 
-   run=iEvent.eventAuxiliary().run(); 
-   lumi=iEvent.eventAuxiliary().luminosityBlock();
-   event=iEvent.eventAuxiliary().event();
+   //run=iEvent.eventAuxiliary().run(); 
+   //lumi=iEvent.eventAuxiliary().luminosityBlock();
+   //event=iEvent.eventAuxiliary().event();
 
    edm::Handle<reco::VertexCollection> vertices;
    iEvent.getByToken(vtxToken_, vertices);
@@ -204,9 +161,9 @@ test_lepton_ids::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
 
    for(UInt_t i = 0; i < muons->size(); i++){
 
-     std::cout << passTightMuonId((*muons)[i], PV) << " " << (*muons)[i].isTightMuon(PV) << std::endl;
+     std::cout << passTightMuonIdV1((*muons)[i], PV) << " " << (*muons)[i].isTightMuon(PV) << std::endl;
 
-     assert(passTightMuonId((*muons)[i], PV) == (*muons)[i].isTightMuon(PV));
+     assert(passTightMuonIdV1((*muons)[i], PV) == (*muons)[i].isTightMuon(PV));
      
    }
 
@@ -218,50 +175,6 @@ test_lepton_ids::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
 void 
 test_lepton_ids::beginJob()
 {
-
-  edm::Service<TFileService> fs;
-
-  n_events_run_over= fs->make<TH1F>("n_events_run_over","n_events_run_over",1,0,1);
-
-  tree = fs->make<TTree>( "events"  , "events");
-
-  tree->Branch("flags",&flags);
-
-  tree->Branch("event",&event);
-  tree->Branch("lumi",&lumi);
-  tree->Branch("run",&run);
-
-  tree->Branch("metpt",&metpt);
-  tree->Branch("metphi",&metphi);
-  tree->Branch("metsumet",&metsumet);
-  tree->Branch("metgenmetpt",&metgenmetpt);
-  tree->Branch("metptshiftup",&metptshiftup);
-  tree->Branch("metptshiftdown",&metptshiftdown);
-  tree->Branch("jet1",&jet1);
-  tree->Branch("jet2",&jet2);
-  tree->Branch("jet1pujetid",&jet1pujetid);
-  tree->Branch("jet2pujetid",&jet2pujetid);
-  tree->Branch("jet1btag",&jet1btag);
-  tree->Branch("jet2btag",&jet2btag);
-  tree->Branch("lep1",&lep1);
-  tree->Branch("lep2",&lep2);
-  tree->Branch("nvtx",&nvtx);
-  tree->Branch("lep1q",&lep1q);
-  tree->Branch("lep1id",&lep1id);
-  tree->Branch("lep2q",&lep2q);
-  tree->Branch("lep2id",&lep2id);
-  tree->Branch("lep1_nearestparton_4mom",&lep1_nearestparton_4mom);
-  tree->Branch("lep1_nearestparton_pdgid",&lep1_nearestparton_pdgid);
-  tree->Branch("lep2_nearestparton_4mom",&lep2_nearestparton_4mom);
-  tree->Branch("lep2_nearestparton_pdgid",&lep2_nearestparton_pdgid);
-  tree->Branch("lep1_matching_real_gen_lepton_pdgid",&lep1_matching_real_gen_lepton_pdgid);
-  tree->Branch("lep2_matching_real_gen_lepton_pdgid",&lep2_matching_real_gen_lepton_pdgid);
-  tree->Branch("lep1_matching_real_gen_lepton_q",&lep1_matching_real_gen_lepton_q);
-  tree->Branch("lep2_matching_real_gen_lepton_q",&lep2_matching_real_gen_lepton_q);
-  tree->Branch("lep1_nearest_gen_electron_dr",&lep1_nearest_gen_electron_dr);
-  tree->Branch("lep2_nearest_gen_electron_dr",&lep2_nearest_gen_electron_dr);
-  tree->Branch("lep1_nearest_gen_muon_dr",&lep1_nearest_gen_muon_dr);
-  tree->Branch("lep2_nearest_gen_muon_dr",&lep2_nearest_gen_muon_dr);
 
 }
 
