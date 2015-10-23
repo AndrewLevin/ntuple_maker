@@ -209,19 +209,15 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
   //triggerNames.push_back("HLT_Mu8_v2");
   //triggerNames.push_back("HLT_Mu17_v2");
 
-  triggerNames.push_back("HLT_Mu8_v2");
-  triggerNames.push_back("HLT_Mu17_v2");
-  triggerNames.push_back("HLT_Mu24_v2");
-  triggerNames.push_back("HLT_Mu34_v2");
+  triggerNames.push_back("HLT_Mu8_v");
+  triggerNames.push_back("HLT_Mu17_v");
+  triggerNames.push_back("HLT_Mu24_v");
+  triggerNames.push_back("HLT_Mu34_v");
 
-  triggerNames.push_back("HLT_Ele12_CaloIdL_TrackIdL_IsoVL_PFJet30_v2");
-  triggerNames.push_back("HLT_Ele18_CaloIdL_TrackIdL_IsoVL_PFJet30_v2");
-  triggerNames.push_back("HLT_Ele23_CaloIdL_TrackIdL_IsoVL_PFJet30_v2");
-  triggerNames.push_back("HLT_Ele33_CaloIdL_TrackIdL_IsoVL_PFJet30_v2");
-  triggerNames.push_back("HLT_Ele12_CaloIdL_TrackIdL_IsoVL_PFJet30_v3");
-  triggerNames.push_back("HLT_Ele18_CaloIdL_TrackIdL_IsoVL_PFJet30_v3");
-  triggerNames.push_back("HLT_Ele23_CaloIdL_TrackIdL_IsoVL_PFJet30_v3");
-  triggerNames.push_back("HLT_Ele33_CaloIdL_TrackIdL_IsoVL_PFJet30_v3");
+  triggerNames.push_back("HLT_Ele12_CaloIdL_TrackIdL_IsoVL_PFJet30_v");
+  triggerNames.push_back("HLT_Ele18_CaloIdL_TrackIdL_IsoVL_PFJet30_v");
+  triggerNames.push_back("HLT_Ele23_CaloIdL_TrackIdL_IsoVL_PFJet30_v");
+  triggerNames.push_back("HLT_Ele33_CaloIdL_TrackIdL_IsoVL_PFJet30_v");
 
   const edm::TriggerNames &names = iEvent.triggerNames(*triggerResultsHandle);
 
