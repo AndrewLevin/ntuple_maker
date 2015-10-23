@@ -344,13 +344,15 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
       std::string name = names.triggerName(i);
 
-      if (name.find( (triggerNames)[j]) != std::string::npos){
+      if (name.find( (triggerNames)[j]) != std::string::npos && triggerResultsHandle->accept(i)){
 
 	trigger_fired = kTRUE;
 	
       }
     }
   }
+
+  
 
   if (! trigger_fired)
     return;
