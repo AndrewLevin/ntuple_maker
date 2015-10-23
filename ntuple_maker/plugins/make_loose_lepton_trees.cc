@@ -142,6 +142,7 @@ public:
   Int_t lep2q;
 
   Bool_t isMC_;
+  std::string lepton_flavor_;
 
 };
 
@@ -169,7 +170,8 @@ make_loose_lepton_trees::make_loose_lepton_trees(const edm::ParameterSet& iConfi
   packedGenToken_(consumes<edm::View<pat::PackedGenParticle> >(iConfig.getParameter<edm::InputTag>("packedgenparticles"))),
   triggerResultsToken_(consumes< edm::TriggerResults >(edm::InputTag("TriggerResults","","HLT"))),
   triggerObjectToken_( consumes< pat::TriggerObjectStandAloneCollection >(edm::InputTag("selectedPatTrigger"))),
-  isMC_(iConfig.getUntrackedParameter<bool>("isMC"))
+  isMC_(iConfig.getUntrackedParameter<bool>("isMC")),
+  lepton_flavor_(iConfig.getUntrackedParameter<std::string>("lepton_flavor"))
 {
   //now do what ever initialization is needed
 
@@ -216,7 +218,10 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
   triggerNames.push_back("HLT_Ele18_CaloIdL_TrackIdL_IsoVL_PFJet30_v2");
   triggerNames.push_back("HLT_Ele23_CaloIdL_TrackIdL_IsoVL_PFJet30_v2");
   triggerNames.push_back("HLT_Ele33_CaloIdL_TrackIdL_IsoVL_PFJet30_v2");
-
+  triggerNames.push_back("HLT_Ele12_CaloIdL_TrackIdL_IsoVL_PFJet30_v3");
+  triggerNames.push_back("HLT_Ele18_CaloIdL_TrackIdL_IsoVL_PFJet30_v3");
+  triggerNames.push_back("HLT_Ele23_CaloIdL_TrackIdL_IsoVL_PFJet30_v3");
+  triggerNames.push_back("HLT_Ele33_CaloIdL_TrackIdL_IsoVL_PFJet30_v3");
 
   const edm::TriggerNames &names = iEvent.triggerNames(*triggerResultsHandle);
 
@@ -401,9 +406,7 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
      nearestparton_pdgid=0;
    }
 
-   if (n_veryloose_electrons + n_veryloose_muons > 1)
-     std::cout  << "warning: n_loose_leptons > 1, not saving the event" << std::endl;
-   else if (n_veryloose_electrons == 1){
+   if (lepton_flavor_ == "electron" && n_veryloose_electrons == 1){
 
      if (isMC_){
 
@@ -453,7 +456,7 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
      ptjetaway=maxptjetaway;
      electron_tree->Fill();
    }
-   else if (n_veryloose_muons == 1){
+   else if (lepton_flavor_ == "muons" && n_veryloose_muons == 1){
 
      if(isMC_){
 
@@ -506,8 +509,6 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
      muon_tree->Fill();
 
    }
-       
-
 
 }
 
@@ -521,34 +522,43 @@ make_loose_lepton_trees::beginJob()
 
   n_events_run_over= fs->make<TH1F>("n_events_run_over","n_events_run_over",1,0,1);
 
-  muon_tree = fs->make<TTree>( "loose_muons"  , "loose_muons");
-  electron_tree = fs->make<TTree>( "loose_electrons"  , "loose_electrons");
+  assert(lepton_flavor_ == "muon" || lepton_flavor_ == "electron");
 
-  muon_tree->Branch("event",&event);
-  muon_tree->Branch("lumi",&lumi);
-  muon_tree->Branch("run",&run);
-  muon_tree->Branch("maxjetbtag",&maxjetbtag);
-  muon_tree->Branch("nearestparton_4mom",&nearestparton_4mom);
-  muon_tree->Branch("nearestparton_pdgid",&nearestparton_pdgid);
-  muon_tree->Branch("muon_4mom",&muon_4mom);
-  muon_tree->Branch("ptjetaway",&ptjetaway);
-  muon_tree->Branch("metpt",&metpt);
-  muon_tree->Branch("flags",&flags);
-  muon_tree->Branch("drnearestgenmuon",&drnearestgenmuon);
-  muon_tree->Branch("drnearestgenelectron",&drnearestgenelectron);
+  if (lepton_flavor_ == "muon"){
 
-  electron_tree->Branch("event",&event);
-  electron_tree->Branch("lumi",&lumi);
-  electron_tree->Branch("run",&run);
-  electron_tree->Branch("maxjetbtag",&maxjetbtag);
-  electron_tree->Branch("nearestparton_4mom",&nearestparton_4mom);
-  electron_tree->Branch("nearestparton_pdgid",&nearestparton_pdgid);
-  electron_tree->Branch("electron_4mom",&electron_4mom);
-  electron_tree->Branch("ptjetaway",&ptjetaway);
-  electron_tree->Branch("metpt",&metpt);
-  electron_tree->Branch("flags",&flags);
-  electron_tree->Branch("drnearestgenelectron",&drnearestgenelectron);
-  electron_tree->Branch("drnearestgenmuon",&drnearestgenmuon);
+    muon_tree = fs->make<TTree>( "loose_muons"  , "loose_muons");
+
+    muon_tree->Branch("event",&event);
+    muon_tree->Branch("lumi",&lumi);
+    muon_tree->Branch("run",&run);
+    muon_tree->Branch("maxjetbtag",&maxjetbtag);
+    muon_tree->Branch("nearestparton_4mom",&nearestparton_4mom);
+    muon_tree->Branch("nearestparton_pdgid",&nearestparton_pdgid);
+    muon_tree->Branch("muon_4mom",&muon_4mom);
+    muon_tree->Branch("ptjetaway",&ptjetaway);
+    muon_tree->Branch("metpt",&metpt);
+    muon_tree->Branch("flags",&flags);
+    muon_tree->Branch("drnearestgenmuon",&drnearestgenmuon);
+    muon_tree->Branch("drnearestgenelectron",&drnearestgenelectron);
+
+  } else {
+
+    electron_tree = fs->make<TTree>( "loose_electrons"  , "loose_electrons");
+    
+    electron_tree->Branch("event",&event);
+    electron_tree->Branch("lumi",&lumi);
+    electron_tree->Branch("run",&run);
+    electron_tree->Branch("maxjetbtag",&maxjetbtag);
+    electron_tree->Branch("nearestparton_4mom",&nearestparton_4mom);
+    electron_tree->Branch("nearestparton_pdgid",&nearestparton_pdgid);
+    electron_tree->Branch("electron_4mom",&electron_4mom);
+    electron_tree->Branch("ptjetaway",&ptjetaway);
+    electron_tree->Branch("metpt",&metpt);
+    electron_tree->Branch("flags",&flags);
+    electron_tree->Branch("drnearestgenelectron",&drnearestgenelectron);
+    electron_tree->Branch("drnearestgenmuon",&drnearestgenmuon);
+    
+  }
 
 }
 
