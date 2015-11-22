@@ -51,18 +51,23 @@
 #include "ntuple_maker/ntuple_maker/interface/lepton_ids.h"
 
 #include "ntuple_maker/ntuple_maker/interface/lhe_and_gen.h"
+#include "ntuple_maker/ntuple_maker/interface/triggers.h"
 
 #include "DataFormats/PatCandidates/interface/PackedGenParticle.h"
 #include "DataFormats/Candidate/interface/Candidate.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 
 #include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
 
 #include "FWCore/Common/interface/TriggerNames.h"
 #include "DataFormats/Common/interface/TriggerResults.h"
 #include "DataFormats/PatCandidates/interface/TriggerObjectStandAlone.h"
 #include "DataFormats/PatCandidates/interface/PackedTriggerPrescales.h"
 #include "DataFormats/PatCandidates/interface/TriggerEvent.h"
+
+#include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
+
 
 //
 // class declaration
@@ -107,10 +112,14 @@ public:
   edm::EDGetTokenT< edm::TriggerResults > triggerResultsToken_;
   edm::EDGetTokenT< pat::TriggerObjectStandAloneCollection > triggerObjectToken_;
   edm::EDGetTokenT< pat::PackedCandidateCollection> pfToken_;
-
+  edm::EDGetTokenT< std::vector<PileupSummaryInfo> > pileupSummaryToken_;
+  edm::EDGetTokenT<LHEEventProduct> lheEvtToken_;
+  edm::EDGetTokenT<GenEventInfoProduct> genEvtToken_;
+  edm::EDGetTokenT<edm::View<reco::GenParticle> > prunedGenToken_;
 
 
   TH1F * n_events_run_over;
+  TH1F * n_weighted_events_run_over;
   UInt_t flags;
   UInt_t event;
   UInt_t run;
@@ -140,6 +149,8 @@ public:
   Int_t lep1q;
   Int_t lep2q;
   lhe_and_gen lhe_and_gen_object; //separate the part that runs over the generator and lhe information
+
+  Int_t n_pu_interactions;
 
   bool syscalcinfo_;
   bool lheinfo_;
@@ -172,6 +183,9 @@ ntuple_maker::ntuple_maker(const edm::ParameterSet& iConfig):
   triggerObjectToken_( consumes< pat::TriggerObjectStandAloneCollection >(edm::InputTag("selectedPatTrigger"))),
   //  lheRunInfoLabel_(iConfig.getParameter<edm::InputTag>("lheruninfo")),
   pfToken_(consumes<pat::PackedCandidateCollection>(iConfig.getParameter<edm::InputTag>("pfCands"))),
+  pileupSummaryToken_(consumes <std::vector<PileupSummaryInfo> >(iConfig.getParameter<edm::InputTag>("pileup_summary"))),
+  lheEvtToken_(consumes<LHEEventProduct>(iConfig.getParameter<edm::InputTag>("lheevent"))),
+  genEvtToken_(consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("genevent"))),
   syscalcinfo_(iConfig.getUntrackedParameter<bool>("syscalcinfo")),
   lheinfo_(iConfig.getUntrackedParameter<bool>("lheinfo")),
   isMC_(iConfig.getUntrackedParameter<bool>("isMC"))
@@ -185,6 +199,7 @@ ntuple_maker::ntuple_maker(const edm::ParameterSet& iConfig):
   lhe_and_gen_object.prunedGenToken_ = consumes<edm::View<reco::GenParticle> >(iConfig.getParameter<edm::InputTag>("prunedgenparticles"));
   lhe_and_gen_object.packedGenToken_ = consumes<edm::View<pat::PackedGenParticle> >(iConfig.getParameter<edm::InputTag>("packedgenparticles"));
   lhe_and_gen_object.lheEvtToken_ = consumes<LHEEventProduct>(iConfig.getParameter<edm::InputTag>("lheevent"));
+  lhe_and_gen_object.genEvtToken_ = consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("genevent"));
   lhe_and_gen_object.syscalcinfo_ = syscalcinfo_;
   lhe_and_gen_object.lheinfo_ = lheinfo_;
   lhe_and_gen_object.lheRunInfoLabel_ = iConfig.getParameter<edm::InputTag>("lheruninfo");
@@ -215,8 +230,44 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   flags = 0;
 
-  if (isMC_)
+  if (isMC_){
     n_events_run_over->Fill(0.5);
+
+    //edm::Handle<LHEEventProduct> hLheEvt;
+    //iEvent.getByToken(lheEvtToken_,hLheEvt);
+
+    edm::Handle<GenEventInfoProduct> hGenEvt;
+    iEvent.getByToken(genEvtToken_,hGenEvt);
+
+    //std::cout << "hGenEvt->weight() = " << hGenEvt->weight() << std::endl;
+    //std::cout << "hLheEvt->originalXWGTUP() = " << hLheEvt->originalXWGTUP() << std::endl;
+
+    //assert(hGenEvt->weight() == 1 || hGenEvt->weight() == -1);
+
+    //assert(hGenEvt->weight() * hLheEvt->originalXWGTUP() > 0);
+
+    if (hGenEvt->weight() > 0)
+      n_weighted_events_run_over->Fill(0.5,1);
+    else
+      n_weighted_events_run_over->Fill(0.5,-1);
+  }
+
+
+   if (isMC_){
+
+     edm::Handle< std::vector<PileupSummaryInfo> > pileupSummaryHandle;
+
+     iEvent.getByToken(pileupSummaryToken_,pileupSummaryHandle);
+
+     for(const auto & pu : *pileupSummaryHandle)
+       {
+
+	 if (pu.getBunchCrossing() == 0)
+	   n_pu_interactions = pu.getTrueNumInteractions();
+       }
+
+   }
+
 
      edm::Handle<pat::TauCollection> taus;
      iEvent.getByToken(tauToken_, taus);
@@ -232,8 +283,6 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
      edm::Handle<pat::PackedCandidateCollection> pfs;
      iEvent.getByToken(pfToken_, pfs);
-
-
 
      for (unsigned int i = 0; i < pfs->size(); ++i) {
        for (unsigned int j = i+1; j < pfs->size(); ++j) {
@@ -324,37 +373,9 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   iEvent.getByToken(triggerResultsToken_,triggerResultsHandle);
 
-  std::vector<std::string> triggerNames;
-
-  triggerNames.push_back("HLT_Mu17_Mu8");
-  triggerNames.push_back("HLT_Mu17_Ele8_CaloIdT_CaloIsoVL");
-  triggerNames.push_back("HLT_Mu8_Ele17_CaloIdT_CaloIsoVL");
-  triggerNames.push_back("HLT_Ele17_CaloIdT_TrkIdVL_CaloIsoVL_TrkIsoVL_Ele8_CaloIdT_TrkIdVL_CaloIsoVL_TrkIsoVL");
-  triggerNames.push_back("HLT_Ele17_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_Ele8_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL");
-
   const edm::TriggerNames &names = iEvent.triggerNames(*triggerResultsHandle);
 
-  edm::Handle<pat::TriggerObjectStandAloneCollection > triggerObjectHandle;
-
-  Bool_t trigger_fired = kFALSE;
-
-  for (unsigned int i = 0; i < names.size(); i++) {
-
-    for(unsigned int j=0;j< triggerNames.size() ;++j){
-
-      std::string name = names.triggerName(i);
-
-      if (name.find( (triggerNames)[j]) != std::string::npos && triggerResultsHandle->accept(i)){
-
-	trigger_fired = kTRUE;
-	
-      }
-    }
-  }
-
-  
-
-  if (! trigger_fired)
+  if (! trigger_fired(names,triggerResultsHandle,"doublelepton"))
     return;
 
   /*
@@ -398,8 +419,6 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   std::vector<UInt_t> veryloose_muon_indices;
   std::vector<UInt_t> veryloose_electron_indices;
-
-
 
    using namespace edm;
 
@@ -474,8 +493,6 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        }
      }
    }
-
-
 
    for(UInt_t i = 0; i < muons->size(); i++){
 
@@ -682,6 +699,9 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    edm::Handle<pat::METCollection> mets;
    iEvent.getByToken(metToken_, mets);
+
+   assert(mets->size() == 1);
+
    const pat::MET &met = mets->front();
 
    metpt = met.pt();
@@ -692,6 +712,8 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      metgenmetpt = met.genMET()->pt();
    else
      metgenmetpt = 0;
+
+
 
    //metptshiftup = met.shiftedPt(pat::MET::JetEnUp);
 
@@ -709,8 +731,10 @@ ntuple_maker::beginJob()
 
   edm::Service<TFileService> fs;
 
-  if (isMC_)
+  if (isMC_){
     n_events_run_over= fs->make<TH1F>("n_events_run_over","n_events_run_over",1,0,1);
+    n_weighted_events_run_over= fs->make<TH1F>("n_weighted_events_run_over","n_weighted_events_run_over",1,0,1);
+  }
 
   lhe_and_gen_object.initrwgt_header_tree_ = fs->make<TTree >("initrwgt_header","initrwgt_header");
 
@@ -745,6 +769,9 @@ ntuple_maker::beginJob()
   tree->Branch("lep2id",&lep2id);
 
   tree->Branch("maxbtagevent",&maxbtagevent);
+
+  if (isMC_)
+    tree->Branch("n_pu_interactions",&n_pu_interactions);
 
   lhe_and_gen_object.defineBranches(tree);
 

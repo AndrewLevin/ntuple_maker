@@ -43,6 +43,7 @@ using namespace std;
 #include "DataFormats/JetReco/interface/GenJet.h"
 #include "DataFormats/JetReco/interface/GenJetCollection.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHERunInfoProduct.h"
 
 
@@ -86,7 +87,7 @@ class lhe_and_gen
   void defineBranches(TTree * tree);
   void beginRun(edm::Run const&);
   
-
+  edm::EDGetTokenT<GenEventInfoProduct> genEvtToken_;
   edm::EDGetTokenT<LHEEventProduct> lheEvtToken_;
   edm::EDGetTokenT<edm::View<reco::GenParticle> > prunedGenToken_;
   edm::EDGetTokenT<edm::View<pat::PackedGenParticle> > packedGenToken_;
@@ -117,6 +118,7 @@ class lhe_and_gen
 
   std::vector<Float_t> * lhe_weights;  
   std::vector<Float_t> * pdf_weights;  
+  Float_t gen_weight;
   Float_t lhe_weight_orig;
   Float_t qcd_pdf_weight_orig;
   Float_t qcd_weight_mur1muf2;

@@ -452,7 +452,7 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
      ptjetaway=maxptjetaway;
      electron_tree->Fill();
    }
-   else if (lepton_flavor_ == "muons" && n_veryloose_muons == 1){
+   else if (lepton_flavor_ == "muon" && n_veryloose_muons == 1){
 
      if(isMC_){
 

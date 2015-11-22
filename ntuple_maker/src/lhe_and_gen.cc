@@ -21,6 +21,8 @@ void lhe_and_gen::defineBranches(TTree *tree){
   tree->Branch("lep1_nearest_gen_muon_dr",&lep1_nearest_gen_muon_dr);
   tree->Branch("lep2_nearest_gen_muon_dr",&lep2_nearest_gen_muon_dr);
 
+  tree->Branch("gen_weight",&gen_weight);
+
   tree->Branch("lhe_weight_orig",&lhe_weight_orig);
 
   tree->Branch("qcd_pdf_weight_orig",&qcd_pdf_weight_orig);
@@ -96,7 +98,15 @@ Float_t find_nearest_gen_lepton(LorentzVector &lepton_4mom, edm::Handle<edm::Vie
 
 };
 
-lhe_and_gen::lhe_and_gen()
+lhe_and_gen::lhe_and_gen():
+  qcd_weight_mur1muf2_index(std::numeric_limits<int>::max()),
+  qcd_weight_mur1muf0p5_index(std::numeric_limits<int>::max()),
+  qcd_weight_mur2muf1_index(std::numeric_limits<int>::max()),
+  qcd_weight_mur2muf2_index(std::numeric_limits<int>::max()),
+  qcd_weight_mur2muf0p5_index(std::numeric_limits<int>::max()),
+  qcd_weight_mur0p5muf1_index(std::numeric_limits<int>::max()),
+  qcd_weight_mur0p5muf2_index(std::numeric_limits<int>::max()),
+  qcd_weight_mur0p5muf0p5_index(std::numeric_limits<int>::max())
 {
 
 }
@@ -114,15 +124,28 @@ int lhe_and_gen::analyze(const edm::Event& iEvent, LorentzVector & lep1, Lorentz
   edm::Handle<LHEEventProduct> hLheEvt;
   iEvent.getByToken(lheEvtToken_,hLheEvt);
 
+  edm::Handle<GenEventInfoProduct> hGenEvt;
+  iEvent.getByToken(genEvtToken_,hGenEvt);
 
+  //assert(hGenEvt->weight() == hLheEvt->originalXWGTUP());
 
+  gen_weight = hGenEvt->weight();
 
   lhe_weight_orig = hLheEvt->originalXWGTUP();
 
   if (syscalcinfo_){
 
+    assert(qcd_weight_mur1muf2_index != std::numeric_limits<int>::max());
+    assert(qcd_weight_mur1muf0p5_index != std::numeric_limits<int>::max());
+    assert(qcd_weight_mur2muf1_index != std::numeric_limits<int>::max());
+    assert(qcd_weight_mur2muf2_index != std::numeric_limits<int>::max());
+    assert(qcd_weight_mur2muf0p5_index != std::numeric_limits<int>::max());
+    assert(qcd_weight_mur0p5muf1_index != std::numeric_limits<int>::max());
+    assert(qcd_weight_mur0p5muf2_index != std::numeric_limits<int>::max());
+    assert(qcd_weight_mur0p5muf0p5_index != std::numeric_limits<int>::max());
+
     qcd_pdf_weight_orig = hLheEvt->weights()[0].wgt;
-    
+
     qcd_weight_mur1muf2 = hLheEvt->weights()[qcd_weight_mur1muf2_index].wgt;
     qcd_weight_mur1muf0p5 = hLheEvt->weights()[qcd_weight_mur1muf0p5_index].wgt;
     qcd_weight_mur2muf1 = hLheEvt->weights()[qcd_weight_mur2muf1_index].wgt;
@@ -131,7 +154,6 @@ int lhe_and_gen::analyze(const edm::Event& iEvent, LorentzVector & lep1, Lorentz
     qcd_weight_mur0p5muf1 = hLheEvt->weights()[qcd_weight_mur0p5muf1_index].wgt;
     qcd_weight_mur0p5muf2 = hLheEvt->weights()[qcd_weight_mur0p5muf2_index].wgt;
     qcd_weight_mur0p5muf0p5 = hLheEvt->weights()[qcd_weight_mur0p5muf0p5_index].wgt;
-
 
     for (unsigned int i = 0; i < pdf_weights_indices.size(); i++){
       pdf_weights->push_back(hLheEvt->weights()[pdf_weights_indices[i]].wgt);
@@ -146,6 +168,8 @@ int lhe_and_gen::analyze(const edm::Event& iEvent, LorentzVector & lep1, Lorentz
   }
 
   edm::Handle<edm::View<pat::PackedGenParticle> > packed;
+
+
   iEvent.getByToken(packedGenToken_,packed);
 
   lep1_nearest_gen_electron_dr = std::numeric_limits<Float_t>::max();
@@ -304,79 +328,71 @@ lhe_and_gen::beginRun(edm::Run const& iRun)
 
     bool in_NNPDF23_lo_as_0130_qed = false;
 
+    int weight_index = -1;
+
     for ( LHERunInfoProduct::Header::const_iterator iter = lheruniter->begin(); iter != lheruniter->end(); iter++ ) {
+
+      if (  (*iter).find("weight id") != std::string::npos )
+	weight_index++;
 
       //std::cout << (*iter) << std::endl;
 
-      if ( (*iter).find("mur=1 muf=2") != std::string::npos){
+      if ( (*iter).find("mur=1 muf=2") != std::string::npos || (*iter).find("muR=0.10000E+01 muF=0.20000E+01") != std::string::npos){
 
-	std::stringstream ss;
-	ss << (*iter).substr((*iter).find("<weight id=")+12,(*iter).find("> mu") - (*iter).find("<weight id=") - 13);
-	ss >> qcd_weight_mur1muf2_index;
-	qcd_weight_mur1muf2_index=qcd_weight_mur1muf2_index-1;
+	assert(weight_index != -1);
+
+	qcd_weight_mur1muf2_index = weight_index;
 	continue;
       }
 
-      if ( (*iter).find("mur=2 muf=2") != std::string::npos){
+      if ( (*iter).find("mur=2 muf=2") != std::string::npos || (*iter).find("muR=0.20000E+01 muF=0.20000E+01") != std::string::npos){
 
-	std::stringstream ss;
-	ss << (*iter).substr((*iter).find("<weight id=")+12,(*iter).find("> mu") - (*iter).find("<weight id=") - 13);
-	ss >> qcd_weight_mur2muf2_index;
-	qcd_weight_mur2muf2_index=qcd_weight_mur2muf2_index-1;
+	assert(weight_index != -1);
+	qcd_weight_mur2muf2_index=weight_index;
+
 	continue;
       }
 
-      if ( (*iter).find("mur=2 muf=1") != std::string::npos){
+      if ( (*iter).find("mur=2 muf=1") != std::string::npos || (*iter).find("muR=0.20000E+01 muF=0.10000E+01") != std::string::npos ){
 
-	std::stringstream ss;
-	ss << (*iter).substr((*iter).find("<weight id=")+12,(*iter).find("> mu") - (*iter).find("<weight id=") - 13);
-	ss >> qcd_weight_mur2muf1_index;
-	qcd_weight_mur2muf1_index=qcd_weight_mur2muf1_index-1;
+	assert(weight_index != -1);
+	qcd_weight_mur2muf1_index = weight_index;
 	continue;
       }
 
-      if ( (*iter).find("mur=2 muf=0.5") != std::string::npos){
+      if ( (*iter).find("mur=2 muf=0.5") != std::string::npos || (*iter).find("muR=0.20000E+01 muF=0.50000E+00") != std::string::npos  ){
 
-	std::stringstream ss;
-	ss << (*iter).substr((*iter).find("<weight id=")+12,(*iter).find("> mu") - (*iter).find("<weight id=") - 13);
-	ss >> qcd_weight_mur2muf0p5_index;
-	qcd_weight_mur2muf0p5_index=qcd_weight_mur2muf0p5_index-1;
+	assert(weight_index != -1);
+
+	qcd_weight_mur2muf0p5_index=weight_index;
 	continue;
       }
 
-      if ( (*iter).find("mur=0.5 muf=2") != std::string::npos){
+      if ( (*iter).find("mur=0.5 muf=2") != std::string::npos || (*iter).find("muR=0.50000E+00 muF=0.20000E+01") != std::string::npos){
 
-	std::stringstream ss;
-	ss << (*iter).substr((*iter).find("<weight id=")+12,(*iter).find("> mu") - (*iter).find("<weight id=") - 13);
-	ss >> qcd_weight_mur0p5muf2_index;
-	qcd_weight_mur0p5muf2_index=qcd_weight_mur0p5muf2_index-1;
+	assert(weight_index != -1);
+	qcd_weight_mur0p5muf2_index=weight_index;
 	continue;
       }
 
-      if ( (*iter).find("mur=0.5 muf=0.5") != std::string::npos){
+      if ( (*iter).find("mur=0.5 muf=0.5") != std::string::npos || (*iter).find("muR=0.50000E+00 muF=0.50000E+00") != std::string::npos){
 
-	std::stringstream ss;
-	ss << (*iter).substr((*iter).find("<weight id=")+12,(*iter).find("> mu") - (*iter).find("<weight id=") - 13);
-	ss >> qcd_weight_mur0p5muf0p5_index;
-	qcd_weight_mur0p5muf0p5_index=qcd_weight_mur0p5muf0p5_index-1;
+	assert(weight_index != -1);
+	qcd_weight_mur0p5muf0p5_index=weight_index;
 	continue;
       }
 
-      if ( (*iter).find("mur=1 muf=0.5") != std::string::npos){
+      if ( (*iter).find("mur=1 muf=0.5") != std::string::npos || (*iter).find("muR=0.10000E+01 muF=0.50000E+00") != std::string::npos ){
 
-	std::stringstream ss;
-	ss << (*iter).substr((*iter).find("<weight id=")+12,(*iter).find("> mu") - (*iter).find("<weight id=") - 13);
-	ss >> qcd_weight_mur1muf0p5_index;
-	qcd_weight_mur1muf0p5_index=qcd_weight_mur1muf0p5_index-1;
+	assert(weight_index != -1);
+	qcd_weight_mur1muf0p5_index=weight_index;
 	continue;
       }
 
-      if ( (*iter).find("mur=0.5 muf=1") != std::string::npos){
+      if ( (*iter).find("mur=0.5 muf=1") != std::string::npos || (*iter).find("muR=0.50000E+00 muF=0.10000E+01") != std::string::npos ){
 
-	std::stringstream ss;
-	ss << (*iter).substr((*iter).find("<weight id=")+12,(*iter).find("> mu") - (*iter).find("<weight id=") - 13);
-	ss >> qcd_weight_mur0p5muf1_index;
-	qcd_weight_mur0p5muf1_index=qcd_weight_mur0p5muf1_index-1;
+	assert(weight_index != -1);
+	qcd_weight_mur0p5muf1_index=weight_index;
 	continue;
       }
 
@@ -395,16 +411,12 @@ lhe_and_gen::beginRun(edm::Run const& iRun)
 
 	//std::cout << (*iter).substr((*iter).find("<weight id=")+12,(*iter).find(">Member") - (*iter).find("<weight id=") - 13) << std::endl;
 
-	int weight_index;
+	assert(weight_index != -1);
 
-	std::stringstream ss;
-	ss << (*iter).substr((*iter).find("<weight id=")+12,(*iter).find(">Member") - (*iter).find("<weight id=") - 13);
-	ss >> weight_index;
-
-	//need to subtract one because the weight numbers start from 1
-	pdf_weights_indices.push_back(weight_index-1);
+	pdf_weights_indices.push_back(weight_index);
 
       }
+
 
       //std::cout << (*iter) << std::endl;
     }
