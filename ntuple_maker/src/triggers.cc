@@ -13,7 +13,7 @@
 
 bool trigger_fired(const edm::TriggerNames &names, const edm::Handle< edm::TriggerResults> &triggerResultsHandle, std::string which_triggers){
 
-  assert(which_triggers == "doubleeg" || which_triggers == "doublemu" || which_triggers == "muoneg" || which_triggers == "doublelepton");
+  assert(which_triggers == "doubleeg" || which_triggers == "doublemu" || which_triggers == "muoneg" || which_triggers == "doublelepton" || which_triggers == "electron_fake_rate" || which_triggers == "muon_fake_rate");
   
   std::vector<std::string> triggerNames;
 
@@ -35,6 +35,28 @@ if (which_triggers == "doublemu" || which_triggers == "doublelepton") {
 
     triggerNames.push_back("HLT_Mu17_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v");
     triggerNames.push_back("HLT_Mu8_TrkIsoVVL_Ele17_CaloIdL_TrackIdL_IsoVL_v");
+
+  }
+
+ if (which_triggers == "muon_fake_rate") {
+
+   //triggerNames.push_back("HLT_Mu8_v");
+   triggerNames.push_back("HLT_Mu17_v");
+   //triggerNames.push_back("HLT_Mu24_v"); //not present for some of the 2015 data
+   //triggerNames.push_back("HLT_Mu34_v"); //not present for some of the 2015 data
+
+  }
+
+ if (which_triggers == "electron_fake_rate") {
+
+   triggerNames.push_back("HLT_Ele12_CaloIdL_TrackIdL_IsoVL_PFJet30_v");
+
+   //triggerNames.push_back("HLT_Ele18_CaloIdL_TrackIdL_IsoVL_PFJet30_v"); //not present for some of the 2015 data
+
+   //triggerNames.push_back("HLT_Ele23_CaloIdL_TrackIdL_IsoVL_PFJet30_v");
+
+
+   //triggerNames.push_back("HLT_Ele33_CaloIdL_TrackIdL_IsoVL_PFJet30_v");
 
   }
 
