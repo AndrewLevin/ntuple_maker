@@ -51,6 +51,7 @@
 #include "ntuple_maker/ntuple_maker/interface/fr_enum_definition.h"
 #include "ntuple_maker/ntuple_maker/interface/lepton_ids.h"
 
+#include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
 #include "DataFormats/PatCandidates/interface/PackedGenParticle.h"
 #include "DataFormats/Candidate/interface/Candidate.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
@@ -61,11 +62,13 @@
 #include "DataFormats/PatCandidates/interface/PackedTriggerPrescales.h"
 #include "DataFormats/PatCandidates/interface/TriggerEvent.h"
 
+#include "ntuple_maker/ntuple_maker/interface/triggers.h"
+
+#include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
+
 //
 // class declaration
 //
-
-
 
 class make_loose_lepton_trees : public edm::EDAnalyzer {
 public:
@@ -101,8 +104,13 @@ public:
   edm::EDGetTokenT<edm::View<pat::PackedGenParticle> > packedGenToken_;
   edm::EDGetTokenT< edm::TriggerResults > triggerResultsToken_;
   edm::EDGetTokenT< pat::TriggerObjectStandAloneCollection > triggerObjectToken_;
+  edm::EDGetTokenT<GenEventInfoProduct> genEvtToken_;
+  edm::EDGetTokenT<double> rhoToken_;
+  edm::EDGetTokenT<LHEEventProduct> lheEvtToken_;
 
   TH1F * n_events_run_over;
+  TH1F * n_weighted_events_run_over;
+
   UInt_t flags;
   UInt_t event;
   UInt_t run;
@@ -125,10 +133,6 @@ public:
   Float_t maxjetbtag;
   Float_t metpt;
   Float_t metphi;
-  Float_t metsumet;
-  //Float_t metgenmetpt;
-  Float_t metptshiftup;
-  Float_t metptshiftdown;
   LorentzVector jet1;
   LorentzVector jet2;
   LorentzVector nearestparton_4mom;
@@ -141,8 +145,12 @@ public:
   Int_t lep1q;
   Int_t lep2q;
 
+  Float_t gen_weight;
+  Float_t lhe_weight_orig;
+
   Bool_t isMC_;
   std::string lepton_flavor_;
+  std::string which_triggers_;
 
 };
 
@@ -170,8 +178,13 @@ make_loose_lepton_trees::make_loose_lepton_trees(const edm::ParameterSet& iConfi
   packedGenToken_(consumes<edm::View<pat::PackedGenParticle> >(iConfig.getParameter<edm::InputTag>("packedgenparticles"))),
   triggerResultsToken_(consumes< edm::TriggerResults >(edm::InputTag("TriggerResults","","HLT"))),
   triggerObjectToken_( consumes< pat::TriggerObjectStandAloneCollection >(edm::InputTag("selectedPatTrigger"))),
+  genEvtToken_(consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("genevent"))),
+  rhoToken_(consumes<double>(iConfig.getParameter<edm::InputTag>("rho"))),
+  lheEvtToken_(consumes<LHEEventProduct>(iConfig.getParameter<edm::InputTag>("lheevent"))),
   isMC_(iConfig.getUntrackedParameter<bool>("isMC")),
-  lepton_flavor_(iConfig.getUntrackedParameter<std::string>("lepton_flavor"))
+  lepton_flavor_(iConfig.getUntrackedParameter<std::string>("lepton_flavor")),
+  which_triggers_(iConfig.getUntrackedParameter<std::string>("which_triggers"))
+
 {
   //now do what ever initialization is needed
 
@@ -196,56 +209,64 @@ void
 make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
 
-  n_events_run_over->Fill(0.5);
+
+  if(isMC_){
+
+    n_events_run_over->Fill(0.5);
+
+    edm::Handle<GenEventInfoProduct> hGenEvt;
+    iEvent.getByToken(genEvtToken_,hGenEvt);
+
+    edm::Handle<LHEEventProduct> hLheEvt;                                                                                                                             
+    iEvent.getByToken(lheEvtToken_,hLheEvt);   
+  
+    if (hGenEvt->weight() > 0)
+      n_weighted_events_run_over->Fill(0.5,1);
+    else
+      n_weighted_events_run_over->Fill(0.5,-1);
+
+
+    gen_weight = hGenEvt->weight();
+
+    lhe_weight_orig = hLheEvt->originalXWGTUP();
+    
+  }
+
+  /*
+
+
+  for(unsigned int i = 0; i < hLheEvt->hepeup().IDUP.size(); i++){
+    std::cout << hLheEvt->hepeup().IDUP[i] << std::endl;
+
+    LorentzVector v;
+
+    v.SetPxPyPzE(hLheEvt->hepeup().PUP.at(i)[0],hLheEvt->hepeup().PUP.at(i)[1],hLheEvt->hepeup().PUP.at(i)[2],hLheEvt->hepeup().PUP.at(i)[3]);
+
+      std::cout << "v.eta() = " << v.eta() << std::endl;
+      std::cout << "v.pt() = " << v.pt() << std::endl;
+
+  }
+
+  */
+
+  //std::cout << "hLheEvt->hepeup().IDUP.size() = " << hLheEvt->hepeup().IDUP.size() << std::endl;
+
+  edm::Handle<double> rhoHandle;
+
+  iEvent.getByToken(rhoToken_,rhoHandle);
+
+  float rho    =  *rhoHandle;
 
   edm::Handle< edm::TriggerResults> triggerResultsHandle;
 
   iEvent.getByToken(triggerResultsToken_,triggerResultsHandle);
 
-  std::vector<std::string> triggerNames;
-
-  //triggerNames.push_back("HLT_IsoMu20_eta2p1_IterTrk02_v1"); //what does the itertrk02 mean
-  //triggerNames.push_back("HLT_Mu8_v1");
-  //triggerNames.push_back("HLT_Mu8_v2");
-  //triggerNames.push_back("HLT_Mu17_v2");
-
-  triggerNames.push_back("HLT_Mu8_v");
-  triggerNames.push_back("HLT_Mu17_v");
-  triggerNames.push_back("HLT_Mu24_v");
-  triggerNames.push_back("HLT_Mu34_v");
-
-  triggerNames.push_back("HLT_Ele12_CaloIdL_TrackIdL_IsoVL_PFJet30_v");
-  triggerNames.push_back("HLT_Ele18_CaloIdL_TrackIdL_IsoVL_PFJet30_v");
-  triggerNames.push_back("HLT_Ele23_CaloIdL_TrackIdL_IsoVL_PFJet30_v");
-  triggerNames.push_back("HLT_Ele33_CaloIdL_TrackIdL_IsoVL_PFJet30_v");
-
   const edm::TriggerNames &names = iEvent.triggerNames(*triggerResultsHandle);
 
-  edm::Handle<pat::TriggerObjectStandAloneCollection > triggerObjectHandle;
-
-  Bool_t trigger_fired = kFALSE; 
-
-  //  std::cout << "names.size() = " << names.size() << std::endl;
-
-  for (unsigned int i = 0; i < names.size(); i++) { 
-
-    //std::cout << "names.triggerName(i) = " << names.triggerName(i) << std::endl;
-
-    //    std::cout << "triggerResultsHandle->accept(i) = " << triggerResultsHandle->accept(i) << std::endl;
-
-    for(unsigned int j=0;j< triggerNames.size() ;++j){ 
-      std::string name = names.triggerName(i);
-
-      if (name.find( (triggerNames)[j]) != std::string::npos && triggerResultsHandle->accept(i)){ 
-	trigger_fired = kTRUE;
-      }
-    }
-  }
-
-  if (! trigger_fired)
+  if (! trigger_fired(names,triggerResultsHandle,which_triggers_))
     return;
 
-  //std::cout << "trigger fired" << std::endl;
+  edm::Handle<pat::TriggerObjectStandAloneCollection > triggerObjectHandle;
 
   iEvent.getByToken(triggerObjectToken_,triggerObjectHandle);
 
@@ -346,22 +367,32 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
      if( (*electrons)[i].pt() < 10)
        continue;
 
-     if (! passVeryLooseElectronSelection((*electrons)[i], PV))
+     if (! passVeryLooseElectronSelection((*electrons)[i], PV,rho))
        continue;
 
      n_veryloose_electrons++;
 
-     if (passLooseElectronSelectionV1((*electrons)[i], PV))
+     if (passLooseElectronSelectionV1((*electrons)[i], PV,rho))
        flags = flags | LepLooseSelectionV1;
-     if (passLooseElectronSelectionV2((*electrons)[i], PV))
+     if (passLooseElectronSelectionV2((*electrons)[i], PV,rho))
        flags = flags | LepLooseSelectionV2;
+     if (passLooseElectronSelectionV3((*electrons)[i], PV,rho))
+       flags = flags | LepLooseSelectionV3;
+     if (passLooseElectronSelectionV4((*electrons)[i], PV,rho))
+       flags = flags | LepLooseSelectionV4;
 
      electron_4mom = (*electrons)[i].p4();
 
-     if (passTightElectronSelection((*electrons)[i], PV))
+     if (passTightElectronSelectionV1((*electrons)[i], PV,rho))
        flags = flags | LepTightSelectionV1;
+     if (passTightElectronSelectionV2((*electrons)[i], PV,rho))
+       flags = flags | LepTightSelectionV2;
      
    }
+
+
+   //std::cout << "n_veryloose_electrons = " << n_veryloose_electrons << std::endl;
+   //std::cout << "n_veryloose_muon = " << n_veryloose_muons << std::endl;
    
    edm::Handle<pat::JetCollection> jets;
    iEvent.getByToken(jetToken_, jets);
@@ -384,9 +415,6 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
 
    metpt = met.pt();
    metphi = met.phi();
-   metsumet = met.sumEt();
-   metptshiftup = met.shiftedPt(pat::MET::JetEnUp);
-   metptshiftdown = met.shiftedPt(pat::MET::JetEnDown);
 
    Handle<edm::View<reco::GenParticle> > pruned;
    Handle<edm::View<pat::PackedGenParticle> > packed;
@@ -516,7 +544,12 @@ make_loose_lepton_trees::beginJob()
 
   edm::Service<TFileService> fs;
 
-  n_events_run_over= fs->make<TH1F>("n_events_run_over","n_events_run_over",1,0,1);
+  if (isMC_){
+
+    n_events_run_over= fs->make<TH1F>("n_events_run_over","n_events_run_over",1,0,1);
+    n_weighted_events_run_over= fs->make<TH1F>("n_weighted_events_run_over","n_weighted_events_run_over",1,0,1);
+
+  }
 
   assert(lepton_flavor_ == "muon" || lepton_flavor_ == "electron");
 
@@ -533,9 +566,17 @@ make_loose_lepton_trees::beginJob()
     muon_tree->Branch("muon_4mom",&muon_4mom);
     muon_tree->Branch("ptjetaway",&ptjetaway);
     muon_tree->Branch("metpt",&metpt);
+    muon_tree->Branch("metphi",&metphi);
     muon_tree->Branch("flags",&flags);
     muon_tree->Branch("drnearestgenmuon",&drnearestgenmuon);
     muon_tree->Branch("drnearestgenelectron",&drnearestgenelectron);
+
+    if (isMC_) {
+
+      muon_tree->Branch("gen_weight",&gen_weight);
+      muon_tree->Branch("lhe_weight_orig",&lhe_weight_orig);
+
+    }
 
   } else {
 
@@ -550,10 +591,18 @@ make_loose_lepton_trees::beginJob()
     electron_tree->Branch("electron_4mom",&electron_4mom);
     electron_tree->Branch("ptjetaway",&ptjetaway);
     electron_tree->Branch("metpt",&metpt);
+    electron_tree->Branch("metphi",&metphi);
     electron_tree->Branch("flags",&flags);
     electron_tree->Branch("drnearestgenelectron",&drnearestgenelectron);
     electron_tree->Branch("drnearestgenmuon",&drnearestgenmuon);
+
+    if (isMC_) {
+
+      electron_tree->Branch("gen_weight",&gen_weight);
+      electron_tree->Branch("lhe_weight_orig",&lhe_weight_orig);
     
+    }
+
   }
 
 }
