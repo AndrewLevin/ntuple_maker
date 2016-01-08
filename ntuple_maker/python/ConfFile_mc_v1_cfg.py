@@ -23,8 +23,9 @@ process.source = cms.Source("PoolSource",
 
     fileNames = cms.untracked.vstring(
 
-'/store/mc/RunIISpring15DR74/WLLJJToLNu_M-60_EWK_QCD_TuneCUETP8M1_13TeV-madgraph-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/102AAAF1-0966-E511-B871-24BE05C6D5B1.root'
+'file:/afs/cern.ch/work/a/anlevin/VBS/13_tev/Merged.root'
 
+#'/store/mc/RunIISpring15MiniAODv2/TT_TuneCUETP8M1_13TeV-powheg-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/40000/9E0EDDCD-BE70-E511-9A85-6C3BE5B5F210.root'
 
     ),
 #eventsToProcess = cms.untracked.VEventRange('1:11:2092-1:11:2092'),
@@ -58,9 +59,10 @@ process.demo = cms.EDAnalyzer('ntuple_maker',
   prunedgenparticles = cms.InputTag("prunedGenParticles"),  
   packedgenparticles = cms.InputTag("packedGenParticles"),  
   pfCands = cms.InputTag("packedPFCandidates"),
+  pileup_summary = cms.InputTag("slimmedAddPileupInfo"),
+  genevent = cms.InputTag("generator"),
+  rho = cms.InputTag("fixedGridRhoFastjetAll")                              
 )
 
 process.p = cms.Path(process.cleanedMu*process.demo)
-
-
 

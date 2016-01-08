@@ -2,7 +2,7 @@ from WMCore.Configuration import Configuration
 config = Configuration()
 
 config.section_("General")
-config.General.requestName = 'fr_electron_ntuples_v4002'
+config.General.requestName = 'fr_electron_ntuples_data_v602'
 config.General.workArea = 'crab_projects'
 
 config.section_("JobType")
@@ -12,9 +12,9 @@ config.JobType.psetName = 'ntuple_maker/ntuple_maker/python/ConfFile_make_loose_
 config.section_("Data")
 
 #config.Data.inputDataset='/DoubleEG/Run2015B-PromptReco-v1/MINIAOD'
-config.Data.inputDataset='/DoubleEG/Run2015C-PromptReco-v1/MINIAOD'
+#config.Data.inputDataset='/DoubleEG/Run2015C_25ns-05Oct2015-v1/MINIAOD'
 #config.Data.inputDataset='/DoubleEG/Run2015D-PromptReco-v3/MINIAOD'
-#config.Data.inputDataset='/DoubleEG/Run2015D-PromptReco-v4/MINIAOD'
+config.Data.inputDataset='/DoubleEG/Run2015D-PromptReco-v4/MINIAOD'
 
 config.Data.inputDBS = 'global'
 config.Data.splitting = 'LumiBased'
@@ -22,7 +22,7 @@ config.Data.unitsPerJob = 100
 #config.Data.lumiMask = 'lumi_mask_JSON.txt'
 config.Data.publication = True
 config.Data.publishDBS = 'phys03'
-config.Data.outputDatasetTag = 'fr_electron_ntuples_v4000'
+config.Data.outputDatasetTag = 'fr_electron_ntuples_data_v600'
 
 config.section_("Site")
 config.Site.storageSite = 'T2_CH_CERN'

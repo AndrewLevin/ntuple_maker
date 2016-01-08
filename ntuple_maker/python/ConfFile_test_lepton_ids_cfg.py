@@ -6,7 +6,7 @@ process.load("FWCore.MessageService.MessageLogger_cfi")
 
 process.TFileService = cms.Service("TFileService", fileName = cms.string("output_tree.root") )
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(50000) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 #process.load('EgammaAnalysis/ElectronTools/egmGsfElectronIDs_cff')
 
@@ -16,7 +16,10 @@ process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
 #'file:/afs/cern.ch/work/a/anlevin/tmp/MySkim_1.electrons.root'
 #'file:/afs/cern.ch/work/a/anlevin/delete_this_5/CMSSW_7_2_0/src/DiJet.root'
-        '/store/mc/Phys14DR/TTJets_MSDecaysCKM_central_Tune4C_13TeV-madgraph-tauola/MINIAODSIM/PU20bx25_PHYS14_25_V1-v1/00000/00C90EFC-3074-E411-A845-002590DB9262.root'
+'/store/mc/RunIISpring15MiniAODv2/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/50000/00759690-D16E-E511-B29E-00261894382D.root'
+
+
+#        '/store/mc/Phys14DR/TTJets_MSDecaysCKM_central_Tune4C_13TeV-madgraph-tauola/MINIAODSIM/PU20bx25_PHYS14_25_V1-v1/00000/00C90EFC-3074-E411-A845-002590DB9262.root'
 #        '/store/mc/Spring14miniaod/TTJets_MSDecaysCKM_central_Tune4C_13TeV-madgraph-tauola/MINIAODSIM/PU40bx25_POSTLS170_V5-v2/00000/00CAA728-D626-E411-9112-00215AD4D6E2.root'
 #        '/store/user/anlevin/data/MINIAOD/wpwp_13_tev_qed_4_qcd_0_v3/step5_output_9601.root'
 #        'file:/afs/cern.ch/work/a/anlevin/VBS/13_tev/Merged.root'
@@ -44,8 +47,11 @@ process.demo = cms.EDAnalyzer('test_lepton_ids',
   mets = cms.InputTag("slimmedMETs"),  
   prunedgenparticles = cms.InputTag("prunedGenParticles"),  
   packedgenparticles = cms.InputTag("packedGenParticles"),  
-                              
+  eleMediumIdMap = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Spring15-50ns-V2-standalone-medium"),
+  eleTightIdMap = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Spring15-50ns-V2-standalone-tight"),                              
+  rho = cms.InputTag("fixedGridRhoFastjetAll")
 )
+
 
 process.p = cms.Path(process.cleanedMu*process.demo)
 

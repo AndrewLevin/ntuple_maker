@@ -345,8 +345,17 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
 
      n_veryloose_muons++;
 
-     if ( passLooseMuonSelection((*muons)[i],PV))
+     if ( passLooseMuonSelectionV1((*muons)[i],PV))
        flags = flags | LepLooseSelectionV1;
+     if ( passLooseMuonSelectionV2((*muons)[i],PV))
+       flags = flags | LepLooseSelectionV2;
+     if ( passLooseMuonSelectionV3((*muons)[i],PV))
+       flags = flags | LepLooseSelectionV3;
+     if ( passLooseMuonSelectionV4((*muons)[i],PV))
+       flags = flags | LepLooseSelectionV4;
+     if ( passLooseMuonSelectionV5((*muons)[i],PV))
+       flags = flags | LepLooseSelectionV5;
+
 
      muon_4mom = (*muons)[i].p4();
 
@@ -380,6 +389,8 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
        flags = flags | LepLooseSelectionV3;
      if (passLooseElectronSelectionV4((*electrons)[i], PV,rho))
        flags = flags | LepLooseSelectionV4;
+     if (passLooseElectronSelectionV5((*electrons)[i], PV,rho))
+       flags = flags | LepLooseSelectionV5;
 
      electron_4mom = (*electrons)[i].p4();
 

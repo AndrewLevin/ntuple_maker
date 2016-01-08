@@ -93,6 +93,9 @@ public:
   edm::EDGetTokenT<pat::METCollection> metToken_;
   edm::EDGetTokenT<edm::View<reco::GenParticle> > prunedGenToken_;
   edm::EDGetTokenT<edm::View<pat::PackedGenParticle> > packedGenToken_;
+  edm::EDGetTokenT<edm::ValueMap<bool> > eleMediumIdMapToken_;
+  edm::EDGetTokenT<edm::ValueMap<bool> > eleTightIdMapToken_;
+  edm::EDGetTokenT<double> rhoToken_;
 
 };
 
@@ -110,6 +113,7 @@ public:
 test_lepton_ids::test_lepton_ids(const edm::ParameterSet& iConfig):
   vtxToken_(consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>("vertices"))),
   muonToken_(consumes<pat::MuonCollection>(iConfig.getParameter<edm::InputTag>("muons"))),
+  //electronToken_(mayConsume<edm::View<reco::GsfElectron> >(iConfig.getParameter<edm::InputTag>("electrons"))),
   electronToken_(consumes<pat::ElectronCollection>(iConfig.getParameter<edm::InputTag>("electrons"))),
   tauToken_(consumes<pat::TauCollection>(iConfig.getParameter<edm::InputTag>("taus"))),
   photonToken_(consumes<pat::PhotonCollection>(iConfig.getParameter<edm::InputTag>("photons"))),
@@ -117,9 +121,15 @@ test_lepton_ids::test_lepton_ids(const edm::ParameterSet& iConfig):
   fatjetToken_(consumes<pat::JetCollection>(iConfig.getParameter<edm::InputTag>("fatjets"))),
   metToken_(consumes<pat::METCollection>(iConfig.getParameter<edm::InputTag>("mets"))),
   prunedGenToken_(consumes<edm::View<reco::GenParticle> >(iConfig.getParameter<edm::InputTag>("prunedgenparticles"))),
-  packedGenToken_(consumes<edm::View<pat::PackedGenParticle> >(iConfig.getParameter<edm::InputTag>("packedgenparticles")))
+  packedGenToken_(consumes<edm::View<pat::PackedGenParticle> >(iConfig.getParameter<edm::InputTag>("packedgenparticles"))),
+  eleMediumIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleMediumIdMap"))),
+  eleTightIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleTightIdMap"))),
+  rhoToken_(consumes<double>(iConfig.getParameter<edm::InputTag>("rho")))
+
 {
   //now do what ever initialization is needed
+
+
 
 }
 
@@ -147,6 +157,13 @@ test_lepton_ids::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
    
    using namespace edm;
 
+   edm::Handle<double> rhoHandle;
+
+   iEvent.getByToken(rhoToken_,rhoHandle);
+
+   float rho    =  *rhoHandle;
+
+
    //run=iEvent.eventAuxiliary().run(); 
    //lumi=iEvent.eventAuxiliary().luminosityBlock();
    //event=iEvent.eventAuxiliary().event();
@@ -159,14 +176,56 @@ test_lepton_ids::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
    edm::Handle<pat::MuonCollection> muons;
    iEvent.getByToken(muonToken_, muons);
 
-   for(UInt_t i = 0; i < muons->size(); i++){
+   //for(UInt_t i = 0; i < muons->size(); i++){
+   //
+   //     std::cout << passTightMuonIdV1((*muons)[i], PV) << " " << (*muons)[i].isTightMuon(PV) << std::endl;
+   //
+   //     assert(passTightMuonIdV1((*muons)[i], PV) == (*muons)[i].isTightMuon(PV));
+   //     
+   //   }
 
-     std::cout << passTightMuonIdV1((*muons)[i], PV) << " " << (*muons)[i].isTightMuon(PV) << std::endl;
+   //edm::Handle<edm::ValueMap<bool> > medium_id_decisions;
+   //edm::Handle<edm::ValueMap<bool> > tight_id_decisions; 
 
-     assert(passTightMuonIdV1((*muons)[i], PV) == (*muons)[i].isTightMuon(PV));
+   //iEvent.getByToken(eleMediumIdMapToken_,medium_id_decisions);
+   //iEvent.getByToken(eleTightIdMapToken_,tight_id_decisions);
+   
+   edm::Handle<pat::ElectronCollection> electrons;
+
+
+   //edm::Handle<edm::View<reco::GsfElectron> > electrons;
+   iEvent.getByToken(electronToken_, electrons);
+
+   for(UInt_t i = 0; i < electrons->size(); i++){
+
+     assert( (*electrons)[i].isElectronIDAvailable("cutBasedElectronID-Spring15-25ns-V1-standalone-medium") );
+     assert( (*electrons)[i].isElectronIDAvailable("cutBasedElectronID-Spring15-25ns-V1-standalone-tight") );
+     //std::cout << (*electrons)[i].electronID("cutBasedElectronID-Spring15-25ns-V1-standalone-tight") << std::endl;
+     //std::cout << (*electrons)[i].electronID("cutBasedElectronID-Spring15-25ns-V1-standalone-tight") << std::endl;
+
+     //std::cout << "andrew debug 0" << std::endl;
+
+     std::cout << "(*electrons)[i].pt() = " << (*electrons)[i].pt() << std::endl;
+
+     std::cout << passTightElectronSelectionV1((*electrons)[i], PV,rho) << " " << ((*electrons)[i].chargeInfo().isGsfCtfScPixConsistent && (*electrons)[i].electronID("cutBasedElectronID-Spring15-25ns-V1-standalone-medium")) << std::endl;
+
+     assert(passTightElectronSelectionV1((*electrons)[i], PV,rho) == ((*electrons)[i].chargeInfo().isGsfCtfScPixConsistent && (*electrons)[i].electronID("cutBasedElectronID-Spring15-25ns-V1-standalone-medium")) );
+
+     //std::cout << "andrew debug 1" << std::endl;
+
+     //assert(passTightElectronSelectionV1((*electrons)[i], PV,rho) == (*electrons)[i].electronID("cutBasedElectronID-Spring15-25ns-V1-standalone-medium"));
+
+     //bool isPassMedium = (*medium_id_decisions)[el];
+     //bool isPassTight  = (*tight_id_decisions)[el];
+
      
-   }
+     //std::cout << "isPassMedium = " << isPassMedium << std::endl;
+     //std::cout << "isPassTight = " << isPassTight << std::endl;
 
+     
+     //std::cout << (*electrons)[i].userFloat("cutBasedElectronID-PHYS14-PU20bx25-V2-standalone-loose") << std::endl;
+
+   }
 
 }
 

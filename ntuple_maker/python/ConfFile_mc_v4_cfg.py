@@ -23,9 +23,7 @@ process.source = cms.Source("PoolSource",
 
     fileNames = cms.untracked.vstring(
 
-'/store/mc/RunIISpring15MiniAODv2/WpWpJJ_EWK-QCD_TuneCUETP8M1_13TeV-madgraph-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/80000/88743C5E-BE7C-E511-8568-0025905A48B2.root'
-
-#'file:/afs/cern.ch/work/a/anlevin/VBS/13_tev/Merged.root'
+'file:/afs/cern.ch/work/a/anlevin/VBS/13_tev/Merged.root'
 
 #'file:/afs/cern.ch/work/a/anlevin/tmp/306D0BE6-F57A-E511-BF8B-003048FF9AA6.root',
 #'file:/afs/cern.ch/work/a/anlevin/tmp/C40BEFD4-F57A-E511-8427-0025905B85B2.root'
@@ -63,12 +61,12 @@ process.cleanedMu = cms.EDProducer("PATMuonCleanerBySegments",
 
 process.demo = cms.EDAnalyzer('ntuple_maker',
 
-  syscalcinfo = cms.untracked.bool (True), #fill the information from syscalc
+  syscalcinfo = cms.untracked.bool (False), #fill the information from syscalc
   lheinfo = cms.untracked.bool (True),
   vertices = cms.InputTag("offlineSlimmedPrimaryVertices"),
   muons = cms.InputTag("cleanedMu"),
-  lheevent = cms.InputTag("externalLHEProducer"),
-  lheruninfo = cms.InputTag("externalLHEProducer"),
+  lheevent = cms.InputTag("source"),
+  lheruninfo = cms.InputTag("source"),
 #  lheruninfo = cms.InputTag("source"),
 #  lheevent = cms.InputTag("source"),
   #muons = cms.InputTag("slimmedMuons"),
