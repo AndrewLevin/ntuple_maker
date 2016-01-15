@@ -145,7 +145,7 @@ public:
   lhe_and_gen lhe_and_gen_object; //separate the part that runs over the generator and lhe information
 
   bool syscalcinfo_;
-  bool lheinfo_;
+  bool mgreweightinfo_;
 
   bool isMC_;
   bool apply_trigger_;
@@ -178,21 +178,21 @@ threeljj_ntuple_maker::threeljj_ntuple_maker(const edm::ParameterSet& iConfig):
   pfToken_(consumes<pat::PackedCandidateCollection>(iConfig.getParameter<edm::InputTag>("pfCands"))),
   rhoToken_(consumes<float>(iConfig.getParameter<edm::InputTag>("rho"))),
   syscalcinfo_(iConfig.getUntrackedParameter<bool>("syscalcinfo")),
-  lheinfo_(iConfig.getUntrackedParameter<bool>("lheinfo")),
+  mgreweightinfo_(iConfig.getUntrackedParameter<bool>("mgreweightinfo")),
   isMC_(iConfig.getUntrackedParameter<bool>("isMC")),
   apply_trigger_(iConfig.getUntrackedParameter<bool>("apply_trigger"))
 {
   //now do what ever initialization is needed
 
   //if lhe_info_ is false, syscalcinfo_ should also be false
-  assert(!syscalcinfo_ || lheinfo_);
+  assert(!syscalcinfo_ || mgreweightinfo_);
 
   lhe_and_gen_object.isMC_ = isMC_;
   lhe_and_gen_object.prunedGenToken_ = consumes<edm::View<reco::GenParticle> >(iConfig.getParameter<edm::InputTag>("prunedgenparticles"));
   lhe_and_gen_object.packedGenToken_ = consumes<edm::View<pat::PackedGenParticle> >(iConfig.getParameter<edm::InputTag>("packedgenparticles"));
   lhe_and_gen_object.lheEvtToken_ = consumes<LHEEventProduct>(iConfig.getParameter<edm::InputTag>("lheevent"));
   lhe_and_gen_object.syscalcinfo_ = syscalcinfo_;
-  lhe_and_gen_object.lheinfo_ = lheinfo_;
+  lhe_and_gen_object.mgreweightinfo_ = mgreweightinfo_;
   lhe_and_gen_object.lheRunInfoLabel_ = iConfig.getParameter<edm::InputTag>("lheruninfo");
   
 }

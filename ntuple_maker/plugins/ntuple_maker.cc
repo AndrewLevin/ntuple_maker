@@ -155,7 +155,7 @@ public:
   Int_t n_pu_interactions;
 
   bool syscalcinfo_;
-  bool lheinfo_;
+  bool mgreweightinfo_;
 
   bool isMC_;
 
@@ -190,13 +190,13 @@ ntuple_maker::ntuple_maker(const edm::ParameterSet& iConfig):
   genEvtToken_(consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("genevent"))),
   rhoToken_(consumes<double>(iConfig.getParameter<edm::InputTag>("rho"))),
   syscalcinfo_(iConfig.getUntrackedParameter<bool>("syscalcinfo")),
-  lheinfo_(iConfig.getUntrackedParameter<bool>("lheinfo")),
+  mgreweightinfo_(iConfig.getUntrackedParameter<bool>("mgreweightinfo")),
   isMC_(iConfig.getUntrackedParameter<bool>("isMC"))
 {
   //now do what ever initialization is needed
 
   //if lhe_info_ is false, syscalcinfo_ should also be false
-  assert(!syscalcinfo_ || lheinfo_);
+  assert(!syscalcinfo_ || mgreweightinfo_);
 
   lhe_and_gen_object.isMC_ = isMC_;
   lhe_and_gen_object.prunedGenToken_ = consumes<edm::View<reco::GenParticle> >(iConfig.getParameter<edm::InputTag>("prunedgenparticles"));
@@ -204,7 +204,7 @@ ntuple_maker::ntuple_maker(const edm::ParameterSet& iConfig):
   lhe_and_gen_object.lheEvtToken_ = consumes<LHEEventProduct>(iConfig.getParameter<edm::InputTag>("lheevent"));
   lhe_and_gen_object.genEvtToken_ = consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("genevent"));
   lhe_and_gen_object.syscalcinfo_ = syscalcinfo_;
-  lhe_and_gen_object.lheinfo_ = lheinfo_;
+  lhe_and_gen_object.mgreweightinfo_ = mgreweightinfo_;
   lhe_and_gen_object.lheRunInfoLabel_ = iConfig.getParameter<edm::InputTag>("lheruninfo");
   
 }

@@ -27,7 +27,7 @@ void lhe_and_gen::defineBranches(TTree *tree){
 
   tree->Branch("qcd_pdf_weight_orig",&qcd_pdf_weight_orig);
 
-  tree->Branch("lhe_weights",&lhe_weights);
+  tree->Branch("mgreweight_weights",&mgreweight_weights);
 
   tree->Branch("pdf_weights",&pdf_weights);
 
@@ -113,13 +113,13 @@ lhe_and_gen::lhe_and_gen():
 
 int lhe_and_gen::analyze(const edm::Event& iEvent, LorentzVector & lep1, LorentzVector & lep2){
 
-  lhe_weights = new std::vector<Float_t>();
+  mgreweight_weights = new std::vector<Float_t>();
   pdf_weights = new std::vector<Float_t>();
 
   if (! isMC_)
     return 0;
 
-  if(lheinfo_){
+  if(mgreweightinfo_ || syscalcinfo_){
 
   edm::Handle<LHEEventProduct> hLheEvt;
   iEvent.getByToken(lheEvtToken_,hLheEvt);
@@ -161,8 +161,12 @@ int lhe_and_gen::analyze(const edm::Event& iEvent, LorentzVector & lep1, Lorentz
 
   }
 
-  for(unsigned int i = 0; i < hLheEvt->weights().size(); i++){
-    lhe_weights->push_back(hLheEvt->weights()[i].wgt);
+  if (mgreweightinfo_) {
+
+    for(unsigned int i = 0; i < mgreweight_weights_indices.size(); i++){
+      mgreweight_weights->push_back(hLheEvt->weights()[mgreweight_weights_indices[i]].wgt);
+    }
+
   }
 
   }
@@ -250,7 +254,7 @@ void
 lhe_and_gen::beginRun(edm::Run const& iRun)
 {
 
-  if(lheinfo_){
+  if(mgreweightinfo_ || syscalcinfo_){
 
   edm::Handle<LHERunInfoProduct> hLheRun;
   iRun.getByLabel(lheRunInfoLabel_,hLheRun);
@@ -290,8 +294,6 @@ lhe_and_gen::beginRun(edm::Run const& iRun)
   }
 
 
-
-
   for ( LHERunInfoProduct::headers_const_iterator lheruniter = hLheRun.product()->headers_begin(); lheruniter != hLheRun.product()->headers_end(); lheruniter++ ) {
 
     if (lheruniter->tag() != "initrwgt")
@@ -327,6 +329,7 @@ lhe_and_gen::beginRun(edm::Run const& iRun)
       continue;
 
     bool in_NNPDF23_lo_as_0130_qed = false;
+    bool in_mg_reweighting = false;
 
     int weight_index = -1;
 
@@ -401,11 +404,35 @@ lhe_and_gen::beginRun(edm::Run const& iRun)
 	continue;
       }
 
+      if ( (*iter).find("mg_reweighting") != std::string::npos){
+	in_mg_reweighting = true;
+	continue;
+      }
+
+      if (in_mg_reweighting) {
+	if ( (*iter).find("/weightgroup") != std::string::npos){
+	  in_mg_reweighting = false;
+	  continue;
+	}
+
+
+	//the mg reweight weights can take more than one line
+
+	assert((*iter).find("set param_card") != std::string::npos || (*iter).find("</weight>") != std::string::npos);
+
+	assert(weight_index != -1);
+
+	if ((*iter).find("weight id") != std::string::npos)
+	  mgreweight_weights_indices.push_back(weight_index);
+
+      }
+
       if (in_NNPDF23_lo_as_0130_qed){
 	if ( (*iter).find("/weightgroup") != std::string::npos){
 	  in_NNPDF23_lo_as_0130_qed = false;
 	  continue;
 	}
+
 
 	assert((*iter).find("Member") != std::string::npos);
 
@@ -416,7 +443,6 @@ lhe_and_gen::beginRun(edm::Run const& iRun)
 	pdf_weights_indices.push_back(weight_index);
 
       }
-
 
       //std::cout << (*iter) << std::endl;
     }

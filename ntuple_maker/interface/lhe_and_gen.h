@@ -116,7 +116,7 @@ class lhe_and_gen
 
   std::string slha_header_line_;
 
-  std::vector<Float_t> * lhe_weights;  
+  std::vector<Float_t> * mgreweight_weights;  
   std::vector<Float_t> * pdf_weights;  
   Float_t gen_weight;
   Float_t lhe_weight_orig;
@@ -131,6 +131,7 @@ class lhe_and_gen
   Float_t qcd_weight_mur0p5muf0p5;
 
   std::vector<int> pdf_weights_indices;
+  std::vector<int> mgreweight_weights_indices;
   //  int qcd_weight_up_index;
   //  int qcd_weight_down_index;
 
@@ -144,9 +145,8 @@ class lhe_and_gen
   int qcd_weight_mur0p5muf0p5_index;
 
   bool syscalcinfo_;
-  bool lheinfo_;
+  bool mgreweightinfo_;
   bool isMC_;
-
 
 };
 
