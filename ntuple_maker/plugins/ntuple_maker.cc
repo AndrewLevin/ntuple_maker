@@ -59,6 +59,7 @@
 
 #include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/LHERunInfoProduct.h"
 
 #include "FWCore/Common/interface/TriggerNames.h"
 #include "DataFormats/Common/interface/TriggerResults.h"
@@ -111,6 +112,7 @@ public:
   edm::EDGetTokenT<pat::METCollection> metToken_;
   edm::EDGetTokenT< edm::TriggerResults > triggerResultsToken_;
   edm::EDGetTokenT< pat::TriggerObjectStandAloneCollection > triggerObjectToken_;
+  edm::InputTag lheRunInfoLabel_;
   edm::EDGetTokenT< pat::PackedCandidateCollection> pfToken_;
   edm::EDGetTokenT< std::vector<PileupSummaryInfo> > pileupSummaryToken_;
   edm::EDGetTokenT<LHEEventProduct> lheEvtToken_;
@@ -183,7 +185,7 @@ ntuple_maker::ntuple_maker(const edm::ParameterSet& iConfig):
   metToken_(consumes<pat::METCollection>(iConfig.getParameter<edm::InputTag>("mets"))),
   triggerResultsToken_(consumes< edm::TriggerResults >(edm::InputTag("TriggerResults","","HLT"))),
   triggerObjectToken_( consumes< pat::TriggerObjectStandAloneCollection >(edm::InputTag("selectedPatTrigger"))),
-  //  lheRunInfoLabel_(iConfig.getParameter<edm::InputTag>("lheruninfo")),
+  lheRunInfoLabel_(iConfig.getParameter<edm::InputTag>("lheruninfo")),
   pfToken_(consumes<pat::PackedCandidateCollection>(iConfig.getParameter<edm::InputTag>("pfCands"))),
   pileupSummaryToken_(consumes <std::vector<PileupSummaryInfo> >(iConfig.getParameter<edm::InputTag>("pileup_summary"))),
   lheEvtToken_(consumes<LHEEventProduct>(iConfig.getParameter<edm::InputTag>("lheevent"))),
@@ -206,6 +208,8 @@ ntuple_maker::ntuple_maker(const edm::ParameterSet& iConfig):
   lhe_and_gen_object.syscalcinfo_ = syscalcinfo_;
   lhe_and_gen_object.mgreweightinfo_ = mgreweightinfo_;
   lhe_and_gen_object.lheRunInfoLabel_ = iConfig.getParameter<edm::InputTag>("lheruninfo");
+
+  consumes< LHERunInfoProduct, edm::InRun > (iConfig.getParameter<edm::InputTag>("lheruninfo"));
   
 }
 
