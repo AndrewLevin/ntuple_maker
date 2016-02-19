@@ -23,7 +23,25 @@ process.source = cms.Source("PoolSource",
 
     fileNames = cms.untracked.vstring(
 
-'/store/mc/RunIISpring15MiniAODv2/WpWpJJ_EWK-QCD_TuneCUETP8M1_13TeV-madgraph-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/80000/88743C5E-BE7C-E511-8568-0025905A48B2.root'
+# '/store/mc/RunIIFall15MiniAODv2/DY2JetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/MINIAODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/10000/044F8A3A-43B8-E511-8F98-0025904CF75A.root'
+
+'/store/mc/RunIIFall15MiniAODv2/WpWpJJ_EWK-QCD_TuneCUETP8M1_13TeV-madgraph-pythia8/MINIAODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/00000/E89EB2E2-A7B8-E511-B30A-001E67A402C1.root'
+
+#'file:eos/cms/store/user/anlevin/data/MINIAOD/wgjj_ewk_qcd_v1/step4_output_1.root',
+#'file:eos/cms/store/user/anlevin/data/MINIAOD/wgjj_ewk_qcd_v1/step4_output_101.root',
+#'file:eos/cms/store/user/anlevin/data/MINIAOD/wgjj_ewk_qcd_v1/step4_output_201.root',
+#'file:eos/cms/store/user/anlevin/data/MINIAOD/wgjj_ewk_qcd_v1/step4_output_301.root',
+#'file:eos/cms/store/user/anlevin/data/MINIAOD/wgjj_ewk_qcd_v1/step4_output_401.root',
+#'file:eos/cms/store/user/anlevin/data/MINIAOD/wgjj_ewk_qcd_v1/step4_output_501.root',
+#'file:eos/cms/store/user/anlevin/data/MINIAOD/wgjj_ewk_qcd_v1/step4_output_601.root',
+#'file:eos/cms/store/user/anlevin/data/MINIAOD/wgjj_ewk_qcd_v1/step4_output_701.root',
+#'file:eos/cms/store/user/anlevin/data/MINIAOD/wgjj_ewk_qcd_v1/step4_output_801.root',
+#'file:eos/cms/store/user/anlevin/data/MINIAOD/wgjj_ewk_qcd_v1/step4_output_901.root',
+
+
+#'/store/mc/RunIIFall15MiniAODv1/DY2JetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/MINIAODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/00000/006EF3A3-34B1-E511-B8FD-B083FED42FC4.root'
+
+#'/store/mc/RunIISpring15MiniAODv2/WpWpJJ_EWK-QCD_TuneCUETP8M1_13TeV-madgraph-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/80000/88743C5E-BE7C-E511-8568-0025905A48B2.root'
 
 #'file:/afs/cern.ch/work/a/anlevin/VBS/13_tev/Merged.root'
 
@@ -64,7 +82,7 @@ process.cleanedMu = cms.EDProducer("PATMuonCleanerBySegments",
 process.demo = cms.EDAnalyzer('ntuple_maker',
 
   syscalcinfo = cms.untracked.bool (True), #fill the information from syscalc
-  lheinfo = cms.untracked.bool (True),
+  mgreweightinfo = cms.untracked.bool (False),
   vertices = cms.InputTag("offlineSlimmedPrimaryVertices"),
   muons = cms.InputTag("cleanedMu"),
   lheevent = cms.InputTag("externalLHEProducer"),

@@ -14,7 +14,9 @@ process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use
     fileNames = cms.untracked.vstring(
 
-'/store/data/Run2015D/DoubleEG/MINIAOD/PromptReco-v4/000/258/159/00000/027612B0-306C-E511-BD47-02163E014496.root'
+'/store/data/Run2015D/DoubleMuon/MINIAOD/16Dec2015-v1/10000/00039A2E-D7A7-E511-98EE-3417EBE64696.root'
+
+#'/store/data/Run2015D/DoubleEG/MINIAOD/PromptReco-v4/000/258/159/00000/027612B0-306C-E511-BD47-02163E014496.root'
 
 #'/store/data/Run2015D/DoubleMuon/MINIAOD/PromptReco-v4/000/260/627/00000/6294465C-2285-E511-A6F9-02163E014431.root',
 #'/store/data/Run2015D/DoubleMuon/MINIAOD/PromptReco-v4/000/260/627/00000/648DE552-1E85-E511-944F-02163E0143CF.root',

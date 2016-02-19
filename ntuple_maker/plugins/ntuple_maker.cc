@@ -197,9 +197,6 @@ ntuple_maker::ntuple_maker(const edm::ParameterSet& iConfig):
 {
   //now do what ever initialization is needed
 
-  //if lhe_info_ is false, syscalcinfo_ should also be false
-  assert(!syscalcinfo_ || mgreweightinfo_);
-
   lhe_and_gen_object.isMC_ = isMC_;
   lhe_and_gen_object.prunedGenToken_ = consumes<edm::View<reco::GenParticle> >(iConfig.getParameter<edm::InputTag>("prunedgenparticles"));
   lhe_and_gen_object.packedGenToken_ = consumes<edm::View<pat::PackedGenParticle> >(iConfig.getParameter<edm::InputTag>("packedgenparticles"));

@@ -23,7 +23,7 @@ process.source = cms.Source("PoolSource",
 
     fileNames = cms.untracked.vstring(
 
-'/store/mc/RunIISpring15DR74/WpWpJJ_EWK_TuneCUETP8M1_13TeV-madgraph-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/70000/001E8D25-8112-E511-A426-001517E74088.root'
+'/store/mc/RunIIFall15MiniAODv2/WW_DoubleScattering_13TeV-pythia8/MINIAODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/50000/007A62A6-85BA-E511-8ECD-C81F66B78FF5.root'
 
 
     ),
@@ -40,7 +40,7 @@ process.cleanedMu = cms.EDProducer("PATMuonCleanerBySegments",
 process.demo = cms.EDAnalyzer('ntuple_maker',
 
   syscalcinfo = cms.untracked.bool (False), #fill the information from syscalc
-  lheinfo = cms.untracked.bool (False),
+  mgreweightinfo = cms.untracked.bool (False),                              
   vertices = cms.InputTag("offlineSlimmedPrimaryVertices"),
   muons = cms.InputTag("cleanedMu"),
   lheevent = cms.InputTag("externalLHEProducer"),
