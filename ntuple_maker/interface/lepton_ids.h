@@ -22,6 +22,38 @@
 // class declaration
 //
 
+inline Float_t muon_isolation(const pat::Muon & muon, const reco::Vertex &vtx) {
+
+  return ( muon.pfIsolationR04().sumChargedHadronPt+ std::max(0.0,muon.pfIsolationR04().sumNeutralHadronEt + muon.pfIsolationR04().sumPhotonEt - 0.5 * muon.pfIsolationR04().sumPUPt) )/muon.pt();  
+
+}
+
+inline Float_t electron_isolation(const pat::Electron & el, const reco::Vertex &PV, const double &rho) {
+
+     reco::GsfElectron::PflowIsolationVariables pfIso = el.pfIsolationVariables();
+
+     //see here https://indico.cern.ch/event/369239/contribution/4/attachments/1134761/1623262/talk_effective_areas_25ns.pdf slide 12
+
+     double EffectiveArea = 0;
+
+     float abseta = fabs(fabs(el.superCluster()->eta()));
+     if (abseta >= 0.0 && abseta < 1.0 ) EffectiveArea = 0.1752;
+     if (abseta >= 1.0 && abseta < 1.479 ) EffectiveArea = 0.1862;
+     if (abseta >= 1.479 && abseta < 2.0 ) EffectiveArea = 0.1411;
+     if (abseta >= 2.0 && abseta < 2.2 ) EffectiveArea = 0.1534;
+     if (abseta >= 2.2 && abseta < 2.3 ) EffectiveArea = 0.1903;
+     if (abseta >= 2.3 && abseta < 2.4 ) EffectiveArea = 0.2243;
+     if (abseta >= 2.4 && abseta < 5.0 ) EffectiveArea = 0.2687;
+
+     //EffectiveArea = 0;
+
+     Float_t absiso = pfIso.sumChargedHadronPt + std::max(0.0 , pfIso.sumNeutralHadronEt + pfIso.sumPhotonEt - rho * EffectiveArea );
+     Float_t relIsoWithDBeta = absiso/el.pt();
+
+     return relIsoWithDBeta;
+
+}
+
 inline Bool_t passSoftMuonId(const pat::Muon & muon, const reco::Vertex &vtx){
 
   return muon.isSoftMuon(vtx);

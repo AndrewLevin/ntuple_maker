@@ -41,7 +41,10 @@ if (which_triggers == "doublemu" || which_triggers == "doublelepton") {
  if (which_triggers == "muon_fake_rate") {
 
    //triggerNames.push_back("HLT_Mu8_v");
-   triggerNames.push_back("HLT_Mu17_v");
+   
+   //triggerNames.push_back("HLT_Mu17_v");
+   triggerNames.push_back("HLT_Mu17_TrkIsoVVL_v");
+   
    //triggerNames.push_back("HLT_Mu24_v"); //not present for some of the 2015 data
    //triggerNames.push_back("HLT_Mu34_v"); //not present for some of the 2015 data
 

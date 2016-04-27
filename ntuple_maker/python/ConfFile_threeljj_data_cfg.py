@@ -49,7 +49,7 @@ process.cleanedMu = cms.EDProducer("PATMuonCleanerBySegments",
 process.demo = cms.EDAnalyzer('threeljj_ntuple_maker',
 
   syscalcinfo = cms.untracked.bool (False), #fill the information from syscalc
-  lheinfo = cms.untracked.bool (False),
+  mgreweightinfo = cms.untracked.bool (False),
   vertices = cms.InputTag("offlineSlimmedPrimaryVertices"),
   muons = cms.InputTag("cleanedMu"),
   lheevent = cms.InputTag("externalLHEProducer"),
@@ -68,6 +68,8 @@ process.demo = cms.EDAnalyzer('threeljj_ntuple_maker',
   packedgenparticles = cms.InputTag("packedGenParticles"),  
   pfCands = cms.InputTag("packedPFCandidates"),                              
   apply_trigger = cms.untracked.bool(True),                              
+  rho = cms.InputTag("fixedGridRhoFastjetAll"),
+  genevent = cms.InputTag("generator"),
 )
 
 process.p = cms.Path(process.cleanedMu*process.demo)

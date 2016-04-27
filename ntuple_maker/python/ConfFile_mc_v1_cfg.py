@@ -1,3 +1,4 @@
+
 import FWCore.ParameterSet.Config as cms
 
 process = cms.Process("Demo")
@@ -23,7 +24,11 @@ process.source = cms.Source("PoolSource",
 
     fileNames = cms.untracked.vstring(
 
-'file:/afs/cern.ch/work/a/anlevin/VBS/13_tev/Merged.root'
+'/store/mc/RunIIFall15MiniAODv2/WmWmJJ_13TeV-powheg-pythia8/MINIAODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/80000/84FEA6AF-ABED-E511-AD3F-001E67581494.root'
+
+#'/store/mc/RunIIFall15MiniAODv2/TT_TuneCUETP8M1_13TeV-powheg-pythia8/MINIAODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12_ext3-v1/00000/00DF0A73-17C2-E511-B086-E41D2D08DE30.root'
+
+#'file:/afs/cern.ch/work/a/anlevin/VBS/13_tev/Merged.root'
 
 #'/store/mc/RunIISpring15MiniAODv2/TT_TuneCUETP8M1_13TeV-powheg-pythia8/MINIAODSIM/74X_mcRun2_asymptotic_v2-v1/40000/9E0EDDCD-BE70-E511-9A85-6C3BE5B5F210.root'
 
@@ -41,7 +46,7 @@ process.cleanedMu = cms.EDProducer("PATMuonCleanerBySegments",
 process.demo = cms.EDAnalyzer('ntuple_maker',
 
   syscalcinfo = cms.untracked.bool (False), #fill the information from syscalc
-  lheinfo = cms.untracked.bool (True),
+  mgreweightinfo = cms.untracked.bool (False),
   vertices = cms.InputTag("offlineSlimmedPrimaryVertices"),
   muons = cms.InputTag("cleanedMu"),
   lheevent = cms.InputTag("externalLHEProducer"),

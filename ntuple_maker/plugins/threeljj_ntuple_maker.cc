@@ -107,10 +107,14 @@ public:
   edm::EDGetTokenT< edm::TriggerResults > triggerResultsToken_;
   edm::EDGetTokenT< pat::TriggerObjectStandAloneCollection > triggerObjectToken_;
   edm::EDGetTokenT< pat::PackedCandidateCollection> pfToken_;
-  edm::EDGetTokenT<float> rhoToken_;
+  edm::EDGetTokenT<double> rhoToken_;
+  edm::EDGetTokenT<LHEEventProduct> lheEvtToken_;
+  edm::EDGetTokenT<GenEventInfoProduct> genEvtToken_;
+
 
 
   TH1F * n_events_run_over;
+  TH1F * n_weighted_events_run_over;
   UInt_t flags;
   UInt_t event;
   UInt_t run;
@@ -147,8 +151,8 @@ public:
   bool syscalcinfo_;
   bool mgreweightinfo_;
 
-  bool isMC_;
   bool apply_trigger_;
+  bool isMC_;
 
 };
 
@@ -176,24 +180,28 @@ threeljj_ntuple_maker::threeljj_ntuple_maker(const edm::ParameterSet& iConfig):
   triggerObjectToken_( consumes< pat::TriggerObjectStandAloneCollection >(edm::InputTag("selectedPatTrigger"))),
   //  lheRunInfoLabel_(iConfig.getParameter<edm::InputTag>("lheruninfo")),
   pfToken_(consumes<pat::PackedCandidateCollection>(iConfig.getParameter<edm::InputTag>("pfCands"))),
-  rhoToken_(consumes<float>(iConfig.getParameter<edm::InputTag>("rho"))),
+  rhoToken_(consumes<double>(iConfig.getParameter<edm::InputTag>("rho"))),
+  lheEvtToken_(consumes<LHEEventProduct>(iConfig.getParameter<edm::InputTag>("lheevent"))),
+  genEvtToken_(consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("genevent"))),
   syscalcinfo_(iConfig.getUntrackedParameter<bool>("syscalcinfo")),
   mgreweightinfo_(iConfig.getUntrackedParameter<bool>("mgreweightinfo")),
-  isMC_(iConfig.getUntrackedParameter<bool>("isMC")),
-  apply_trigger_(iConfig.getUntrackedParameter<bool>("apply_trigger"))
+  apply_trigger_(iConfig.getUntrackedParameter<bool>("apply_trigger")),
+  isMC_(iConfig.getUntrackedParameter<bool>("isMC"))
+
 {
   //now do what ever initialization is needed
-
-  //if lhe_info_ is false, syscalcinfo_ should also be false
-  assert(!syscalcinfo_ || mgreweightinfo_);
 
   lhe_and_gen_object.isMC_ = isMC_;
   lhe_and_gen_object.prunedGenToken_ = consumes<edm::View<reco::GenParticle> >(iConfig.getParameter<edm::InputTag>("prunedgenparticles"));
   lhe_and_gen_object.packedGenToken_ = consumes<edm::View<pat::PackedGenParticle> >(iConfig.getParameter<edm::InputTag>("packedgenparticles"));
   lhe_and_gen_object.lheEvtToken_ = consumes<LHEEventProduct>(iConfig.getParameter<edm::InputTag>("lheevent"));
+  lhe_and_gen_object.genEvtToken_ = consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("genevent"));
   lhe_and_gen_object.syscalcinfo_ = syscalcinfo_;
   lhe_and_gen_object.mgreweightinfo_ = mgreweightinfo_;
   lhe_and_gen_object.lheRunInfoLabel_ = iConfig.getParameter<edm::InputTag>("lheruninfo");
+
+  consumes< LHERunInfoProduct, edm::InRun > (iConfig.getParameter<edm::InputTag>("lheruninfo"));
+
   
 }
 
@@ -219,11 +227,20 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   //if (iEvent.eventAuxiliary().luminosityBlock() != 11 || iEvent.eventAuxiliary().event() != 2092)
   //  return;
 
-  if (isMC_)
+  if (isMC_){
     n_events_run_over->Fill(0.5);
 
+    edm::Handle<GenEventInfoProduct> hGenEvt;
+    iEvent.getByToken(genEvtToken_,hGenEvt);
 
-  edm::Handle<float> rhoHandle;
+    if (hGenEvt->weight() > 0)
+      n_weighted_events_run_over->Fill(0.5,1);
+    else
+      n_weighted_events_run_over->Fill(0.5,-1);
+  }
+
+
+  edm::Handle<double> rhoHandle;
 
   iEvent.getByToken(rhoToken_,rhoHandle);
 
@@ -341,7 +358,7 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
    for(UInt_t i = 0; i < electrons->size(); i++){
 
-     if( (*electrons)[i].pt() < 10) 
+     if( (*electrons)[i].pt() < 20) 
        continue;
 
      if (!passVeryLooseElectronSelection((*electrons)[i],PV,rho))
@@ -353,7 +370,7 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
    for(UInt_t i = 0; i < muons->size(); i++){
 
-     if ((*muons)[i].pt() < 10)
+     if ((*muons)[i].pt() < 20)
        continue;
 
      if (! passVeryLooseMuonSelection( (*muons)[i],PV ) )
@@ -377,6 +394,33 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
      if (passLooseMuonSelectionV1((*muons)[i3],PV) )
        flags = flags | Lep3LooseSelectionV1;
+
+     if (passLooseMuonSelectionV2((*muons)[i1],PV) )
+       flags = flags | Lep1LooseSelectionV2;
+
+     if (passLooseMuonSelectionV2((*muons)[i2],PV) )
+       flags = flags | Lep2LooseSelectionV2;
+
+     if (passLooseMuonSelectionV2((*muons)[i3],PV) )
+       flags = flags | Lep3LooseSelectionV2;
+
+     if (passLooseMuonSelectionV3((*muons)[i1],PV) )
+       flags = flags | Lep1LooseSelectionV3;
+
+     if (passLooseMuonSelectionV3((*muons)[i2],PV) )
+       flags = flags | Lep2LooseSelectionV3;
+
+     if (passLooseMuonSelectionV3((*muons)[i3],PV) )
+       flags = flags | Lep3LooseSelectionV3;
+
+     if (passLooseMuonSelectionV4((*muons)[i1],PV) )
+       flags = flags | Lep1LooseSelectionV4;
+
+     if (passLooseMuonSelectionV4((*muons)[i2],PV) )
+       flags = flags | Lep2LooseSelectionV4;
+
+     if (passLooseMuonSelectionV4((*muons)[i3],PV) )
+       flags = flags | Lep3LooseSelectionV4;
 
      if (passTightMuonSelectionV1((*muons)[i1],PV)) 
        flags = flags | Lep1TightSelectionV1;
@@ -456,8 +500,10 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
      lep2q = (*muons)[im2].charge();
      lep2id = (*muons)[im2].pdgId();
 
-     if (passTightElectronSelectionV2((*electrons)[ie], PV,rho))
+     if (passTightElectronSelectionV1((*electrons)[ie], PV,rho))
        flags = flags | Lep2TightSelectionV1;
+     if (passTightElectronSelectionV2((*electrons)[ie], PV,rho))
+       flags = flags | Lep2TightSelectionV2;
      if (passLooseElectronSelectionV1((*electrons)[ie],PV,rho))
 	 flags = flags | Lep2LooseSelectionV1;
      if (passLooseElectronSelectionV2((*electrons)[ie],PV,rho))
@@ -489,15 +535,19 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
      lep1q = (*muons)[im].charge();
      lep1id = (*muons)[im].pdgId();
 
-     if (passTightElectronSelectionV2((*electrons)[ie1], PV,rho))
+     if (passTightElectronSelectionV1((*electrons)[ie1], PV,rho))
        flags = flags | Lep2TightSelectionV1;
+     if (passTightElectronSelectionV2((*electrons)[ie1], PV,rho))
+       flags = flags | Lep2TightSelectionV2;
      if (passLooseElectronSelectionV1((*electrons)[ie1],PV,rho))
 	 flags = flags | Lep2LooseSelectionV1;
      if (passLooseElectronSelectionV2((*electrons)[ie1],PV,rho))
 	 flags = flags | Lep2LooseSelectionV2;
 
-     if (passTightElectronSelectionV2((*electrons)[ie2], PV,rho))
+     if (passTightElectronSelectionV1((*electrons)[ie2], PV,rho))
        flags = flags | Lep3TightSelectionV1;
+     if (passTightElectronSelectionV2((*electrons)[ie2], PV,rho))
+       flags = flags | Lep3TightSelectionV2;
      if (passLooseElectronSelectionV1((*electrons)[ie2],PV,rho))
 	 flags = flags | Lep3LooseSelectionV1;
      if (passLooseElectronSelectionV2((*electrons)[ie2],PV,rho))
@@ -531,12 +581,21 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
      lep3q = (*electrons)[i3].charge();
      lep3id = (*electrons)[i3].pdgId();
 
-     if (passTightElectronSelectionV2((*electrons)[i1],PV,rho))
+     if (passTightElectronSelectionV1((*electrons)[i1],PV,rho))
 	 flags = flags | Lep1TightSelectionV1;
-     if (passTightElectronSelectionV2((*electrons)[i2],PV,rho))
+     if (passTightElectronSelectionV1((*electrons)[i2],PV,rho))
 	 flags = flags | Lep2TightSelectionV1;
-     if (passTightElectronSelectionV2((*electrons)[i3],PV,rho))
+     if (passTightElectronSelectionV1((*electrons)[i3],PV,rho))
 	 flags = flags | Lep3TightSelectionV1;
+
+     if (passTightElectronSelectionV2((*electrons)[i1],PV,rho))
+	 flags = flags | Lep1TightSelectionV2;
+     if (passTightElectronSelectionV2((*electrons)[i2],PV,rho))
+	 flags = flags | Lep2TightSelectionV2;
+     if (passTightElectronSelectionV2((*electrons)[i3],PV,rho))
+	 flags = flags | Lep3TightSelectionV2;
+
+
      if (passLooseElectronSelectionV1((*electrons)[i1],PV,rho))
 	 flags = flags | Lep1LooseSelectionV1;
      if (passLooseElectronSelectionV1((*electrons)[i2],PV,rho))
@@ -552,8 +611,6 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
    } else 
      return;
-
-  std::cout << "andrew debug 2" << std::endl;
 
    lhe_and_gen_object.analyze(iEvent,lep1,lep2);
 
@@ -597,6 +654,8 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
    //metptshiftdown = met.shiftedPt(pat::MET::JetEnDown);
 
+   std::cout << "event passed" << std::endl;
+
    tree->Fill();
 
 }
@@ -609,8 +668,10 @@ threeljj_ntuple_maker::beginJob()
 
   edm::Service<TFileService> fs;
 
-  if (isMC_)
+  if (isMC_){
     n_events_run_over= fs->make<TH1F>("n_events_run_over","n_events_run_over",1,0,1);
+    n_weighted_events_run_over= fs->make<TH1F>("n_weighted_events_run_over","n_weighted_events_run_over",1,0,1);
+  }
 
   lhe_and_gen_object.initrwgt_header_tree_ = fs->make<TTree >("initrwgt_header","initrwgt_header");
 

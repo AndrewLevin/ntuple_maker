@@ -23,9 +23,7 @@ process.source = cms.Source("PoolSource",
 
     fileNames = cms.untracked.vstring(
 
-'/store/mc/RunIIFall15MiniAODv2/WZJJ_QCD_13TeV-madgraph-pythia8/MINIAODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/00000/48811764-39B8-E511-BCC5-F46D043B3CE5.root'
-
-#'/store/mc/RunIIFall15MiniAODv2/WLLJJToLNu_M-60_EWK_QCD_TuneCUETP8M1_13TeV-madgraph-pythia8/MINIAODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/00000/C69294D5-4CB8-E511-9FF5-001E67E95C40.root'
+'/store/mc/RunIIFall15MiniAODv2/WLLJJToLNu_M-60_EWK_QCD_TuneCUETP8M1_13TeV-madgraph-pythia8/MINIAODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/00000/C69294D5-4CB8-E511-9FF5-001E67E95C40.root'
 
 #'/store/mc/RunIISpring15DR74/WLLJJToLNu_M-60_EWK_QCD_TuneCUETP8M1_13TeV-madgraph-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/60000/26DBC5F1-8566-E511-8C82-20CF3027A607.root',
 #'/store/mc/RunIISpring15DR74/WLLJJToLNu_M-60_EWK_QCD_TuneCUETP8M1_13TeV-madgraph-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/60000/3A5140F2-8566-E511-8242-B083FED42488.root',
@@ -57,7 +55,7 @@ process.cleanedMu = cms.EDProducer("PATMuonCleanerBySegments",
 
 process.demo = cms.EDAnalyzer('threeljj_ntuple_maker',
 
-  syscalcinfo = cms.untracked.bool (True), #fill the information from syscalc
+  syscalcinfo = cms.untracked.bool (False), #fill the information from syscalc
   mgreweightinfo = cms.untracked.bool (False),
   vertices = cms.InputTag("offlineSlimmedPrimaryVertices"),
   muons = cms.InputTag("cleanedMu"),

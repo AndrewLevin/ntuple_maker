@@ -163,11 +163,11 @@ get_prescale_information::analyze(const edm::Event& iEvent, const edm::EventSetu
 
     //std::cout << "names.triggerName(i) = " << names.triggerName(i) << std::endl;
 
-    //if (names.triggerName(i).find("HLT_Mu24_v") == std::string::npos)
-    //  continue;
-
-    if (names.triggerName(i).find("HLT_Ele8_CaloIdL_TrackIdL_IsoVL_PFJet30_v") == std::string::npos)
+    if (names.triggerName(i).find("HLT_Mu17_TrkIsoVVL_v") == std::string::npos)
       continue;
+
+    //if (names.triggerName(i).find("HLT_Ele8_CaloIdL_TrackIdL_IsoVL_PFJet30_v") == std::string::npos)
+    //  continue;
 
     n_matches++;
 

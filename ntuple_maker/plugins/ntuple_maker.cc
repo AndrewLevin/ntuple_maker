@@ -150,6 +150,8 @@ public:
   LorentzVector lep2;
   Int_t lep1id;
   Int_t lep2id;
+  Float_t lep1iso;
+  Float_t lep2iso;
   Int_t lep1q;
   Int_t lep2q;
   lhe_and_gen lhe_and_gen_object; //separate the part that runs over the generator and lhe information
@@ -283,15 +285,6 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
      edm::Handle<pat::TauCollection> taus;
      iEvent.getByToken(tauToken_, taus);
-
-     for (const pat::Tau &tau : *taus) {
-       if (tau.pt() < 20) continue;
-
-       if (fabs(tau.eta()) > 2.4) continue;
-
-       if(tau.tauID("byTightCombinedIsolationDeltaBetaCorr3Hits"))
-	 flags = flags | WLLJJVetoV3;
-     }
 
      edm::Handle<pat::PackedCandidateCollection> pfs;
      iEvent.getByToken(pfToken_, pfs);
@@ -576,10 +569,12 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      lep1 = (*muons)[i1].p4();
      lep1q = (*muons)[i1].charge();
      lep1id = (*muons)[i1].pdgId();
+     lep1iso = muon_isolation((*muons)[i1],PV);
 
      lep2 = (*muons)[i2].p4();
      lep2q = (*muons)[i2].charge();
      lep2id = (*muons)[i2].pdgId();
+     lep2iso = muon_isolation((*muons)[i2],PV);
      
      for(UInt_t i = 0; i < muons->size(); i++){
 
@@ -635,6 +630,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      lep1 = (*muons)[im].p4();
      lep1q = (*muons)[im].charge();
      lep1id = (*muons)[im].pdgId();
+     lep1iso = muon_isolation((*muons)[im],PV);
 
      if (passTightElectronSelectionV1((*electrons)[ie], PV,rho))
        flags = flags | Lep2TightSelectionV1;
@@ -654,7 +650,8 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      lep2= (*electrons)[ie].p4();
      lep2q = (*electrons)[ie].charge();
      lep2id = (*electrons)[ie].pdgId();
-     
+     lep2iso = electron_isolation((*electrons)[ie],PV,rho);
+
      for(UInt_t i = 0; i < muons->size(); i++){
 
        if (i == im)
@@ -688,10 +685,14 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      lep1= (*electrons)[i1].p4();
      lep1q = (*electrons)[i1].charge();
      lep1id = (*electrons)[i1].pdgId();
+     lep1iso = electron_isolation((*electrons)[i1],PV,rho);
+
 
      lep2= (*electrons)[i2].p4();
      lep2q = (*electrons)[i2].charge();
      lep2id = (*electrons)[i2].pdgId();
+     lep2iso = electron_isolation((*electrons)[i2],PV,rho);
+
 
      if (passTightElectronSelectionV1((*electrons)[i1],PV,rho))
 	 flags = flags | Lep1TightSelectionV1;
@@ -754,6 +755,23 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    std::vector<const pat::Jet *> cleaned_jets;
 
+     for (const pat::Tau &tau : *taus) {
+       if (tau.pt() < 20) continue;
+
+       if (fabs(tau.eta()) > 2.4) continue;
+
+       if ( reco::deltaR(tau.p4(),lep1) < 0.4 || reco::deltaR(tau.p4(),lep2) < 0.4 )
+       continue;
+
+       //std::cout << tau.tauID("byMediumIsolationMVArun2v1DBnewDMwLT") << std::endl;
+       //std::cout << tau.charge() << std::endl;
+
+       if(tau.tauID("byMediumIsolationMVArun2v1DBnewDMwLT"))
+	 flags = flags | WLLJJVetoV3;
+     }
+
+
+
    for (const pat::Jet &j : *jets) {
 
      if ( reco::deltaR(j.p4(),lep1) < 0.4 || reco::deltaR(j.p4(),lep2) < 0.4 ){
@@ -762,6 +780,8 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      }
      cleaned_jets.push_back(&j);
    }
+
+
 
    if (cleaned_jets.size() < 2) 
      return;
@@ -866,6 +886,8 @@ ntuple_maker::beginJob()
   tree->Branch("jet2btag",&jet2btag);
   tree->Branch("lep1",&lep1);
   tree->Branch("lep2",&lep2);
+  tree->Branch("lep1iso",&lep1iso);
+  tree->Branch("lep2iso",&lep2iso);
   tree->Branch("nvtx",&nvtx);
   tree->Branch("lep1q",&lep1q);
   tree->Branch("lep1id",&lep1id);
