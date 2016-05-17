@@ -144,7 +144,12 @@ class lhe_and_gen
   int qcd_weight_mur0p5muf2_index;
   int qcd_weight_mur0p5muf0p5_index;
 
+  int lhelep1pdgid;
+
+  int lhelep2pdgid;
+
   bool syscalcinfo_;
+  bool lhe_lepton_info_;
   bool mgreweightinfo_;
   bool isMC_;
 

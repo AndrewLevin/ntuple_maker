@@ -70,8 +70,10 @@ process.demo = cms.EDAnalyzer('ntuple_maker',
   pfCands = cms.InputTag("packedPFCandidates"),                              
 pileup_summary = cms.InputTag("slimmedAddPileupInfo"),
 genevent = cms.InputTag("generator"),
-rho = cms.InputTag("fixedGridRhoFastjetAll")
-
+rho = cms.InputTag("fixedGridRhoFastjetAll"),
+jes = cms.untracked.string("nominal"),
+jer = cms.untracked.string("nominal"),
+lheleptoninfo = cms.untracked.bool(False)
 )
 
 process.p = cms.Path(process.cleanedMu*process.demo)

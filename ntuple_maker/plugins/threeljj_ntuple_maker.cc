@@ -654,8 +654,6 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
    //metptshiftdown = met.shiftedPt(pat::MET::JetEnDown);
 
-   std::cout << "event passed" << std::endl;
-
    tree->Fill();
 
 }

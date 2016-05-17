@@ -26,6 +26,7 @@
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/EDAnalyzer.h"
+#include "FWCore/Framework/interface/EventSetup.h"
 
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
@@ -69,6 +70,16 @@
 
 #include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
 
+#include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
+#include "CondFormats/JetMETObjects/interface/JetCorrectionUncertainty.h"
+#include "JetMETCorrections/Objects/interface/JetCorrectionsRecord.h"
+#include "JetMETCorrections/Objects/interface/JetCorrector.h"
+
+#include "FWCore/Framework/interface/ESHandle.h"
+
+#include "JetMETCorrections/Modules/interface/JetResolution.h"
+
+#include "TRandom3.h"
 
 //
 // class declaration
@@ -77,6 +88,45 @@
 const Float_t z_mass = 91.18800;
 
 typedef ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> > LorentzVector;
+
+std::pair<int,int> get_two_highest_pt_jet_indices(const std::vector<float> &corrected_jet_pts) {
+
+  assert(corrected_jet_pts.size() >= 2);
+
+  int index1 = -1;
+  int index2 = -1;
+  
+
+  for (unsigned int i = 0; i < corrected_jet_pts.size(); i++){
+
+    if (index1 == -1){
+      index1 = i;
+      continue;
+    }
+
+    if (index2 == -1){
+      index2 = i;
+      continue;
+    }
+    
+    if (corrected_jet_pts[index1] < corrected_jet_pts[i]){
+      index1 = i;
+      continue;
+    }
+
+    if (corrected_jet_pts[index2] < corrected_jet_pts[i]){
+      index2 = i;
+      continue;
+    }
+    
+
+  }
+
+  assert(index1 != -1 && index2 != -1);
+
+  return std::pair<int,int>(index1,index2);
+
+}
 
 class ntuple_maker : public edm::EDAnalyzer {
 public:
@@ -161,7 +211,21 @@ public:
   bool syscalcinfo_;
   bool mgreweightinfo_;
 
+
   bool isMC_;
+
+  JetCorrectionUncertainty *jecUnc_;
+
+  bool isJecUncSet_ = false;
+
+  std::string jes_;
+  std::string jer_;
+
+  bool lhe_lepton_info_;
+
+private:
+
+  TRandom3*rnd_{0};
 
 };
 
@@ -195,9 +259,15 @@ ntuple_maker::ntuple_maker(const edm::ParameterSet& iConfig):
   rhoToken_(consumes<double>(iConfig.getParameter<edm::InputTag>("rho"))),
   syscalcinfo_(iConfig.getUntrackedParameter<bool>("syscalcinfo")),
   mgreweightinfo_(iConfig.getUntrackedParameter<bool>("mgreweightinfo")),
-  isMC_(iConfig.getUntrackedParameter<bool>("isMC"))
+  isMC_(iConfig.getUntrackedParameter<bool>("isMC")),
+  jes_(iConfig.getUntrackedParameter<std::string>("jes")),
+  jer_(iConfig.getUntrackedParameter<std::string>("jer")),
+  lhe_lepton_info_(iConfig.getUntrackedParameter<bool>("lheleptoninfo"))
 {
   //now do what ever initialization is needed
+
+  rnd_=new TRandom3();
+  rnd_->SetSeed((unsigned)time(NULL));
 
   lhe_and_gen_object.isMC_ = isMC_;
   lhe_and_gen_object.prunedGenToken_ = consumes<edm::View<reco::GenParticle> >(iConfig.getParameter<edm::InputTag>("prunedgenparticles"));
@@ -206,6 +276,7 @@ ntuple_maker::ntuple_maker(const edm::ParameterSet& iConfig):
   lhe_and_gen_object.genEvtToken_ = consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("genevent"));
   lhe_and_gen_object.syscalcinfo_ = syscalcinfo_;
   lhe_and_gen_object.mgreweightinfo_ = mgreweightinfo_;
+  lhe_and_gen_object.lhe_lepton_info_ = lhe_lepton_info_;
   lhe_and_gen_object.lheRunInfoLabel_ = iConfig.getParameter<edm::InputTag>("lheruninfo");
 
   consumes< LHERunInfoProduct, edm::InRun > (iConfig.getParameter<edm::InputTag>("lheruninfo"));
@@ -236,7 +307,21 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   flags = 0;
 
-  
+  if (!isJecUncSet_ && isMC_){
+
+    std::string payload = "AK4PFchs";
+    
+    edm::ESHandle<JetCorrectorParametersCollection> JetCorParColl;
+    
+    iSetup.get<JetCorrectionsRecord>().get(payload ,JetCorParColl); 
+    
+    JetCorrectorParameters const& par = (*JetCorParColl)["Uncertainty"];
+    
+    jecUnc_ = new JetCorrectionUncertainty(par);
+
+    isJecUncSet_ = true;
+
+  }
 
   edm::Handle<double> rhoHandle;
 
@@ -504,8 +589,11 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      if ((*muons)[i].pt() < 20)
        continue;
 
-     if (! passVeryLooseMuonSelection( (*muons)[i],PV ) )
-       continue;
+     //if (!passTightMuonSelectionV1((*muons)[i],PV) )
+     //  continue;
+
+	 if (! passVeryLooseMuonSelection( (*muons)[i],PV ) )
+	 continue;
 
      veryloose_muon_indices.push_back(i);
 
@@ -771,30 +859,104 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      }
 
 
+   std::vector<float> corrected_jet_pts;
 
    for (const pat::Jet &j : *jets) {
+
 
      if ( reco::deltaR(j.p4(),lep1) < 0.4 || reco::deltaR(j.p4(),lep2) < 0.4 ){
        continue;
 
      }
+
+     if (isMC_){
+
+     jecUnc_->setJetEta(j.eta());
+     jecUnc_->setJetPt(j.pt());
+
+     float jecunc = jecUnc_->getUncertainty(true);
+
+     float oldpt = j.pt();
+
+     if (jes_ == "up")
+       oldpt = oldpt*(1+jecunc);
+     else if (jes_ == "down")
+       oldpt = oldpt*(1-jecunc);
+     else
+       assert(jes_ == "nominal");
+
+     JME::JetResolution resolution = JME::JetResolution::get(iSetup, "AK4PFchs_pt");
+     JME::JetResolutionScaleFactor resolution_sf = JME::JetResolutionScaleFactor::get(iSetup, "AK4PFchs");
+     JME::JetParameters jpar;
+     jpar.setJetPt( j.pt()).setJetEta( j.eta() ).setRho( rho)  ;
+     float res = resolution.getResolution(jpar);
+     float sf = resolution_sf.getScaleFactor(jpar);
+     float sf_up = resolution_sf.getScaleFactor(jpar, Variation::UP);
+     float sf_down = resolution_sf.getScaleFactor(jpar, Variation::DOWN);
+     
+     // https://twiki.cern.ch/twiki/bin/view/CMS/JetResolution#Smearing_procedures
+     const reco::GenJet* genjet= j.genJet() ;
+     float newpt = j.pt();
+
+     float newptUp = j.pt();
+     float newptDown = j.pt();
+     
+     //
+     // -- if (genjet==NULL) cout <<"DEBUG: NO GENJET"<<endl;
+     // -- else cout <<"DEBUG: YES GENJET"<<"DR="<<reco::deltaR(*genjet,j) <<" DPT="<<fabs(j.pt()-genjet->pt())<< " 3Sig="<<3*res*genjet->pt()<<endl;
+
+     // additional matching dR(reco jet, gen jet)<Rcone/2 and dpt=abs(pT-pTgen)<3*sigma_MC
+     if (genjet!=NULL and reco::deltaR(*genjet,j) <0.2 and fabs(j.pt()-genjet->pt())<3*res*genjet->pt()) { //scaling
+       float genpt=genjet->pt();
+       newpt     = std::max(float(0.),float(genpt+sf*(j.pt()-genpt)      ));
+       newptUp   = std::max(float(0.),float(genpt+sf_up*(j.pt()-genpt)   ));
+       newptDown = std::max(float(0.),float(genpt+sf_down*(j.pt()-genpt) ));
+     }
+     else{ // smearing
+       float sigma=TMath::Sqrt( sf*sf -1) * res;
+       float sigmaUp=TMath::Sqrt( sf_up*sf_up -1) * res;
+       float sigmaDown=TMath::Sqrt( sf_down*sf_down -1) * res;
+       float s = rnd_->Gaus(0,1);
+       newpt = s * sigma + oldpt;
+       newptUp = s * sigmaUp + oldpt;
+       newptDown = s * sigmaDown +oldpt;
+     }
+     //*(TLorentzVector*)(*p4)[p4->GetEntriesFast()-1] *= newpt /oldpt ; // Update the pt stored in p4 at the last position (N-1)
+     //ptResUncUp->push_back(newptUp);
+     //ptResUncDown->push_back(newptDown) ;
+     
+     if (jer_ == "nominal")
+       corrected_jet_pts.push_back(newpt);
+     else if (jer_ == "up")
+       corrected_jet_pts.push_back(newptUp);
+     else if (jer_ == "down")
+       corrected_jet_pts.push_back(newptDown);
+     else
+       assert(0);
+
+     }
+     else
+       corrected_jet_pts.push_back(j.pt());
+
+
      cleaned_jets.push_back(&j);
    }
 
-
-
    if (cleaned_jets.size() < 2) 
      return;
-   else if (cleaned_jets[1]->pt() < 20)
+
+   std::pair<int,int> highest_pt_jet_indices = get_two_highest_pt_jet_indices(corrected_jet_pts);
+
+   if (cleaned_jets[highest_pt_jet_indices.first]->pt() < 20 || cleaned_jets[highest_pt_jet_indices.second]->pt() < 20)
      return;
 
-   float NHF0    = cleaned_jets[0]->neutralHadronEnergyFraction();
-   float NEMF0   = cleaned_jets[0]->neutralEmEnergyFraction();
-   float CHF0    = cleaned_jets[0]->chargedHadronEnergyFraction();
+   float NHF0    = cleaned_jets[highest_pt_jet_indices.first]->neutralHadronEnergyFraction();
+   float NEMF0   = cleaned_jets[highest_pt_jet_indices.first]->neutralEmEnergyFraction();
+   float CHF0    = cleaned_jets[highest_pt_jet_indices.first]->chargedHadronEnergyFraction();
    //float MUF0    = cleaned_jets[0]->muonEnergyFraction();
-   float CEMF0   = cleaned_jets[0]->chargedEmEnergyFraction();
-   int NumConst0 = cleaned_jets[0]->chargedMultiplicity()+cleaned_jets[0]->neutralMultiplicity();
-   int CHM0      = cleaned_jets[0]->chargedMultiplicity();
+   float CEMF0   = cleaned_jets[highest_pt_jet_indices.first]->chargedEmEnergyFraction();
+   int NumConst0 = cleaned_jets[highest_pt_jet_indices.first]->chargedMultiplicity()+cleaned_jets[highest_pt_jet_indices.first]->neutralMultiplicity();
+   int CHM0      = cleaned_jets[highest_pt_jet_indices.first]->chargedMultiplicity();
    
    float NHF1    = cleaned_jets[1]->neutralHadronEnergyFraction();
    float NEMF1   = cleaned_jets[1]->neutralEmEnergyFraction();
@@ -804,22 +966,34 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    int NumConst1 = cleaned_jets[1]->chargedMultiplicity()+cleaned_jets[1]->neutralMultiplicity();
    int CHM1      = cleaned_jets[1]->chargedMultiplicity();
 
-   if (abs(cleaned_jets[0]->eta()) <= 3.0)
-     jet1loosejetid = (NHF0<0.99 && NEMF0<0.99 && NumConst0>1) && ((abs(cleaned_jets[0]->eta())<=2.4 && CHF0>0 && CHM0>0 && CEMF0<0.99) || abs(cleaned_jets[0]->eta())>2.4);
+   if (abs(cleaned_jets[highest_pt_jet_indices.first]->eta()) <= 3.0)
+     jet1loosejetid = (NHF0<0.99 && NEMF0<0.99 && NumConst0>1) && ((abs(cleaned_jets[highest_pt_jet_indices.first]->eta())<=2.4 && CHF0>0 && CHM0>0 && CEMF0<0.99) || abs(cleaned_jets[highest_pt_jet_indices.first]->eta())>2.4);
    else
-     jet1loosejetid = NEMF0<0.90 && cleaned_jets[0]->neutralMultiplicity()>10;
+     jet1loosejetid = NEMF0<0.90 && cleaned_jets[highest_pt_jet_indices.first]->neutralMultiplicity()>10;
 
-   if (abs(cleaned_jets[1]->eta()) <= 3.0)
-     jet2loosejetid = (NHF1<0.99 && NEMF1<1.99 && NumConst1>1) && ((abs(cleaned_jets[1]->eta())<=2.4 && CHF1>0 && CHM1>0 && CEMF1<0.99) || abs(cleaned_jets[1]->eta())>2.4);
+   if (abs(cleaned_jets[highest_pt_jet_indices.second]->eta()) <= 3.0)
+     jet2loosejetid = (NHF1<0.99 && NEMF1<1.99 && NumConst1>1) && ((abs(cleaned_jets[highest_pt_jet_indices.second]->eta())<=2.4 && CHF1>0 && CHM1>0 && CEMF1<0.99) || abs(cleaned_jets[highest_pt_jet_indices.second]->eta())>2.4);
    else
-     jet2loosejetid = NEMF1<0.90 && cleaned_jets[1]->neutralMultiplicity()>10;
+     jet2loosejetid = NEMF1<0.90 && cleaned_jets[highest_pt_jet_indices.second]->neutralMultiplicity()>10;
+   
+   //   std::cout << "andrew debug 1" << std::endl;
+   //   std::cout << corrected_jet_pts[highest_pt_jet_indices.first]/cleaned_jets[highest_pt_jet_indices.first]->pt() << std::endl;
+   //   std::cout << corrected_jet_pts[highest_pt_jet_indices.second]/cleaned_jets[highest_pt_jet_indices.second]->pt() << std::endl;
+   //   std::cout << "andrew debug 2" << std::endl;
 
-   jet1=cleaned_jets[0]->p4();
-   jet2=cleaned_jets[1]->p4();   
-   jet1btag = std::max(0.f,cleaned_jets[0]->bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags"));
-   jet2btag = std::max(0.f,cleaned_jets[1]->bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags"));
-   jet1pujetid = cleaned_jets[0]->userFloat("pileupJetId:fullDiscriminant");
-   jet2pujetid = cleaned_jets[1]->userFloat("pileupJetId:fullDiscriminant");
+
+
+
+   jet1=cleaned_jets[highest_pt_jet_indices.first]->p4();
+   jet2=cleaned_jets[highest_pt_jet_indices.second]->p4();
+
+   jet1 *= (corrected_jet_pts[highest_pt_jet_indices.first]/cleaned_jets[highest_pt_jet_indices.first]->pt());
+   jet2 *= (corrected_jet_pts[highest_pt_jet_indices.second]/cleaned_jets[highest_pt_jet_indices.second]->pt());
+
+   jet1btag = std::max(0.f,cleaned_jets[highest_pt_jet_indices.first]->bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags"));
+   jet2btag = std::max(0.f,cleaned_jets[highest_pt_jet_indices.second]->bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags"));
+   jet1pujetid = cleaned_jets[highest_pt_jet_indices.first]->userFloat("pileupJetId:fullDiscriminant");
+   jet2pujetid = cleaned_jets[highest_pt_jet_indices.second]->userFloat("pileupJetId:fullDiscriminant");
 
    edm::Handle<pat::METCollection> mets;
    iEvent.getByToken(metToken_, mets);

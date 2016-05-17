@@ -8,6 +8,11 @@ void lhe_and_gen::defineBranches(TTree *tree){
 
   slha_header_tree_->Branch("slha_header_line",&slha_header_line_);
 
+  if (lhe_lepton_info_){
+    tree->Branch("lhelep1pdgid",&lhelep1pdgid);
+    tree->Branch("lhelep2pdgid",&lhelep2pdgid);
+  }
+
   tree->Branch("lep1_nearestparton_4mom",&lep1_nearestparton_4mom);
   tree->Branch("lep1_nearestparton_pdgid",&lep1_nearestparton_pdgid);
   tree->Branch("lep2_nearestparton_4mom",&lep2_nearestparton_4mom);
@@ -119,7 +124,7 @@ int lhe_and_gen::analyze(const edm::Event& iEvent, LorentzVector & lep1, Lorentz
   if (! isMC_)
     return 0;
 
-  if(mgreweightinfo_ || syscalcinfo_){
+  if(mgreweightinfo_ || syscalcinfo_ || lhe_lepton_info_){
 
   edm::Handle<LHEEventProduct> hLheEvt;
   iEvent.getByToken(lheEvtToken_,hLheEvt);
@@ -132,6 +137,28 @@ int lhe_and_gen::analyze(const edm::Event& iEvent, LorentzVector & lep1, Lorentz
   gen_weight = hGenEvt->weight();
 
   lhe_weight_orig = hLheEvt->originalXWGTUP();
+
+  std::vector<unsigned int> lhe_lepton_indices;
+
+  if (lhe_lepton_info_){
+    for(unsigned int i = 0; i < hLheEvt->hepeup().IDUP.size(); i++){
+
+      if (abs(hLheEvt->hepeup().IDUP[i]) == 11 || abs(hLheEvt->hepeup().IDUP[i]) == 13 || abs(hLheEvt->hepeup().IDUP[i]) == 15){
+	
+	lhe_lepton_indices.push_back(i);
+      }
+    }
+    
+    assert(lhe_lepton_indices.size() == 2);
+
+    lhelep1pdgid = hLheEvt->hepeup().IDUP[lhe_lepton_indices[0]];
+    lhelep2pdgid = hLheEvt->hepeup().IDUP[lhe_lepton_indices[1]];
+
+
+
+  }
+
+  
 
   if (syscalcinfo_){
 
@@ -399,7 +426,7 @@ lhe_and_gen::beginRun(edm::Run const& iRun)
 	continue;
       }
 
-      if ( (*iter).find("NNPDF23_lo_as_0130_qed.LHgrid") != std::string::npos){
+      if ( (*iter).find("NNPDF30_lo_as_0130.LHgrid") != std::string::npos){
 	in_NNPDF23_lo_as_0130_qed = true;
 	continue;
       }

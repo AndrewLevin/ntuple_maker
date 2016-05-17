@@ -31,6 +31,43 @@ process.source = cms.Source("PoolSource",
 
 )
 
+process.load("Configuration.Geometry.GeometryIdeal_cff") 
+process.load('Configuration.StandardSequences.Services_cff')
+process.load("Configuration.StandardSequences.MagneticField_cff")
+
+#mc https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideFrontierConditions#Global_Tags_for_Run2_MC_Producti
+process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff')
+process.GlobalTag.globaltag = '76X_mcRun2_asymptotic_v12'
+
+from CondCore.DBCommon.CondDBSetup_cfi import *
+
+
+jerString = cms.string('sqlite:src/ntuple_maker/ntuple_maker/data/Summer15_25nsV6_MC.db')
+
+process.jer = cms.ESSource("PoolDBESSource",
+        CondDBSetup,
+        toGet = cms.VPSet(
+            # Resolution
+            cms.PSet(
+                record = cms.string('JetResolutionRcd'),
+                tag    = cms.string('JR_Summer15_25nsV6_MC_PtResolution_AK4PFchs'),
+                label  = cms.untracked.string('AK4PFchs_pt')
+                ),
+
+            # Scale factors
+            cms.PSet(
+                record = cms.string('JetResolutionScaleFactorRcd'),
+                tag    = cms.string('JR_Summer15_25nsV6_MC_SF_AK4PFchs'),
+                label  = cms.untracked.string('AK4PFchs')
+                ),
+            ),
+        connect = jerString
+        )
+
+process.es_prefer_jer = cms.ESPrefer('PoolDBESSource', 'jer')
+
+
+
 process.cleanedMu = cms.EDProducer("PATMuonCleanerBySegments",
    src = cms.InputTag("slimmedMuons"),
    preselection = cms.string("track.isNonnull"),
@@ -60,7 +97,13 @@ process.demo = cms.EDAnalyzer('ntuple_maker',
   pfCands = cms.InputTag("packedPFCandidates"),                              
   pileup_summary = cms.InputTag("slimmedAddPileupInfo"),                              
   genevent = cms.InputTag("generator"),  
-rho = cms.InputTag("fixedGridRhoFastjetAll")
+rho = cms.InputTag("fixedGridRhoFastjetAll"),
+jes = cms.untracked.string("nominal"),
+jer = cms.untracked.string("nominal"),
+  lheleptoninfo = cms.untracked.bool(True),
+
+
+
 )
 
 process.p = cms.Path(process.cleanedMu*process.demo)
