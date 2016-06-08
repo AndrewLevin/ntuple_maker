@@ -106,7 +106,7 @@ public:
   edm::EDGetTokenT< pat::TriggerObjectStandAloneCollection > triggerObjectToken_;
   edm::EDGetTokenT<GenEventInfoProduct> genEvtToken_;
   edm::EDGetTokenT<double> rhoToken_;
-  edm::EDGetTokenT<LHEEventProduct> lheEvtToken_;
+  //  edm::EDGetTokenT<LHEEventProduct> lheEvtToken_;
 
   TH1F * n_events_run_over;
   TH1F * n_weighted_events_run_over;
@@ -114,6 +114,8 @@ public:
   UInt_t flags;
   UInt_t event;
   UInt_t run;
+  Float_t iso;
+
   UInt_t lumi;
   UInt_t nvtx;
   UInt_t njets;
@@ -146,7 +148,7 @@ public:
   Int_t lep2q;
 
   Float_t gen_weight;
-  Float_t lhe_weight_orig;
+  //  Float_t lhe_weight_orig;
 
   Bool_t isMC_;
   std::string lepton_flavor_;
@@ -180,7 +182,7 @@ make_loose_lepton_trees::make_loose_lepton_trees(const edm::ParameterSet& iConfi
   triggerObjectToken_( consumes< pat::TriggerObjectStandAloneCollection >(edm::InputTag("selectedPatTrigger"))),
   genEvtToken_(consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("genevent"))),
   rhoToken_(consumes<double>(iConfig.getParameter<edm::InputTag>("rho"))),
-  lheEvtToken_(consumes<LHEEventProduct>(iConfig.getParameter<edm::InputTag>("lheevent"))),
+  //  lheEvtToken_(consumes<LHEEventProduct>(iConfig.getParameter<edm::InputTag>("lheevent"))),
   isMC_(iConfig.getUntrackedParameter<bool>("isMC")),
   lepton_flavor_(iConfig.getUntrackedParameter<std::string>("lepton_flavor")),
   which_triggers_(iConfig.getUntrackedParameter<std::string>("which_triggers"))
@@ -217,8 +219,7 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
     edm::Handle<GenEventInfoProduct> hGenEvt;
     iEvent.getByToken(genEvtToken_,hGenEvt);
 
-    edm::Handle<LHEEventProduct> hLheEvt;                                                                                                                             
-    iEvent.getByToken(lheEvtToken_,hLheEvt);   
+    //edm::Handle<LHEEventProduct> hLheEvt;                                                                                                                                 //iEvent.getByToken(lheEvtToken_,hLheEvt);   
   
     if (hGenEvt->weight() > 0)
       n_weighted_events_run_over->Fill(0.5,1);
@@ -228,7 +229,7 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
 
     gen_weight = hGenEvt->weight();
 
-    lhe_weight_orig = hLheEvt->originalXWGTUP();
+    //lhe_weight_orig = hLheEvt->originalXWGTUP();
     
   }
 
@@ -335,6 +336,9 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
    n_veryloose_muons = 0;
    n_veryloose_electrons = 0;
 
+   UInt_t ie = 0;
+   UInt_t im = 0;
+
    for(UInt_t i = 0; i < muons->size(); i++){
 
      if( (*muons)[i].pt() < 10)
@@ -358,6 +362,8 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
 
 
      muon_4mom = (*muons)[i].p4();
+     im = i;
+
 
      if (passTightMuonSelectionV1((*muons)[i],PV)) {
        flags = flags | LepTightSelectionV1;
@@ -393,6 +399,8 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
        flags = flags | LepLooseSelectionV5;
 
      electron_4mom = (*electrons)[i].p4();
+     ie = i;
+
 
      if (passTightElectronSelectionV1((*electrons)[i], PV,rho))
        flags = flags | LepTightSelectionV1;
@@ -489,6 +497,9 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
      }
 
      ptjetaway=maxptjetaway;
+     
+     iso = electron_isolation((*electrons)[ie], PV,rho);
+
      electron_tree->Fill();
    }
    else if (lepton_flavor_ == "muon" && n_veryloose_muons == 1){
@@ -541,6 +552,8 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
 
      ptjetaway=maxptjetaway;
 
+     iso = muon_isolation((*muons)[im], PV);
+
      muon_tree->Fill();
 
    }
@@ -577,6 +590,7 @@ make_loose_lepton_trees::beginJob()
     muon_tree->Branch("muon_4mom",&muon_4mom);
     muon_tree->Branch("ptjetaway",&ptjetaway);
     muon_tree->Branch("metpt",&metpt);
+    muon_tree->Branch("iso",&iso);
     muon_tree->Branch("metphi",&metphi);
     muon_tree->Branch("flags",&flags);
     muon_tree->Branch("drnearestgenmuon",&drnearestgenmuon);
@@ -585,7 +599,7 @@ make_loose_lepton_trees::beginJob()
     if (isMC_) {
 
       muon_tree->Branch("gen_weight",&gen_weight);
-      muon_tree->Branch("lhe_weight_orig",&lhe_weight_orig);
+      //      muon_tree->Branch("lhe_weight_orig",&lhe_weight_orig);
 
     }
 
@@ -603,6 +617,7 @@ make_loose_lepton_trees::beginJob()
     electron_tree->Branch("ptjetaway",&ptjetaway);
     electron_tree->Branch("metpt",&metpt);
     electron_tree->Branch("metphi",&metphi);
+    electron_tree->Branch("iso",&iso);
     electron_tree->Branch("flags",&flags);
     electron_tree->Branch("drnearestgenelectron",&drnearestgenelectron);
     electron_tree->Branch("drnearestgenmuon",&drnearestgenmuon);
@@ -610,7 +625,7 @@ make_loose_lepton_trees::beginJob()
     if (isMC_) {
 
       electron_tree->Branch("gen_weight",&gen_weight);
-      electron_tree->Branch("lhe_weight_orig",&lhe_weight_orig);
+      //      electron_tree->Branch("lhe_weight_orig",&lhe_weight_orig);
     
     }
 

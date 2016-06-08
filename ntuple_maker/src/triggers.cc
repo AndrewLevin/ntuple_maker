@@ -69,11 +69,16 @@ if (which_triggers == "doublemu" || which_triggers == "doublelepton") {
   
   for (unsigned int i = 0; i < names.size(); i++) {
     
-    //std::cout << "names.triggerName(i) = " << names.triggerName(i) << std::endl;                                                                                         
+    //if (triggerResultsHandle->accept(i))
+    //	std::cout << "names.triggerName(i) = " << names.triggerName(i) << std::endl;                                                                                     
+      
+
+    
     for(unsigned int j=0;j< triggerNames.size() ;++j){
       
       std::string name = names.triggerName(i);
       
+
       if (name.find( (triggerNames)[j]) != std::string::npos && triggerResultsHandle->accept(i)){
 	//      if (name.find( (triggerNames)[j]) != std::string::npos){                                                                                               	
 	trigger_fired = kTRUE;

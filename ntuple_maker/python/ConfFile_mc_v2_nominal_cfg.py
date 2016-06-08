@@ -149,7 +149,7 @@ process.demo = cms.EDAnalyzer('ntuple_maker',
 #  jer = cms.untracked.string("up"),
   #jer = cms.untracked.string("down"),
   jer = cms.untracked.string("nominal"),
-  lheleptoninfo = cms.untracked.bool(True),                                
+  lheleptoninfo = cms.untracked.bool(False),                                
 )
 
 process.p = cms.Path(process.cleanedMu*process.demo)

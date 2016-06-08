@@ -22,6 +22,8 @@
 // class declaration
 //
 
+
+
 inline Float_t muon_isolation(const pat::Muon & muon, const reco::Vertex &vtx) {
 
   return ( muon.pfIsolationR04().sumChargedHadronPt+ std::max(0.0,muon.pfIsolationR04().sumNeutralHadronEt + muon.pfIsolationR04().sumPhotonEt - 0.5 * muon.pfIsolationR04().sumPUPt) )/muon.pt();  
@@ -48,9 +50,9 @@ inline Float_t electron_isolation(const pat::Electron & el, const reco::Vertex &
      //EffectiveArea = 0;
 
      Float_t absiso = pfIso.sumChargedHadronPt + std::max(0.0 , pfIso.sumNeutralHadronEt + pfIso.sumPhotonEt - rho * EffectiveArea );
-     Float_t relIsoWithDBeta = absiso/el.pt();
+     Float_t relIso = absiso/el.pt();
 
-     return relIsoWithDBeta;
+     return relIso;
 
 }
 
@@ -159,11 +161,6 @@ inline Bool_t passLooseMuonSelectionV5(const pat::Muon & muon, const reco::Verte
 
 }
 
-inline Bool_t passVeryLooseMuonSelection(const pat::Muon & muon, const reco::Vertex &vtx ){
-
-  return passLooseMuonSelectionV1(muon,vtx) || passLooseMuonSelectionV2(muon,vtx) || passLooseMuonSelectionV3(muon,vtx) || passLooseMuonSelectionV4(muon,vtx) || passLooseMuonSelectionV5(muon,vtx);
-
-}
 
 inline Bool_t passTightMuonIdV1(const pat::Muon & muon, const reco::Vertex &vtx) {
 
@@ -408,6 +405,12 @@ inline Bool_t passTightElectronSelectionV2(const pat::Electron & el, const reco:
      } 
 
   return pass;
+
+}    
+
+inline Bool_t passTightElectronSelectionV3(const pat::Electron & el, const reco::Vertex &PV, const double &rho) {
+
+  return el.electronID("cutBasedElectronID-Spring15-25ns-V1-standalone-tight");
 
 }    
 
@@ -789,8 +792,14 @@ inline Bool_t passLooseElectronSelectionV5(const pat::Electron & el, const reco:
 
   Bool_t pass = kFALSE;
 
+  //  std::cout << "el.chargeInfo().isGsfCtfScPixConsistent = " << el.chargeInfo().isGsfCtfScPixConsistent << std::endl;
+
   if (!el.chargeInfo().isGsfCtfScPixConsistent)
     return kFALSE;
+
+  //  std::cout << "fabs((-1) * el.gsfTrack()->dxy(PV.position())) = " << fabs((-1) * el.gsfTrack()->dxy(PV.position())) << std::endl;
+  //  std::cout << "fabs(el.gsfTrack()->dz( PV.position() )) = " << fabs(el.gsfTrack()->dz( PV.position() )) << std::endl;
+  //  std::cout << "el.passConversionVeto() = " << el.passConversionVeto() << std::endl;
 
   if(fabs(el.superCluster()->eta()) < 2.5 && fabs(el.superCluster()->eta()) > 1.479 ){
     if(
@@ -819,9 +828,19 @@ inline Bool_t passLooseElectronSelectionV5(const pat::Electron & el, const reco:
 
 inline Bool_t passVeryLooseElectronSelection(const pat::Electron & el, const reco::Vertex &PV, const double &rho) {
 
-  return passLooseElectronSelectionV5(el,PV,rho) || passLooseElectronSelectionV4(el,PV,rho) || passLooseElectronSelectionV2(el,PV,rho);
+  return passLooseElectronSelectionV5(el,PV,rho) || passLooseElectronSelectionV4(el,PV,rho) || passLooseElectronSelectionV2(el,PV,rho);;
+  //return passTightElectronSelectionV3(el,PV,rho);
 
 }    
+
+inline Bool_t passVeryLooseMuonSelection(const pat::Muon & muon, const reco::Vertex &vtx ){
+
+
+  //return passTightMuonSelectionV1(muon,vtx);
+
+  return passLooseMuonSelectionV1(muon,vtx) || passLooseMuonSelectionV2(muon,vtx) || passLooseMuonSelectionV3(muon,vtx) || passLooseMuonSelectionV4(muon,vtx) || passLooseMuonSelectionV5(muon,vtx);
+
+}
 
 
 #endif

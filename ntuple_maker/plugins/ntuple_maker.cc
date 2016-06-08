@@ -466,7 +466,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   const edm::TriggerNames &names = iEvent.triggerNames(*triggerResultsHandle);
 
   if (! trigger_fired(names,triggerResultsHandle,"doublelepton"))
-    return;
+      return;
 
   /*
 
@@ -509,6 +509,9 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   std::vector<UInt_t> veryloose_muon_indices;
   std::vector<UInt_t> veryloose_electron_indices;
+  std::vector<UInt_t> tight_muon_indices;
+  std::vector<UInt_t> tight_electron_indices;
+
 
    using namespace edm;
 
@@ -528,6 +531,9 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    edm::Handle<pat::MuonCollection> muons;
    iEvent.getByToken(muonToken_, muons);
+
+   //   std::cout << "muons->size() = " << muons->size() << std::endl;
+   //   std::cout << "electrons->size() = " << electrons->size() << std::endl;
 
    for (UInt_t i = 0; i < muons->size(); i++){
      for (UInt_t j = i+1; j < muons->size(); j++){
@@ -563,10 +569,12 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      if( (*electrons)[i].pt() < 20) 
        continue;
 
-     if (!passVeryLooseElectronSelection((*electrons)[i],PV,rho))
-       continue;
+     if (passTightElectronSelectionV2((*electrons)[i],PV,rho))
+       tight_electron_indices.push_back(i);
+     else if (!passVeryLooseElectronSelection((*electrons)[i],PV,rho))
+       veryloose_electron_indices.push_back(i);
 
-     veryloose_electron_indices.push_back(i);
+
 
    }
 
@@ -592,19 +600,19 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      //if (!passTightMuonSelectionV1((*muons)[i],PV) )
      //  continue;
 
-	 if (! passVeryLooseMuonSelection( (*muons)[i],PV ) )
-	 continue;
 
-     veryloose_muon_indices.push_back(i);
+     if (passTightMuonSelectionV1( (*muons)[i],PV ) )
+       tight_muon_indices.push_back(i);
+     else if (passVeryLooseMuonSelection( (*muons)[i],PV ) )
+       veryloose_muon_indices.push_back(i);
+     
 
     }
 
-   //std::cout << veryloose_muon_indices.size() << " " << veryloose_electron_indices.size() << std::endl;
+   if(tight_muon_indices.size() >= 2){
 
-   if(veryloose_muon_indices.size() >= 2){
-
-     UInt_t i1 = veryloose_muon_indices[0];
-     UInt_t i2 = veryloose_muon_indices[1];
+     UInt_t i1 = tight_muon_indices[0];
+     UInt_t i2 = tight_muon_indices[1];
 
      if (passLooseMuonSelectionV1((*muons)[i1],PV) )
        flags = flags | Lep1LooseSelectionV1;
@@ -636,11 +644,13 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      if (passLooseMuonSelectionV5((*muons)[i2],PV) )
        flags = flags | Lep2LooseSelectionV5;
 
-     if (passTightMuonSelectionV1((*muons)[i1],PV)) 
+     if (passTightMuonSelectionV1((*muons)[i1],PV)) {
        flags = flags | Lep1TightSelectionV1;
 
-     if (passTightMuonSelectionV1((*muons)[i2],PV)) 
+     }
+     if (passTightMuonSelectionV1((*muons)[i2],PV)) {
        flags = flags | Lep2TightSelectionV1;
+     }
 
      if (passTightMuonSelectionV2((*muons)[i1],PV)) 
        flags = flags | Lep1TightSelectionV2;
@@ -686,10 +696,10 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 
    }
-   else if (veryloose_muon_indices.size() >=1 && veryloose_electron_indices.size() >= 1){
+   else if (tight_muon_indices.size() >=1 && tight_electron_indices.size() >= 1){
 
-     UInt_t im = veryloose_muon_indices[0];
-     UInt_t ie = veryloose_electron_indices[0];
+     UInt_t im = tight_muon_indices[0];
+     UInt_t ie = tight_electron_indices[0];
 
      if (passLooseMuonSelectionV1((*muons)[im],PV))
        flags = flags | Lep1LooseSelectionV1;
@@ -724,6 +734,8 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        flags = flags | Lep2TightSelectionV1;
      if (passTightElectronSelectionV2((*electrons)[ie], PV,rho))
        flags = flags | Lep2TightSelectionV2;
+     if (passTightElectronSelectionV3((*electrons)[ie], PV,rho))
+       flags = flags | Lep2TightSelectionV3;
      if (passLooseElectronSelectionV1((*electrons)[ie],PV,rho))
 	 flags = flags | Lep2LooseSelectionV1;
      if (passLooseElectronSelectionV2((*electrons)[ie],PV,rho))
@@ -765,10 +777,10 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      }
 
      
-   } else if (veryloose_electron_indices.size() >= 2){
+   } else if (tight_electron_indices.size() >= 2){
 
-     UInt_t i1 = veryloose_electron_indices[0];
-     UInt_t i2 = veryloose_electron_indices[1];
+     UInt_t i1 = tight_electron_indices[0];
+     UInt_t i2 = tight_electron_indices[1];
 
      lep1= (*electrons)[i1].p4();
      lep1q = (*electrons)[i1].charge();
@@ -790,6 +802,10 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	 flags = flags | Lep1TightSelectionV2;
      if (passTightElectronSelectionV2((*electrons)[i2],PV,rho))
 	 flags = flags | Lep2TightSelectionV2;
+     if (passTightElectronSelectionV3((*electrons)[i1],PV,rho))
+	 flags = flags | Lep1TightSelectionV3;
+     if (passTightElectronSelectionV3((*electrons)[i2],PV,rho))
+	 flags = flags | Lep2TightSelectionV3;
 
      if (passLooseElectronSelectionV1((*electrons)[i1],PV,rho))
 	 flags = flags | Lep1LooseSelectionV1;
@@ -857,6 +873,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if(tau.tauID("byMediumIsolationMVArun2v1DBnewDMwLT"))
 	 flags = flags | WLLJJVetoV3;
      }
+
 
 
    std::vector<float> corrected_jet_pts;
@@ -945,6 +962,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    if (cleaned_jets.size() < 2) 
      return;
 
+
    std::pair<int,int> highest_pt_jet_indices = get_two_highest_pt_jet_indices(corrected_jet_pts);
 
    if (cleaned_jets[highest_pt_jet_indices.first]->pt() < 20 || cleaned_jets[highest_pt_jet_indices.second]->pt() < 20)
@@ -1010,7 +1028,6 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      metgenmetpt = met.genMET()->pt();
    else
      metgenmetpt = 0;
-
 
 
    //metptshiftup = met.shiftedPt(pat::MET::JetEnUp);
