@@ -176,13 +176,15 @@ test_lepton_ids::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
    edm::Handle<pat::MuonCollection> muons;
    iEvent.getByToken(muonToken_, muons);
 
-   //for(UInt_t i = 0; i < muons->size(); i++){
-   //
-   //     std::cout << passTightMuonIdV1((*muons)[i], PV) << " " << (*muons)[i].isTightMuon(PV) << std::endl;
-   //
-   //     assert(passTightMuonIdV1((*muons)[i], PV) == (*muons)[i].isTightMuon(PV));
-   //     
-   //   }
+   for(UInt_t i = 0; i < muons->size(); i++){
+   
+     std::cout << passTightMuonIdV1((*muons)[i], PV) << " " << ((*muons)[i].isTightMuon(PV) && fabs((*muons)[i].muonBestTrack()->dxy(PV.position())) < 0.02) << std::endl;
+   
+     assert(passTightMuonIdV1((*muons)[i], PV) == ((*muons)[i].isTightMuon(PV) && fabs((*muons)[i].muonBestTrack()->dxy(PV.position())) < 0.02) );
+        
+      }
+
+   return;
 
    //edm::Handle<edm::ValueMap<bool> > medium_id_decisions;
    //edm::Handle<edm::ValueMap<bool> > tight_id_decisions; 
@@ -192,7 +194,6 @@ test_lepton_ids::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
    
    edm::Handle<pat::ElectronCollection> electrons;
 
-
    //edm::Handle<edm::View<reco::GsfElectron> > electrons;
    iEvent.getByToken(electronToken_, electrons);
 
@@ -200,10 +201,6 @@ test_lepton_ids::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
 
      assert( (*electrons)[i].isElectronIDAvailable("cutBasedElectronID-Spring15-25ns-V1-standalone-medium") );
      assert( (*electrons)[i].isElectronIDAvailable("cutBasedElectronID-Spring15-25ns-V1-standalone-tight") );
-     //std::cout << (*electrons)[i].electronID("cutBasedElectronID-Spring15-25ns-V1-standalone-tight") << std::endl;
-     //std::cout << (*electrons)[i].electronID("cutBasedElectronID-Spring15-25ns-V1-standalone-tight") << std::endl;
-
-     //std::cout << "andrew debug 0" << std::endl;
 
      std::cout << "(*electrons)[i].pt() = " << (*electrons)[i].pt() << std::endl;
 

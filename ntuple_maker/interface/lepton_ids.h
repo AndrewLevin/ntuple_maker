@@ -179,6 +179,22 @@ inline Bool_t passTightMuonIdV1(const pat::Muon & muon, const reco::Vertex &vtx)
 
 }
 
+//should be the same as the member function is istightmuon()
+inline Bool_t passTightMuonIdV2(const pat::Muon & muon, const reco::Vertex &vtx) {
+
+  if(!muon.isPFMuon() || !muon.isGlobalMuon() ) return false;
+
+  bool muID = muon.isGlobalMuon() && muon.globalTrack()->normalizedChi2()<10. && muon.globalTrack()->hitPattern().numberOfValidMuonHits() >0 && (muon.numberOfMatchedStations() > 1);
+  
+  bool hits = muon.innerTrack()->hitPattern().trackerLayersWithMeasurement() > 5 &&
+    muon.innerTrack()->hitPattern().numberOfValidPixelHits() > 0; 
+
+  bool ip = fabs(muon.muonBestTrack()->dxy(vtx.position())) < 0.2 && fabs(muon.muonBestTrack()->dz(vtx.position())) < 0.5;
+  
+  return muID && hits && ip;
+
+}
+
 
 inline Bool_t passTightMuonSelectionV1(const pat::Muon & muon, const reco::Vertex &vtx) {
 
@@ -245,23 +261,6 @@ inline Bool_t passTightElectronSelectionV1(const pat::Electron & el, const reco:
      else
        ooEmooP = fabs(1.0/el.ecalEnergy() - el.eSuperClusterOverP()/el.ecalEnergy() );
 
-     /*
-
-     std::cout << "rho = " << rho << std::endl;
-     std::cout << el.superCluster()->eta() << std::endl;
-     std::cout << fabs(el.deltaEtaSuperClusterTrackAtVtx()) << std::endl;
-     std::cout << fabs(el.deltaPhiSuperClusterTrackAtVtx()) << std::endl;
-     std::cout << el.full5x5_sigmaIetaIeta() << std::endl;
-     std::cout << el.hcalOverEcal() << std::endl;
-     std::cout << fabs((-1) * el.gsfTrack()->dxy(PV.position())) << std::endl;
-     std::cout << fabs(el.gsfTrack()->dz( PV.position() )) << std::endl;
-     std::cout << fabs(ooEmooP) << std::endl;
-     std::cout << relIsoWithDBeta  << std::endl;
-     std::cout << el.passConversionVeto() << std::endl;
-     std::cout << el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) << std::endl;
-
-     */
-
      //medium working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
      if(fabs(el.superCluster()->eta()) < 2.5 && fabs(el.superCluster()->eta()) > 1.479 ){
        if(
@@ -322,6 +321,7 @@ inline Bool_t passTightElectronSelectionV2(const pat::Electron & el, const reco:
   if (!el.chargeInfo().isGsfCtfScPixConsistent)
     return kFALSE;
 
+
      reco::GsfElectron::PflowIsolationVariables pfIso = el.pfIsolationVariables();
 
      //see here https://indico.cern.ch/event/369239/contribution/4/attachments/1134761/1623262/talk_effective_areas_25ns.pdf slide 12
@@ -354,6 +354,23 @@ inline Bool_t passTightElectronSelectionV2(const pat::Electron & el, const reco:
      }
      else
        ooEmooP = fabs(1.0/el.ecalEnergy() - el.eSuperClusterOverP()/el.ecalEnergy() );
+
+     /*
+
+     std::cout << "rho = " << rho << std::endl;
+     std::cout << el.superCluster()->eta() << std::endl;
+     std::cout << fabs(el.deltaEtaSuperClusterTrackAtVtx()) << std::endl;
+     std::cout << fabs(el.deltaPhiSuperClusterTrackAtVtx()) << std::endl;
+     std::cout << el.full5x5_sigmaIetaIeta() << std::endl;
+     std::cout << el.hcalOverEcal() << std::endl;
+     std::cout << fabs((-1) * el.gsfTrack()->dxy(PV.position())) << std::endl;
+     std::cout << fabs(el.gsfTrack()->dz( PV.position() )) << std::endl;
+     std::cout << fabs(ooEmooP) << std::endl;
+     std::cout << relIsoWithDBeta  << std::endl;
+     std::cout << el.passConversionVeto() << std::endl;
+     std::cout << el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) << std::endl;
+
+     */
 
      //tight working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
      if(fabs(el.superCluster()->eta()) < 2.5 && fabs(el.superCluster()->eta()) > 1.479 ){

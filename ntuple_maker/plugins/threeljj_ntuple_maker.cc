@@ -50,6 +50,8 @@
 #include "ntuple_maker/ntuple_maker/interface/threeljj_enum_definition.h"
 #include "ntuple_maker/ntuple_maker/interface/lepton_ids.h"
 
+#include "ntuple_maker/ntuple_maker/interface/triggers.h"
+
 #include "ntuple_maker/ntuple_maker/interface/lhe_and_gen.h"
 
 #include "DataFormats/PatCandidates/interface/PackedGenParticle.h"
@@ -140,19 +142,26 @@ public:
   LorentzVector lep1;
   LorentzVector lep2;
   LorentzVector lep3;
+
+  Float_t lep1iso;
+  Float_t lep2iso;
+  Float_t lep3iso;
+
   Int_t lep1id;
   Int_t lep2id;
   Int_t lep3id;
   Int_t lep1q;
   Int_t lep2q;
   Int_t lep3q;
-  lhe_and_gen lhe_and_gen_object; //separate the part that runs over the generator and lhe information
+  //  lhe_and_gen lhe_and_gen_object; //separate the part that runs over the generator and lhe information
 
   bool syscalcinfo_;
   bool mgreweightinfo_;
 
   bool apply_trigger_;
   bool isMC_;
+
+  Float_t gen_weight;
 
 };
 
@@ -176,7 +185,8 @@ threeljj_ntuple_maker::threeljj_ntuple_maker(const edm::ParameterSet& iConfig):
   jetToken_(consumes<pat::JetCollection>(iConfig.getParameter<edm::InputTag>("jets"))),
   fatjetToken_(consumes<pat::JetCollection>(iConfig.getParameter<edm::InputTag>("fatjets"))),
   metToken_(consumes<pat::METCollection>(iConfig.getParameter<edm::InputTag>("mets"))),
-  triggerResultsToken_(consumes< edm::TriggerResults >(edm::InputTag("TriggerResults","","HLT"))),
+    triggerResultsToken_(consumes< edm::TriggerResults >(edm::InputTag("TriggerResults","","HLT"))),
+  //  triggerResultsToken_(consumes< edm::TriggerResults >(edm::InputTag("TriggerResults","","HLT2"))),
   triggerObjectToken_( consumes< pat::TriggerObjectStandAloneCollection >(edm::InputTag("selectedPatTrigger"))),
   //  lheRunInfoLabel_(iConfig.getParameter<edm::InputTag>("lheruninfo")),
   pfToken_(consumes<pat::PackedCandidateCollection>(iConfig.getParameter<edm::InputTag>("pfCands"))),
@@ -190,15 +200,6 @@ threeljj_ntuple_maker::threeljj_ntuple_maker(const edm::ParameterSet& iConfig):
 
 {
   //now do what ever initialization is needed
-
-  lhe_and_gen_object.isMC_ = isMC_;
-  lhe_and_gen_object.prunedGenToken_ = consumes<edm::View<reco::GenParticle> >(iConfig.getParameter<edm::InputTag>("prunedgenparticles"));
-  lhe_and_gen_object.packedGenToken_ = consumes<edm::View<pat::PackedGenParticle> >(iConfig.getParameter<edm::InputTag>("packedgenparticles"));
-  lhe_and_gen_object.lheEvtToken_ = consumes<LHEEventProduct>(iConfig.getParameter<edm::InputTag>("lheevent"));
-  lhe_and_gen_object.genEvtToken_ = consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("genevent"));
-  lhe_and_gen_object.syscalcinfo_ = syscalcinfo_;
-  lhe_and_gen_object.mgreweightinfo_ = mgreweightinfo_;
-  lhe_and_gen_object.lheRunInfoLabel_ = iConfig.getParameter<edm::InputTag>("lheruninfo");
 
   consumes< LHERunInfoProduct, edm::InRun > (iConfig.getParameter<edm::InputTag>("lheruninfo"));
 
@@ -237,6 +238,10 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       n_weighted_events_run_over->Fill(0.5,1);
     else
       n_weighted_events_run_over->Fill(0.5,-1);
+
+    gen_weight = hGenEvt->weight();
+    
+
   }
 
 
@@ -258,40 +263,10 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   iEvent.getByToken(triggerResultsToken_,triggerResultsHandle);
 
-  std::vector<std::string> triggerNames;
-
-  triggerNames.push_back("HLT_Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_DZ_v");
-  triggerNames.push_back("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_v");
-//triggerNames.push_back("HLT_Mu17_Mu8_v");
-  triggerNames.push_back("HLT_Mu8_TrkIsoVVL_Ele17_CaloIdL_TrackIdL_IsoVL_v");
-  triggerNames.push_back("HLT_Mu17_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v");
-  triggerNames.push_back("HLT_Ele17_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v");
-    //triggerNames.push_back("HLT_Ele17_CaloIdT_TrkIdVL_CaloIsoVL_TrkIsoVL_Ele8_CaloIdT_TrkIdVL_CaloIsoVL_TrkIsoVL_v");
-    //triggerNames.push_back("HLT_Ele17_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_Ele8_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_v");
-
   const edm::TriggerNames &names = iEvent.triggerNames(*triggerResultsHandle);
 
-  edm::Handle<pat::TriggerObjectStandAloneCollection > triggerObjectHandle;
-
-  Bool_t trigger_fired = kFALSE;
-
-  for (unsigned int i = 0; i < names.size(); i++) {
-
-    //std::cout << "names.triggerName(i) = " << names.triggerName(i) << std::endl;
-
-    for(unsigned int j=0;j< triggerNames.size() ;++j){
-
-      std::string name = names.triggerName(i);
-
-      if (name.find( (triggerNames)[j]) != std::string::npos && triggerResultsHandle->accept(i)){
-
-	trigger_fired = kTRUE;
-	
-      }
-    }
-  }
-
-  if (! trigger_fired && apply_trigger_)
+  //  if (apply_trigger_ && ! trigger_fired(names,triggerResultsHandle,"soup"))
+      if (apply_trigger_ && ! trigger_fired(names,triggerResultsHandle,"doublelepton"))
     return;
 
   /*
@@ -335,6 +310,8 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   std::vector<UInt_t> veryloose_muon_indices;
   std::vector<UInt_t> veryloose_electron_indices;
+  std::vector<UInt_t> tight_muon_indices;
+  std::vector<UInt_t> tight_electron_indices;
 
    using namespace edm;
 
@@ -361,10 +338,19 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
      if( (*electrons)[i].pt() < 20) 
        continue;
 
-     if (!passVeryLooseElectronSelection((*electrons)[i],PV,rho))
-       continue;
+     bool should_be_cleaned = false;
 
-     veryloose_electron_indices.push_back(i);
+     for (UInt_t j = 0; j < muons->size(); j++){
+       if (reco::deltaR((*electrons)[i],(*muons)[j]) < 0.05 && passTightMuonIdV2((*muons)[j],PV))
+         should_be_cleaned = true;
+     }
+
+     if (should_be_cleaned) continue;
+
+     if (passTightElectronSelectionV2((*electrons)[i],PV,rho))
+       tight_electron_indices.push_back(i);
+     else  if (passVeryLooseElectronSelection((*electrons)[i],PV,rho))
+       veryloose_electron_indices.push_back(i);
 
    }
 
@@ -373,54 +359,36 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
      if ((*muons)[i].pt() < 20)
        continue;
 
-     if (! passVeryLooseMuonSelection( (*muons)[i],PV ) )
-       continue;
-
-     veryloose_muon_indices.push_back(i);
+     if (passTightMuonSelectionV1( (*muons)[i],PV ) )
+       tight_muon_indices.push_back(i);
+     else if (passVeryLooseMuonSelection( (*muons)[i],PV ) )
+       veryloose_muon_indices.push_back(i);
 
     }
 
-   if(veryloose_muon_indices.size() >= 3){
+   /*
 
-     UInt_t i1 = veryloose_muon_indices[0];
-     UInt_t i2 = veryloose_muon_indices[1];
-     UInt_t i3 = veryloose_muon_indices[2];
+      std::cout << "veryloose_muon_indices.size() = " << veryloose_muon_indices.size() << std::endl;
+      std::cout << "veryloose_electron_indices.size() = " << veryloose_electron_indices.size() << std::endl;
+     std::cout << "tight_muon_indicies.size() = " << tight_muon_indices.size() << std::endl;
+     std::cout << "tight_electron_indicies.size() = " << tight_electron_indices.size() << std::endl;
 
-     if (passLooseMuonSelectionV1((*muons)[i1],PV) )
-       flags = flags | Lep1LooseSelectionV1;
+   */
 
-     if (passLooseMuonSelectionV1((*muons)[i2],PV) )
-       flags = flags | Lep2LooseSelectionV1;
+   if(tight_muon_indices.size() >= 3){
 
-     if (passLooseMuonSelectionV1((*muons)[i3],PV) )
-       flags = flags | Lep3LooseSelectionV1;
+     UInt_t i1 = tight_muon_indices[0];
+     UInt_t i2 = tight_muon_indices[1];
+     UInt_t i3 = tight_muon_indices[2];
 
-     if (passLooseMuonSelectionV2((*muons)[i1],PV) )
-       flags = flags | Lep1LooseSelectionV2;
+     if (passLooseMuonSelectionV5((*muons)[i1],PV) )
+       flags = flags | Lep1LooseSelectionV5;
 
-     if (passLooseMuonSelectionV2((*muons)[i2],PV) )
-       flags = flags | Lep2LooseSelectionV2;
+     if (passLooseMuonSelectionV5((*muons)[i2],PV) )
+       flags = flags | Lep2LooseSelectionV5;
 
-     if (passLooseMuonSelectionV2((*muons)[i3],PV) )
-       flags = flags | Lep3LooseSelectionV2;
-
-     if (passLooseMuonSelectionV3((*muons)[i1],PV) )
-       flags = flags | Lep1LooseSelectionV3;
-
-     if (passLooseMuonSelectionV3((*muons)[i2],PV) )
-       flags = flags | Lep2LooseSelectionV3;
-
-     if (passLooseMuonSelectionV3((*muons)[i3],PV) )
-       flags = flags | Lep3LooseSelectionV3;
-
-     if (passLooseMuonSelectionV4((*muons)[i1],PV) )
-       flags = flags | Lep1LooseSelectionV4;
-
-     if (passLooseMuonSelectionV4((*muons)[i2],PV) )
-       flags = flags | Lep2LooseSelectionV4;
-
-     if (passLooseMuonSelectionV4((*muons)[i3],PV) )
-       flags = flags | Lep3LooseSelectionV4;
+     if (passLooseMuonSelectionV5((*muons)[i3],PV) )
+       flags = flags | Lep3LooseSelectionV5;
 
      if (passTightMuonSelectionV1((*muons)[i1],PV)) 
        flags = flags | Lep1TightSelectionV1;
@@ -452,27 +420,30 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
      lep1 = (*muons)[i1].p4();
      lep1q = (*muons)[i1].charge();
      lep1id = (*muons)[i1].pdgId();
+     lep1iso = muon_isolation((*muons)[i1],PV);
 
      lep2 = (*muons)[i2].p4();
      lep2q = (*muons)[i2].charge();
      lep2id = (*muons)[i2].pdgId();
+     lep2iso = muon_isolation((*muons)[i2],PV);
 
      lep3 = (*muons)[i3].p4();
      lep3q = (*muons)[i3].charge();
      lep3id = (*muons)[i3].pdgId();
+     lep3iso = muon_isolation((*muons)[i3],PV);
      
    }
-   else if (veryloose_muon_indices.size() >=2 && veryloose_electron_indices.size() >= 1){
+   else if (tight_muon_indices.size() >=2 && tight_electron_indices.size() >= 1){
 
-     UInt_t im1 = veryloose_muon_indices[0];
-     UInt_t im2 = veryloose_muon_indices[1];
-     UInt_t ie = veryloose_electron_indices[0];
+     UInt_t im1 = tight_muon_indices[0];
+     UInt_t im2 = tight_muon_indices[1];
+     UInt_t ie = tight_electron_indices[0];
 
-     if (passLooseMuonSelectionV1((*muons)[im1],PV))
-       flags = flags | Lep1LooseSelectionV1;
+     if (passLooseMuonSelectionV5((*muons)[im1],PV))
+       flags = flags | Lep1LooseSelectionV5;
 
-     if (passLooseMuonSelectionV1((*muons)[im2],PV))
-       flags = flags | Lep2LooseSelectionV1;
+     if (passLooseMuonSelectionV5((*muons)[im2],PV))
+       flags = flags | Lep2LooseSelectionV5;
 
      if (passTightMuonSelectionV1((*muons)[im1],PV)) 
        flags = flags | Lep1TightSelectionV1;
@@ -495,32 +466,33 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
      lep1 = (*muons)[im1].p4();
      lep1q = (*muons)[im1].charge();
      lep1id = (*muons)[im1].pdgId();
+     lep1iso = muon_isolation((*muons)[im1],PV);
 
      lep2 = (*muons)[im2].p4();
      lep2q = (*muons)[im2].charge();
      lep2id = (*muons)[im2].pdgId();
+     lep2iso = muon_isolation((*muons)[im2],PV);
 
      if (passTightElectronSelectionV1((*electrons)[ie], PV,rho))
-       flags = flags | Lep2TightSelectionV1;
+       flags = flags | Lep3TightSelectionV1;
      if (passTightElectronSelectionV2((*electrons)[ie], PV,rho))
-       flags = flags | Lep2TightSelectionV2;
-     if (passLooseElectronSelectionV1((*electrons)[ie],PV,rho))
-	 flags = flags | Lep2LooseSelectionV1;
-     if (passLooseElectronSelectionV2((*electrons)[ie],PV,rho))
-	 flags = flags | Lep2LooseSelectionV2;
+       flags = flags | Lep3TightSelectionV2;
+     if (passLooseElectronSelectionV5((*electrons)[ie],PV,rho))
+	 flags = flags | Lep3LooseSelectionV5;
        
      lep3= (*electrons)[ie].p4();
      lep3q = (*electrons)[ie].charge();
      lep3id = (*electrons)[ie].pdgId();
+     lep3iso = electron_isolation((*electrons)[ie],PV,rho);
      
-   } else if (veryloose_muon_indices.size() >=1 && veryloose_electron_indices.size() >= 2) {
+   } else if (tight_muon_indices.size() >=1 && tight_electron_indices.size() >= 2) {
 
-     UInt_t im = veryloose_muon_indices[0];
-     UInt_t ie1 = veryloose_electron_indices[0];
-     UInt_t ie2 = veryloose_electron_indices[1];
+     UInt_t im = tight_muon_indices[0];
+     UInt_t ie1 = tight_electron_indices[0];
+     UInt_t ie2 = tight_electron_indices[1];
 
-     if (passLooseMuonSelectionV1((*muons)[im],PV))
-       flags = flags | Lep1LooseSelectionV1;
+     if (passLooseMuonSelectionV5((*muons)[im],PV))
+       flags = flags | Lep1LooseSelectionV5;
 
      if (passTightMuonSelectionV1((*muons)[im],PV)) 
        flags = flags | Lep1TightSelectionV1;
@@ -534,52 +506,53 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
      lep1 = (*muons)[im].p4();
      lep1q = (*muons)[im].charge();
      lep1id = (*muons)[im].pdgId();
+     lep1iso = muon_isolation((*muons)[im],PV);
 
      if (passTightElectronSelectionV1((*electrons)[ie1], PV,rho))
        flags = flags | Lep2TightSelectionV1;
      if (passTightElectronSelectionV2((*electrons)[ie1], PV,rho))
        flags = flags | Lep2TightSelectionV2;
-     if (passLooseElectronSelectionV1((*electrons)[ie1],PV,rho))
-	 flags = flags | Lep2LooseSelectionV1;
-     if (passLooseElectronSelectionV2((*electrons)[ie1],PV,rho))
-	 flags = flags | Lep2LooseSelectionV2;
+     if (passLooseElectronSelectionV5((*electrons)[ie1],PV,rho))
+	 flags = flags | Lep2LooseSelectionV5;
 
      if (passTightElectronSelectionV1((*electrons)[ie2], PV,rho))
        flags = flags | Lep3TightSelectionV1;
      if (passTightElectronSelectionV2((*electrons)[ie2], PV,rho))
        flags = flags | Lep3TightSelectionV2;
-     if (passLooseElectronSelectionV1((*electrons)[ie2],PV,rho))
-	 flags = flags | Lep3LooseSelectionV1;
-     if (passLooseElectronSelectionV2((*electrons)[ie2],PV,rho))
-	 flags = flags | Lep3LooseSelectionV2;
+     if (passLooseElectronSelectionV5((*electrons)[ie2],PV,rho))
+	 flags = flags | Lep3LooseSelectionV5;
 
-       
      lep2= (*electrons)[ie1].p4();
      lep2q = (*electrons)[ie1].charge();
      lep2id = (*electrons)[ie1].pdgId();
+     lep2iso = electron_isolation((*electrons)[ie1],PV,rho);
 
      lep3= (*electrons)[ie2].p4();
      lep3q = (*electrons)[ie2].charge();
      lep3id = (*electrons)[ie2].pdgId();
+     lep2iso = electron_isolation((*electrons)[ie2],PV,rho);
 
-   }else if (veryloose_electron_indices.size() >= 3){
+   } else if (tight_electron_indices.size() >= 3){
 
-     UInt_t i1 = veryloose_electron_indices[0];
-     UInt_t i2 = veryloose_electron_indices[1];
-     UInt_t i3 = veryloose_electron_indices[2];
+     UInt_t i1 = tight_electron_indices[0];
+     UInt_t i2 = tight_electron_indices[1];
+     UInt_t i3 = tight_electron_indices[2];
 
 
      lep1= (*electrons)[i1].p4();
      lep1q = (*electrons)[i1].charge();
      lep1id = (*electrons)[i1].pdgId();
+     lep1iso = electron_isolation((*electrons)[i1],PV,rho);
 
      lep2= (*electrons)[i2].p4();
      lep2q = (*electrons)[i2].charge();
      lep2id = (*electrons)[i2].pdgId();
+     lep2iso = electron_isolation((*electrons)[i2],PV,rho);
 
      lep3= (*electrons)[i3].p4();
      lep3q = (*electrons)[i3].charge();
      lep3id = (*electrons)[i3].pdgId();
+     lep3iso = electron_isolation((*electrons)[i3],PV,rho);
 
      if (passTightElectronSelectionV1((*electrons)[i1],PV,rho))
 	 flags = flags | Lep1TightSelectionV1;
@@ -596,23 +569,219 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	 flags = flags | Lep3TightSelectionV2;
 
 
-     if (passLooseElectronSelectionV1((*electrons)[i1],PV,rho))
-	 flags = flags | Lep1LooseSelectionV1;
-     if (passLooseElectronSelectionV1((*electrons)[i2],PV,rho))
-	 flags = flags | Lep2LooseSelectionV1;
-     if (passLooseElectronSelectionV1((*electrons)[i3],PV,rho))
-	 flags = flags | Lep3LooseSelectionV1;
-     if (passLooseElectronSelectionV2((*electrons)[i1],PV,rho))
-	 flags = flags | Lep1LooseSelectionV2;
-     if (passLooseElectronSelectionV2((*electrons)[i2],PV,rho))
-	 flags = flags | Lep2LooseSelectionV2;
-     if (passLooseElectronSelectionV2((*electrons)[i3],PV,rho))
-	 flags = flags | Lep3LooseSelectionV2;
+     if (passLooseElectronSelectionV5((*electrons)[i1],PV,rho))
+	 flags = flags | Lep1LooseSelectionV5;
+     if (passLooseElectronSelectionV5((*electrons)[i2],PV,rho))
+	 flags = flags | Lep2LooseSelectionV5;
+     if (passLooseElectronSelectionV5((*electrons)[i3],PV,rho))
+	 flags = flags | Lep3LooseSelectionV5;
 
-   } else 
+   } else if(tight_muon_indices.size() >= 2 && veryloose_muon_indices.size() >= 1){
+
+     UInt_t i1 = tight_muon_indices[0];
+     UInt_t i2 = tight_muon_indices[1];
+     UInt_t i3 = veryloose_muon_indices[0];
+
+     if (passLooseMuonSelectionV5((*muons)[i1],PV) )
+       flags = flags | Lep1LooseSelectionV5;
+
+     if (passLooseMuonSelectionV5((*muons)[i2],PV) )
+       flags = flags | Lep2LooseSelectionV5;
+
+     if (passLooseMuonSelectionV5((*muons)[i3],PV) )
+       flags = flags | Lep3LooseSelectionV5;
+
+     if (passTightMuonSelectionV1((*muons)[i1],PV)) 
+       flags = flags | Lep1TightSelectionV1;
+
+     if (passTightMuonSelectionV1((*muons)[i2],PV)) 
+       flags = flags | Lep2TightSelectionV1;
+
+     if (passTightMuonSelectionV1((*muons)[i3],PV)) 
+       flags = flags | Lep3TightSelectionV1;
+
+     if (passTightMuonSelectionV2((*muons)[i1],PV)) 
+       flags = flags | Lep1TightSelectionV2;
+
+     if (passTightMuonSelectionV2((*muons)[i2],PV)) 
+       flags = flags | Lep2TightSelectionV2;
+
+     if (passTightMuonSelectionV2((*muons)[i3],PV)) 
+       flags = flags | Lep3TightSelectionV2;
+
+     if (passTightMuonSelectionV3((*muons)[i1],PV)) 
+       flags = flags | Lep1TightSelectionV3;
+
+     if (passTightMuonSelectionV3((*muons)[i2],PV)) 
+       flags = flags | Lep2TightSelectionV3;
+
+     if (passTightMuonSelectionV3((*muons)[i3],PV)) 
+       flags = flags | Lep3TightSelectionV3;
+
+     lep1 = (*muons)[i1].p4();
+     lep1q = (*muons)[i1].charge();
+     lep1id = (*muons)[i1].pdgId();
+     lep1iso = muon_isolation((*muons)[i1],PV);
+
+     lep2 = (*muons)[i2].p4();
+     lep2q = (*muons)[i2].charge();
+     lep2id = (*muons)[i2].pdgId();
+     lep2iso = muon_isolation((*muons)[i2],PV);
+
+     lep3 = (*muons)[i3].p4();
+     lep3q = (*muons)[i3].charge();
+     lep3id = (*muons)[i3].pdgId();
+     lep3iso = muon_isolation((*muons)[i3],PV);
+     
+   } else if (tight_muon_indices.size() >=2 && veryloose_electron_indices.size() >= 1){
+
+     UInt_t im1 = tight_muon_indices[0];
+     UInt_t im2 = tight_muon_indices[1];
+     UInt_t ie = veryloose_electron_indices[0];
+
+     if (passLooseMuonSelectionV5((*muons)[im1],PV))
+       flags = flags | Lep1LooseSelectionV5;
+
+     if (passLooseMuonSelectionV5((*muons)[im2],PV))
+       flags = flags | Lep2LooseSelectionV5;
+
+     if (passTightMuonSelectionV1((*muons)[im1],PV)) 
+       flags = flags | Lep1TightSelectionV1;
+
+     if (passTightMuonSelectionV1((*muons)[im2],PV)) 
+       flags = flags | Lep2TightSelectionV1;
+
+     if (passTightMuonSelectionV2((*muons)[im1],PV)) 
+       flags = flags | Lep1TightSelectionV2;
+
+     if (passTightMuonSelectionV2((*muons)[im2],PV)) 
+       flags = flags | Lep2TightSelectionV2;
+
+     if (passTightMuonSelectionV3((*muons)[im1],PV) ) 
+       flags = flags | Lep1TightSelectionV3;
+
+     if (passTightMuonSelectionV3((*muons)[im2],PV) ) 
+       flags = flags | Lep2TightSelectionV3;
+
+     lep1 = (*muons)[im1].p4();
+     lep1q = (*muons)[im1].charge();
+     lep1id = (*muons)[im1].pdgId();
+     lep1iso = muon_isolation((*muons)[im1],PV);
+
+     lep2 = (*muons)[im2].p4();
+     lep2q = (*muons)[im2].charge();
+     lep2id = (*muons)[im2].pdgId();
+     lep2iso = muon_isolation((*muons)[im2],PV);
+
+     if (passTightElectronSelectionV1((*electrons)[ie], PV,rho))
+       flags = flags | Lep3TightSelectionV1;
+     if (passTightElectronSelectionV2((*electrons)[ie], PV,rho))
+       flags = flags | Lep3TightSelectionV2;
+     if (passLooseElectronSelectionV5((*electrons)[ie],PV,rho))
+	 flags = flags | Lep3LooseSelectionV5;
+       
+     lep3= (*electrons)[ie].p4();
+     lep3q = (*electrons)[ie].charge();
+     lep3id = (*electrons)[ie].pdgId();
+     lep3iso = electron_isolation((*electrons)[ie],PV,rho);
+
+
+   } else if (veryloose_muon_indices.size() >=1 && tight_electron_indices.size() >= 2) {
+
+     UInt_t im = veryloose_muon_indices[0];
+     UInt_t ie1 = tight_electron_indices[0];
+     UInt_t ie2 = tight_electron_indices[1];
+
+     if (passLooseMuonSelectionV5((*muons)[im],PV))
+       flags = flags | Lep1LooseSelectionV5;
+
+     if (passTightMuonSelectionV1((*muons)[im],PV)) 
+       flags = flags | Lep1TightSelectionV1;
+
+     if (passTightMuonSelectionV2((*muons)[im],PV)) 
+       flags = flags | Lep1TightSelectionV2;
+
+     if (passTightMuonSelectionV3((*muons)[im],PV) ) 
+       flags = flags | Lep1TightSelectionV3;
+
+     lep1 = (*muons)[im].p4();
+     lep1q = (*muons)[im].charge();
+     lep1id = (*muons)[im].pdgId();
+     lep1iso = muon_isolation((*muons)[im],PV);
+
+     if (passTightElectronSelectionV1((*electrons)[ie1], PV,rho))
+       flags = flags | Lep2TightSelectionV1;
+     if (passTightElectronSelectionV2((*electrons)[ie1], PV,rho))
+       flags = flags | Lep2TightSelectionV2;
+     if (passLooseElectronSelectionV5((*electrons)[ie1],PV,rho))
+	 flags = flags | Lep2LooseSelectionV5;
+
+
+     if (passTightElectronSelectionV1((*electrons)[ie2], PV,rho))
+       flags = flags | Lep3TightSelectionV1;
+     if (passTightElectronSelectionV2((*electrons)[ie2], PV,rho))
+       flags = flags | Lep3TightSelectionV2;
+     if (passLooseElectronSelectionV5((*electrons)[ie2],PV,rho))
+	 flags = flags | Lep3LooseSelectionV5;
+
+       
+     lep2= (*electrons)[ie1].p4();
+     lep2q = (*electrons)[ie1].charge();
+     lep2id = (*electrons)[ie1].pdgId();
+     lep2iso = electron_isolation((*electrons)[ie1],PV,rho);
+
+     lep3= (*electrons)[ie2].p4();
+     lep3q = (*electrons)[ie2].charge();
+     lep3id = (*electrons)[ie2].pdgId();
+     lep3iso = electron_isolation((*electrons)[ie2],PV,rho);
+
+   } else if (tight_electron_indices.size() >= 2 && veryloose_electron_indices.size() >= 1){
+
+     UInt_t i1 = tight_electron_indices[0];
+     UInt_t i2 = tight_electron_indices[1];
+     UInt_t i3 = veryloose_electron_indices[0];
+
+     lep1= (*electrons)[i1].p4();
+     lep1q = (*electrons)[i1].charge();
+     lep1id = (*electrons)[i1].pdgId();
+     lep1iso = electron_isolation((*electrons)[i1],PV,rho);
+
+     lep2= (*electrons)[i2].p4();
+     lep2q = (*electrons)[i2].charge();
+     lep2id = (*electrons)[i2].pdgId();
+     lep2iso = electron_isolation((*electrons)[i2],PV,rho);
+
+     lep3= (*electrons)[i3].p4();
+     lep3q = (*electrons)[i3].charge();
+     lep3id = (*electrons)[i3].pdgId();
+     lep3iso = electron_isolation((*electrons)[i3],PV,rho);
+
+     if (passTightElectronSelectionV1((*electrons)[i1],PV,rho))
+	 flags = flags | Lep1TightSelectionV1;
+     if (passTightElectronSelectionV1((*electrons)[i2],PV,rho))
+	 flags = flags | Lep2TightSelectionV1;
+     if (passTightElectronSelectionV1((*electrons)[i3],PV,rho))
+	 flags = flags | Lep3TightSelectionV1;
+
+     if (passTightElectronSelectionV2((*electrons)[i1],PV,rho))
+	 flags = flags | Lep1TightSelectionV2;
+     if (passTightElectronSelectionV2((*electrons)[i2],PV,rho))
+	 flags = flags | Lep2TightSelectionV2;
+     if (passTightElectronSelectionV2((*electrons)[i3],PV,rho))
+	 flags = flags | Lep3TightSelectionV2;
+
+
+     if (passLooseElectronSelectionV5((*electrons)[i1],PV,rho))
+	 flags = flags | Lep1LooseSelectionV5;
+     if (passLooseElectronSelectionV5((*electrons)[i2],PV,rho))
+	 flags = flags | Lep2LooseSelectionV5;
+     if (passLooseElectronSelectionV5((*electrons)[i3],PV,rho))
+	 flags = flags | Lep3LooseSelectionV5;
+
+ } else 
      return;
 
-   lhe_and_gen_object.analyze(iEvent,lep1,lep2);
+   //   lhe_and_gen_object.analyze(iEvent,lep1,lep2);
 
    std::vector<const pat::Jet *> cleaned_jets;
 
@@ -671,10 +840,6 @@ threeljj_ntuple_maker::beginJob()
     n_weighted_events_run_over= fs->make<TH1F>("n_weighted_events_run_over","n_weighted_events_run_over",1,0,1);
   }
 
-  lhe_and_gen_object.initrwgt_header_tree_ = fs->make<TTree >("initrwgt_header","initrwgt_header");
-
-  lhe_and_gen_object.slha_header_tree_ = fs->make<TTree >("slha_header","slha_header");
-
   tree = fs->make<TTree>( "events"  , "events");
 
   tree->Branch("flags",&flags);
@@ -705,10 +870,16 @@ threeljj_ntuple_maker::beginJob()
   tree->Branch("lep2id",&lep2id);
   tree->Branch("lep3q",&lep3q);
   tree->Branch("lep3id",&lep3id);
+  tree->Branch("lep1iso",&lep1iso);
+  tree->Branch("lep2iso",&lep2iso);
+  tree->Branch("lep3iso",&lep3iso);
 
   tree->Branch("maxbtagevent",&maxbtagevent);
 
-  lhe_and_gen_object.defineBranches(tree);
+  if (isMC_)
+    tree->Branch("gen_weight",&gen_weight);
+
+  //  lhe_and_gen_object.defineBranches(tree);
 
 }
 
@@ -725,7 +896,7 @@ void
 threeljj_ntuple_maker::beginRun(edm::Run const& iRun, edm::EventSetup const&)
 {
 
-  lhe_and_gen_object.beginRun(iRun);
+  //  lhe_and_gen_object.beginRun(iRun);
 
 }
 
