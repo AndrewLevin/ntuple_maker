@@ -495,24 +495,6 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   edm::Handle<pat::JetCollection> jets;
   iEvent.getByToken(jetToken_, jets);
 
-  maxbtagevent = std::numeric_limits<Float_t>::min();
-   
-  for (const pat::Jet &j : *jets) {
-    if (j.pt() < 20) continue;
-
-    //std::cout << j.bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags") << std::endl;
-
-    if (std::max(0.f,j.bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags")) > maxbtagevent)
-      maxbtagevent = std::max(0.f,j.bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags"));
-
-    //see here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation74X
-    //if( std::max(0.f,j.bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags")) > 0.814)
-    //  return;
-
-    
-    
-  }
-
   std::vector<UInt_t> veryloose_muon_indices;
   std::vector<UInt_t> veryloose_electron_indices;
   std::vector<UInt_t> tight_muon_indices;
@@ -1301,6 +1283,24 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
      cleaned_jets.push_back(&j);
    }
+
+  maxbtagevent = std::numeric_limits<Float_t>::min();
+   
+  for (UInt_t i = 0; i < cleaned_jets.size(); i++) {
+    if (cleaned_jets[i]->pt() < 20) continue;
+
+    std::cout << cleaned_jets[i]->bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags") << std::endl;
+
+    if (std::max(0.f,cleaned_jets[i]->bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags")) > maxbtagevent)
+      maxbtagevent = std::max(0.f,cleaned_jets[i]->bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags"));
+
+    //see here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation74X
+    //if( std::max(0.f,j.bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags")) > 0.814)
+    //  return;
+    
+  }
+
+
 
    if (cleaned_jets.size() < 2) 
      return;
