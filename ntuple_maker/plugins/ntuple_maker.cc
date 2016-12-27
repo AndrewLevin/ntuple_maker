@@ -753,9 +753,6 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if (i == im)
 	 continue;
 
-       if ( passWLLJJVetoMuonId( (*muons)[i],PV ) ) 
-	 flags = flags | WLLJJVetoV2;
-
        if (passWLLJJVetoMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 5 && abs((*muons)[i].eta()) < 2.4)
 	 flags = flags | WLLJJVetoV5;
 
@@ -832,9 +829,6 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      //     std::cout << "flags & Lep2LooseSelectionV3 = " << bool(flags & Lep2LooseSelectionV3) << std::endl;
 
      for(UInt_t i = 0; i < muons->size(); i++){
-
-       if ( passWLLJJVetoMuonId( (*muons)[i],PV ) ) 
-	 flags = flags | WLLJJVetoV2;
 
        if (passWLLJJVetoMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 5 && abs((*muons)[i].eta()) < 2.4)
 	 flags = flags | WLLJJVetoV5;
@@ -922,9 +916,6 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if (i == i1 || i == i2)
 	 continue;
 
-       if ( passWLLJJVetoMuonId( (*muons)[i],PV ) ) 
-	 flags = flags | WLLJJVetoV2;
-
        if (passWLLJJVetoMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 5 && abs((*muons)[i].eta()) < 2.4)
 	 flags = flags | WLLJJVetoV5;
 
@@ -997,9 +988,6 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
        if (i == im)
 	 continue;
-
-       if ( passWLLJJVetoMuonId( (*muons)[i],PV ) ) 
-	 flags = flags | WLLJJVetoV2;
 
        if (passWLLJJVetoMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 5 && abs((*muons)[i].eta()) < 2.4)
 	 flags = flags | WLLJJVetoV5;
@@ -1080,9 +1068,6 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if (i == im)
 	 continue;
 
-       if ( passWLLJJVetoMuonId( (*muons)[i],PV ) ) 
-	 flags = flags | WLLJJVetoV2;
-
        if (passWLLJJVetoMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 5 && abs((*muons)[i].eta()) < 2.4)
 	 flags = flags | WLLJJVetoV5;
 
@@ -1154,9 +1139,6 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      //     std::cout << "flags & Lep2LooseSelectionV3 = " << bool(flags & Lep2LooseSelectionV3) << std::endl;
 
      for(UInt_t i = 0; i < muons->size(); i++){
-
-       if ( passWLLJJVetoMuonId( (*muons)[i],PV ) ) 
-	 flags = flags | WLLJJVetoV2;
 
        if (passWLLJJVetoMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 5 && abs((*muons)[i].eta()) < 2.4)
 	 flags = flags | WLLJJVetoV5;
