@@ -469,10 +469,8 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   const edm::TriggerNames &names = iEvent.triggerNames(*triggerResultsHandle);
 
   if (apply_trigger_ && ! trigger_fired(names,triggerResultsHandle,"doublelepton"))
-  //  if (apply_trigger_ && ! trigger_fired(names,triggerResultsHandle,"soup"))
+  //    if (apply_trigger_ && ! trigger_fired(names,triggerResultsHandle,"soup"))
         return;
-
-  
 
   /*
 
@@ -526,7 +524,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    for (UInt_t i = 0; i < muons->size(); i++){
      for (UInt_t j = i+1; j < muons->size(); j++){
 
-       if ((*muons)[i].pt() < 10 || (*muons)[j].pt() < 10)
+       if ((*muons)[i].pt() < 10 || (*muons)[j].pt() < 10 || abs((*muons)[i].eta()) > 2.4 || abs((*muons)[j].eta()) > 2.4)
 	 continue;
 
        if ((*muons)[j].charge() != (*muons)[i].charge() && abs(((*muons)[i].p4() + (*muons)[j].p4()).mass() - z_mass)  < 15){
@@ -541,7 +539,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    for(UInt_t i = 0; i < electrons->size(); i++){
      for(UInt_t j = i+1; j < electrons->size(); j++){
 
-       if ((*electrons)[i].pt() < 10 || (*electrons)[j].pt() < 10)
+       if ((*electrons)[i].pt() < 10 || (*electrons)[j].pt() < 10 || abs((*electrons)[i].eta()) > 2.5 || abs((*electrons)[j].eta()) > 2.5)
 	 continue;
 
        if ((*electrons)[j].charge() != (*electrons)[i].charge() && abs(((*electrons)[i].p4() + (*electrons)[j].p4()).mass() - z_mass)  < 15){
@@ -554,7 +552,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    for(UInt_t i = 0; i < electrons->size(); i++){
 
-     if( (*electrons)[i].pt() < 20) 
+     if( (*electrons)[i].pt() < 20 || abs((*electrons)[i].eta()) > 2.5) 
        continue;
 
      bool should_be_cleaned = false;
@@ -591,7 +589,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    for(UInt_t i = 0; i < muons->size(); i++){
 
-     if ((*muons)[i].pt() < 20)
+     if ((*muons)[i].pt() < 20 || abs((*muons)[i].eta()) > 2.4)
        continue;
 
      //if (!passTightMuonSelectionV1((*muons)[i],PV) )
@@ -607,7 +605,8 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     }
 
 
-   //std::cout << "tight_electron_indices.size() = " << tight_electron_indices.size() << std::endl;
+   //   std::cout << "tight_electron_indices.size() = " << tight_electron_indices.size() << std::endl;
+   //   std::cout << "tight_muon_indices.size() = " << tight_muon_indices.size() << std::endl;
 
    if(tight_muon_indices.size() >= 2){
 
@@ -679,12 +678,9 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if (i == i1 || i == i2)
 	 continue;
 
-       if ( passWLLJJVetoMuonId( (*muons)[i],PV ) ) 
-	 flags = flags | WLLJJVetoV2;
-
-       if (passSoftMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 3)
+       if (passWLLJJVetoMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 5 && abs((*muons)[i].eta()) < 2.4)
 	 flags = flags | WLLJJVetoV5;
-
+       
      }
 
      for(UInt_t i = 0; i < electrons->size(); i++){
@@ -760,8 +756,9 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if ( passWLLJJVetoMuonId( (*muons)[i],PV ) ) 
 	 flags = flags | WLLJJVetoV2;
 
-       if (passSoftMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 3)
+       if (passWLLJJVetoMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 5 && abs((*muons)[i].eta()) < 2.4)
 	 flags = flags | WLLJJVetoV5;
+
 
      }
 
@@ -839,7 +836,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if ( passWLLJJVetoMuonId( (*muons)[i],PV ) ) 
 	 flags = flags | WLLJJVetoV2;
 
-       if (passSoftMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 3)
+       if (passWLLJJVetoMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 5 && abs((*muons)[i].eta()) < 2.4)
 	 flags = flags | WLLJJVetoV5;
 
      }
@@ -928,7 +925,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if ( passWLLJJVetoMuonId( (*muons)[i],PV ) ) 
 	 flags = flags | WLLJJVetoV2;
 
-       if (passSoftMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 3)
+       if (passWLLJJVetoMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 5 && abs((*muons)[i].eta()) < 2.4)
 	 flags = flags | WLLJJVetoV5;
 
      }
@@ -1004,9 +1001,8 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if ( passWLLJJVetoMuonId( (*muons)[i],PV ) ) 
 	 flags = flags | WLLJJVetoV2;
 
-       if (passSoftMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 3)
+       if (passWLLJJVetoMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 5 && abs((*muons)[i].eta()) < 2.4)
 	 flags = flags | WLLJJVetoV5;
-
      }
 
      for(UInt_t i = 0; i < electrons->size(); i++){
@@ -1087,7 +1083,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if ( passWLLJJVetoMuonId( (*muons)[i],PV ) ) 
 	 flags = flags | WLLJJVetoV2;
 
-       if (passSoftMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 3)
+       if (passWLLJJVetoMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 5 && abs((*muons)[i].eta()) < 2.4)
 	 flags = flags | WLLJJVetoV5;
 
      }
@@ -1162,7 +1158,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if ( passWLLJJVetoMuonId( (*muons)[i],PV ) ) 
 	 flags = flags | WLLJJVetoV2;
 
-       if (passSoftMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 3)
+       if (passWLLJJVetoMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 5 && abs((*muons)[i].eta()) < 2.4)
 	 flags = flags | WLLJJVetoV5;
 
      }
@@ -1289,7 +1285,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   for (UInt_t i = 0; i < cleaned_jets.size(); i++) {
     if (cleaned_jets[i]->pt() < 20) continue;
 
-    std::cout << cleaned_jets[i]->bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags") << std::endl;
+    //std::cout << cleaned_jets[i]->bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags") << std::endl;
 
     if (std::max(0.f,cleaned_jets[i]->bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags")) > maxbtagevent)
       maxbtagevent = std::max(0.f,cleaned_jets[i]->bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags"));
