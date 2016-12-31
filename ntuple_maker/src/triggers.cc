@@ -52,16 +52,20 @@ bool trigger_fired(const edm::TriggerNames &names, const edm::Handle< edm::Trigg
 
 if (which_triggers == "doublemu" || which_triggers == "doublelepton") {
 
-    triggerNames.push_back("HLT_Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_DZ_v");
-    triggerNames.push_back("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_v");
+  triggerNames.push_back("HLT_Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_DZ_v");
+  triggerNames.push_back("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_v");
+  
+  //these triggers without the DZ filter are prescaled I think
+  triggerNames.push_back("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_v");
+  triggerNames.push_back("HLT_Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_v");
 
   } 
 
  if (which_triggers == "muoneg" || which_triggers == "doublelepton") {
 
-    triggerNames.push_back("HLT_Mu17_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v");
-    triggerNames.push_back("HLT_Mu8_TrkIsoVVL_Ele17_CaloIdL_TrackIdL_IsoVL_v");
-
+   triggerNames.push_back("HLT_Mu17_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v");
+   triggerNames.push_back("HLT_Mu8_TrkIsoVVL_Ele17_CaloIdL_TrackIdL_IsoVL_v");
+   
   }
 
  if (which_triggers == "muon_fake_rate") {
@@ -107,7 +111,9 @@ if (which_triggers == "doublemu" || which_triggers == "doublelepton") {
       
 
       if (name.find( (triggerNames)[j]) != std::string::npos && triggerResultsHandle->accept(i)){
-	//      if (name.find( (triggerNames)[j]) != std::string::npos){                                                                                               	
+	//      if (name.find( (triggerNames)[j]) != std::string::npos){                                                                                    
+	//	std::cout << (triggerNames)[j] << std::endl;
+           	
 	trigger_fired = kTRUE;
 	
       }

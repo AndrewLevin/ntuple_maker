@@ -1163,9 +1163,9 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    std::vector<const pat::Jet *> cleaned_jets;
 
      for (const pat::Tau &tau : *taus) {
-       if (tau.pt() < 20) continue;
+       if (tau.pt() < 18) continue;
 
-       if (fabs(tau.eta()) > 2.4) continue;
+       if (fabs(tau.eta()) > 2.3) continue;
 
        if ( reco::deltaR(tau.p4(),lep1) < 0.4 || reco::deltaR(tau.p4(),lep2) < 0.4 )
        continue;
@@ -1183,7 +1183,6 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    for (const pat::Jet &j : *jets) {
 
-
      if ( reco::deltaR(j.p4(),lep1) < 0.4 || reco::deltaR(j.p4(),lep2) < 0.4 ){
        continue;
 
@@ -1191,74 +1190,74 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
      if (isMC_){
 
-     jecUnc_->setJetEta(j.eta());
-     jecUnc_->setJetPt(j.pt());
-
-     float jecunc = jecUnc_->getUncertainty(true);
-
-     float oldpt = j.pt();
-
-     if (jes_ == "up")
-       oldpt = oldpt*(1+jecunc);
-     else if (jes_ == "down")
-       oldpt = oldpt*(1-jecunc);
-     else
-       assert(jes_ == "nominal");
-
-     JME::JetResolution resolution = JME::JetResolution::get(iSetup, "AK4PFchs_pt");
-     JME::JetResolutionScaleFactor resolution_sf = JME::JetResolutionScaleFactor::get(iSetup, "AK4PFchs");
-     JME::JetParameters jpar;
-     jpar.setJetPt( j.pt()).setJetEta( j.eta() ).setRho( rho)  ;
-     float res = resolution.getResolution(jpar);
-     float sf = resolution_sf.getScaleFactor(jpar);
-     float sf_up = resolution_sf.getScaleFactor(jpar, Variation::UP);
-     float sf_down = resolution_sf.getScaleFactor(jpar, Variation::DOWN);
-     
-     // https://twiki.cern.ch/twiki/bin/view/CMS/JetResolution#Smearing_procedures
-     const reco::GenJet* genjet= j.genJet() ;
-     float newpt = j.pt();
-
-     float newptUp = j.pt();
-     float newptDown = j.pt();
-     
-     //
-     // -- if (genjet==NULL) cout <<"DEBUG: NO GENJET"<<endl;
-     // -- else cout <<"DEBUG: YES GENJET"<<"DR="<<reco::deltaR(*genjet,j) <<" DPT="<<fabs(j.pt()-genjet->pt())<< " 3Sig="<<3*res*genjet->pt()<<endl;
-
-     // additional matching dR(reco jet, gen jet)<Rcone/2 and dpt=abs(pT-pTgen)<3*sigma_MC
-     if (genjet!=NULL and reco::deltaR(*genjet,j) <0.2 and fabs(j.pt()-genjet->pt())<3*res*genjet->pt()) { //scaling
-       float genpt=genjet->pt();
-       newpt     = std::max(float(0.),float(genpt+sf*(j.pt()-genpt)      ));
-       newptUp   = std::max(float(0.),float(genpt+sf_up*(j.pt()-genpt)   ));
-       newptDown = std::max(float(0.),float(genpt+sf_down*(j.pt()-genpt) ));
-     }
-     else{ // smearing
-       float sigma=TMath::Sqrt( sf*sf -1) * res;
-       float sigmaUp=TMath::Sqrt( sf_up*sf_up -1) * res;
-       float sigmaDown=TMath::Sqrt( sf_down*sf_down -1) * res;
-       float s = rnd_->Gaus(0,1);
-       newpt = s * sigma + oldpt;
-       newptUp = s * sigmaUp + oldpt;
-       newptDown = s * sigmaDown +oldpt;
-     }
-     //*(TLorentzVector*)(*p4)[p4->GetEntriesFast()-1] *= newpt /oldpt ; // Update the pt stored in p4 at the last position (N-1)
-     //ptResUncUp->push_back(newptUp);
-     //ptResUncDown->push_back(newptDown) ;
-     
-     if (jer_ == "nominal")
-       corrected_jet_pts.push_back(newpt);
-     else if (jer_ == "up")
-       corrected_jet_pts.push_back(newptUp);
-     else if (jer_ == "down")
-       corrected_jet_pts.push_back(newptDown);
-     else
-       assert(0);
-
+       jecUnc_->setJetEta(j.eta());
+       jecUnc_->setJetPt(j.pt());
+       
+       float jecunc = jecUnc_->getUncertainty(true);
+       
+       float oldpt = j.pt();
+       
+       if (jes_ == "up")
+	 oldpt = oldpt*(1+jecunc);
+       else if (jes_ == "down")
+	 oldpt = oldpt*(1-jecunc);
+       else
+	 assert(jes_ == "nominal");
+       
+       JME::JetResolution resolution = JME::JetResolution::get(iSetup, "AK4PFchs_pt");
+       JME::JetResolutionScaleFactor resolution_sf = JME::JetResolutionScaleFactor::get(iSetup, "AK4PFchs");
+       JME::JetParameters jpar;
+       jpar.setJetPt( j.pt()).setJetEta( j.eta() ).setRho( rho)  ;
+       float res = resolution.getResolution(jpar);
+       float sf = resolution_sf.getScaleFactor(jpar);
+       float sf_up = resolution_sf.getScaleFactor(jpar, Variation::UP);
+       float sf_down = resolution_sf.getScaleFactor(jpar, Variation::DOWN);
+       
+       // https://twiki.cern.ch/twiki/bin/view/CMS/JetResolution#Smearing_procedures
+       const reco::GenJet* genjet= j.genJet() ;
+       float newpt = j.pt();
+       
+       float newptUp = j.pt();
+       float newptDown = j.pt();
+       
+       //
+       // -- if (genjet==NULL) cout <<"DEBUG: NO GENJET"<<endl;
+       // -- else cout <<"DEBUG: YES GENJET"<<"DR="<<reco::deltaR(*genjet,j) <<" DPT="<<fabs(j.pt()-genjet->pt())<< " 3Sig="<<3*res*genjet->pt()<<endl;
+       
+       // additional matching dR(reco jet, gen jet)<Rcone/2 and dpt=abs(pT-pTgen)<3*sigma_MC
+       if (genjet!=NULL and reco::deltaR(*genjet,j) <0.2 and fabs(j.pt()-genjet->pt())<3*res*genjet->pt()) { //scaling
+	 float genpt=genjet->pt();
+	 newpt     = std::max(float(0.),float(genpt+sf*(j.pt()-genpt)      ));
+	 newptUp   = std::max(float(0.),float(genpt+sf_up*(j.pt()-genpt)   ));
+	 newptDown = std::max(float(0.),float(genpt+sf_down*(j.pt()-genpt) ));
+       }
+       else{ // smearing
+	 float sigma=TMath::Sqrt( sf*sf -1) * res;
+	 float sigmaUp=TMath::Sqrt( sf_up*sf_up -1) * res;
+	 float sigmaDown=TMath::Sqrt( sf_down*sf_down -1) * res;
+	 float s = rnd_->Gaus(0,1);
+	 newpt = s * sigma + oldpt;
+	 newptUp = s * sigmaUp + oldpt;
+	 newptDown = s * sigmaDown +oldpt;
+       }
+       //*(TLorentzVector*)(*p4)[p4->GetEntriesFast()-1] *= newpt /oldpt ; // Update the pt stored in p4 at the last position (N-1)
+       //ptResUncUp->push_back(newptUp);
+       //ptResUncDown->push_back(newptDown) ;
+       
+       if (jer_ == "nominal")
+	 corrected_jet_pts.push_back(newpt);
+       else if (jer_ == "up")
+	 corrected_jet_pts.push_back(newptUp);
+       else if (jer_ == "down")
+	 corrected_jet_pts.push_back(newptDown);
+       else
+	 assert(0);
+       
      }
      else
        corrected_jet_pts.push_back(j.pt());
-
-
+     
+     
      cleaned_jets.push_back(&j);
    }
 

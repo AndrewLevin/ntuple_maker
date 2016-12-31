@@ -66,7 +66,7 @@ inline Bool_t passWLLJJVetoMuonId(const pat::Muon & muon, const reco::Vertex &vt
 
   Float_t relative_isolation = ( muon.pfIsolationR04().sumChargedHadronPt+ std::max(0.0,muon.pfIsolationR04().sumNeutralHadronEt + muon.pfIsolationR04().sumPhotonEt - 0.5 * muon.pfIsolationR04().sumPUPt) )/muon.pt();  
 
-  if (relative_isolation < 0.1 && fabs(muon.muonBestTrack()->dxy(vtx.position())) < 0.02 && fabs(muon.muonBestTrack()->dz(vtx.position())) < 0.1)
+  if (relative_isolation < 0.2 && muon.isSoftMuon(vtx) && fabs(muon.muonBestTrack()->dxy(vtx.position())) < 0.02 && fabs(muon.muonBestTrack()->dz(vtx.position())) < 0.1)
     return true;
   else
     return false;
@@ -200,6 +200,8 @@ inline Bool_t passTightMuonSelectionV1(const pat::Muon & muon, const reco::Verte
 
   Float_t relative_isolation = ( muon.pfIsolationR04().sumChargedHadronPt+ std::max(0.0,muon.pfIsolationR04().sumNeutralHadronEt + muon.pfIsolationR04().sumPhotonEt - 0.5 * muon.pfIsolationR04().sumPUPt) )/muon.pt();
 
+  //  std::cout << "relative_isolation = " << relative_isolation << std::endl;
+
   return passTightMuonIdV1(muon,vtx) && relative_isolation < 0.15;
 
 }
@@ -235,13 +237,13 @@ inline Bool_t passTightElectronSelectionV1(const pat::Electron & el, const reco:
      double EffectiveArea = 0;
 
      float abseta = fabs(fabs(el.superCluster()->eta()));
-     if (abseta >= 0.0 && abseta < 1.0 ) EffectiveArea = 0.1752;
-     if (abseta >= 1.0 && abseta < 1.479 ) EffectiveArea = 0.1862;
-     if (abseta >= 1.479 && abseta < 2.0 ) EffectiveArea = 0.1411;
-     if (abseta >= 2.0 && abseta < 2.2 ) EffectiveArea = 0.1534;
-     if (abseta >= 2.2 && abseta < 2.3 ) EffectiveArea = 0.1903;
-     if (abseta >= 2.3 && abseta < 2.4 ) EffectiveArea = 0.2243;
-     if (abseta >= 2.4 && abseta < 5.0 ) EffectiveArea = 0.2687;
+     if (abseta >= 0.0 && abseta < 1.0 ) EffectiveArea = 0.1703;
+     if (abseta >= 1.0 && abseta < 1.479 ) EffectiveArea = 0.1715;
+     if (abseta >= 1.479 && abseta < 2.0 ) EffectiveArea = 0.1213;
+     if (abseta >= 2.0 && abseta < 2.2 ) EffectiveArea = 0.1230;
+     if (abseta >= 2.2 && abseta < 2.3 ) EffectiveArea = 0.1635;
+     if (abseta >= 2.3 && abseta < 2.4 ) EffectiveArea = 0.1937;
+     if (abseta >= 2.4 && abseta < 5.0 ) EffectiveArea = 0.2393;
 
      //EffectiveArea = 0;
 
@@ -264,48 +266,48 @@ inline Bool_t passTightElectronSelectionV1(const pat::Electron & el, const reco:
      //medium working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
      if(fabs(el.superCluster()->eta()) < 2.5 && fabs(el.superCluster()->eta()) > 1.479 ){
        if(
-	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) < 0.00733 )
+	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) < 0.00609 )
 	  &&
-	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.114)
+	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.045)
 	  &&
-	  (el.full5x5_sigmaIetaIeta() < 0.0283)
+	  (el.full5x5_sigmaIetaIeta() < 0.0298)
 	  &&
-	  ( el.hcalOverEcal() < 0.0678)
+	  ( el.hcalOverEcal() < 0.0878)
 	  &&
-	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.0739 )
+	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) <  0.1)
 	  &&
-	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.602 )
+	  (  fabs(el.gsfTrack()->dz( PV.position() )) <  0.2)
 	  &&
-	  (fabs(ooEmooP) < 0.0898)
+	  (fabs(ooEmooP) < 0.0298)
 	  &&
-	  (relIsoWithDBeta < 0.0678)
+	  (relIsoWithDBeta < 0.0821)
 	  &&
 	  (el.passConversionVeto())
 	  &&
-	  (el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1 )
+	  (el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <=  1)
 	  )
 	 pass = kTRUE;
      } else if (fabs(el.superCluster()->eta()) < 1.479) {
        if(
-	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) < 0.0103)
+	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) < 0.00311)
 	  &&
-	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.0336)
+	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.103)
 	  &&
-	  (el.full5x5_sigmaIetaIeta() < 0.0101)
+	  (el.full5x5_sigmaIetaIeta() < 0.00998)
 	  &&
-	  ( el.hcalOverEcal() < 0.0876)
+	  ( el.hcalOverEcal() < 0.253)
 	  &&
-	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.0118)
+	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.1 )
 	  &&
-	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.373)
+	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.2 )
 	  &&
-	  (fabs(ooEmooP) < 0.0174)
+	  (fabs(ooEmooP) < 0.134)
 	  &&
-	  (relIsoWithDBeta < 0.0766)
+	  (relIsoWithDBeta < 0.0695)
 	  &&
 	  (el.passConversionVeto())
 	  &&
-	  (el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 2  )
+	  (el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1  )
 	  )
 	 pass = kTRUE;
      } 
@@ -330,14 +332,13 @@ inline Bool_t passTightElectronSelectionV2(const pat::Electron & el, const reco:
 
      //float abseta = fabs(el.eta());
      float abseta = fabs(fabs(el.superCluster()->eta()));
-
-     if (abseta >= 0.0 && abseta < 1.0 ) EffectiveArea = 0.1752;
-     if (abseta >= 1.0 && abseta < 1.479 ) EffectiveArea = 0.1862;
-     if (abseta >= 1.479 && abseta < 2.0 ) EffectiveArea = 0.1411;
-     if (abseta >= 2.0 && abseta < 2.2 ) EffectiveArea = 0.1534;
-     if (abseta >= 2.2 && abseta < 2.3 ) EffectiveArea = 0.1903;
-     if (abseta >= 2.3 && abseta < 2.4 ) EffectiveArea = 0.2243;
-     if (abseta >= 2.4 && abseta < 5.0 ) EffectiveArea = 0.2687;
+     if (abseta >= 0.0 && abseta < 1.0 ) EffectiveArea = 0.1703;
+     if (abseta >= 1.0 && abseta < 1.479 ) EffectiveArea = 0.1715;
+     if (abseta >= 1.479 && abseta < 2.0 ) EffectiveArea = 0.1213;
+     if (abseta >= 2.0 && abseta < 2.2 ) EffectiveArea = 0.1230;
+     if (abseta >= 2.2 && abseta < 2.3 ) EffectiveArea = 0.1635;
+     if (abseta >= 2.3 && abseta < 2.4 ) EffectiveArea = 0.1937;
+     if (abseta >= 2.4 && abseta < 5.0 ) EffectiveArea = 0.2393;
 
      Float_t absiso = pfIso.sumChargedHadronPt + std::max(0.0 , pfIso.sumNeutralHadronEt + pfIso.sumPhotonEt - rho * EffectiveArea );
      Float_t relIsoWithDBeta = absiso/el.pt();
@@ -375,21 +376,21 @@ inline Bool_t passTightElectronSelectionV2(const pat::Electron & el, const reco:
      //tight working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
      if(fabs(el.superCluster()->eta()) < 2.5 && fabs(el.superCluster()->eta()) > 1.479 ){
        if(
-	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) < 0.00724 )
+	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) < 0.00605)
 	  &&
-	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.0918)
+	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.0394)
 	  &&
-	  (el.full5x5_sigmaIetaIeta() < 0.0279)
+	  (el.full5x5_sigmaIetaIeta() < 0.0292)
 	  &&
-	  ( el.hcalOverEcal() < 0.0646)
+	  ( el.hcalOverEcal() < 0.0641)
 	  &&
-	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) <  0.0351)
+	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.05)
 	  &&
-	  (  fabs(el.gsfTrack()->dz( PV.position() )) <  0.471)
+	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.1)
 	  &&
-	  (fabs(ooEmooP) < 0.00999)
+	  (fabs(ooEmooP) < 0.0129)
 	  &&
-	  (relIsoWithDBeta < 0.0646)
+	  (relIsoWithDBeta < 0.0571)
 	  &&
 	  (el.passConversionVeto())
 	  &&
@@ -398,25 +399,25 @@ inline Bool_t passTightElectronSelectionV2(const pat::Electron & el, const reco:
 	 pass = kTRUE;
      } else if (fabs(el.superCluster()->eta()) < 1.479) {
        if(
-	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) < 0.00926)
+	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) <  0.00308)
 	  &&
-	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.0336)
+	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.0816)
 	  &&
-	  (el.full5x5_sigmaIetaIeta() < 0.0101)
+	  (el.full5x5_sigmaIetaIeta() < 0.00998)
 	  &&
-	  ( el.hcalOverEcal() < 0.0597)
+	  ( el.hcalOverEcal() < 0.0414)
 	  &&
-	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.0111)
+	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.1 )
 	  &&
-	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.0466)
+	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.2 )
 	  &&
-	  (fabs(ooEmooP) < 0.012)
+	  (fabs(ooEmooP) < 0.0129)
 	  &&
-	  (relIsoWithDBeta < 0.0354)
+	  (relIsoWithDBeta < 0.0588)
 	  &&
 	  (el.passConversionVeto())
 	  &&
-	  (el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 2 )
+	  (el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1)
 	  )
 	 pass = kTRUE;
      } 
@@ -446,14 +447,13 @@ inline Bool_t passLooseElectronSelectionV1(const pat::Electron & el, const reco:
 
      float abseta = fabs(fabs(el.superCluster()->eta()));
 
-
-     if (abseta >= 0.0 && abseta < 1.0 ) EffectiveArea = 0.1752;
-     if (abseta >= 1.0 && abseta < 1.479 ) EffectiveArea = 0.1862;
-     if (abseta >= 1.479 && abseta < 2.0 ) EffectiveArea = 0.1411;
-     if (abseta >= 2.0 && abseta < 2.2 ) EffectiveArea = 0.1534;
-     if (abseta >= 2.2 && abseta < 2.3 ) EffectiveArea = 0.1903;
-     if (abseta >= 2.3 && abseta < 2.4 ) EffectiveArea = 0.2243;
-     if (abseta >= 2.4 && abseta < 5.0 ) EffectiveArea = 0.2687;
+     if (abseta >= 0.0 && abseta < 1.0 ) EffectiveArea = 0.1703;
+     if (abseta >= 1.0 && abseta < 1.479 ) EffectiveArea = 0.1715;
+     if (abseta >= 1.479 && abseta < 2.0 ) EffectiveArea = 0.1213;
+     if (abseta >= 2.0 && abseta < 2.2 ) EffectiveArea = 0.1230;
+     if (abseta >= 2.2 && abseta < 2.3 ) EffectiveArea = 0.1635;
+     if (abseta >= 2.3 && abseta < 2.4 ) EffectiveArea = 0.1937;
+     if (abseta >= 2.4 && abseta < 5.0 ) EffectiveArea = 0.2393;
 
      Float_t absiso = pfIso.sumChargedHadronPt + std::max(0.0 , pfIso.sumNeutralHadronEt + pfIso.sumPhotonEt - rho * EffectiveArea );
      Float_t relIsoWithDBeta = absiso/el.pt();
@@ -471,24 +471,24 @@ inline Bool_t passLooseElectronSelectionV1(const pat::Electron & el, const reco:
      else
        ooEmooP = fabs(1.0/el.ecalEnergy() - el.eSuperClusterOverP()/el.ecalEnergy() );
 
-     //medium working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
+     //tight working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
      if(fabs(el.superCluster()->eta()) < 2.5 && fabs(el.superCluster()->eta()) > 1.479 ){
        if(
-	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) < 0.00733 )
+	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) < 0.00605)
 	  &&
-	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.114)
+	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.0394)
 	  &&
-	  (el.full5x5_sigmaIetaIeta() < 0.0283)
+	  (el.full5x5_sigmaIetaIeta() < 0.0292)
 	  &&
-	  ( el.hcalOverEcal() < 0.0678)
+	  ( el.hcalOverEcal() < 0.0641)
 	  &&
-	  //	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.0739 )
-	  //	  &&
-	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.602 )
+	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.05)
 	  &&
-	  (fabs(ooEmooP) < 0.0898)
+	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.1)
 	  &&
-	  (relIsoWithDBeta < 0.0678*6)
+	  (fabs(ooEmooP) < 0.0129)
+	  &&
+	  (relIsoWithDBeta < 0.0571)
 	  &&
 	  (el.passConversionVeto())
 	  &&
@@ -497,25 +497,25 @@ inline Bool_t passLooseElectronSelectionV1(const pat::Electron & el, const reco:
 	 pass = kTRUE;
      } else if (fabs(el.superCluster()->eta()) < 1.479) {
        if(
-	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) < 0.0103)
+	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) <  0.00308)
 	  &&
-	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.0336)
+	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.0816)
 	  &&
-	  (el.full5x5_sigmaIetaIeta() < 0.0101)
+	  (el.full5x5_sigmaIetaIeta() < 0.00998)
 	  &&
-	  ( el.hcalOverEcal() < 0.0876)
+	  ( el.hcalOverEcal() < 0.0414)
 	  &&
-	  //	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.0118)
-	  //	  &&
-	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.373)
+	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.1 )
 	  &&
-	  (fabs(ooEmooP) < 0.0174)
+	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.2 )
 	  &&
-	  (relIsoWithDBeta < 0.0766*6)
+	  (fabs(ooEmooP) < 0.0129)
+	  &&
+	  (relIsoWithDBeta < 0.0588)
 	  &&
 	  (el.passConversionVeto())
 	  &&
-	  (el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 2  )
+	  (el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1)
 	  )
 	 pass = kTRUE;
      } 
@@ -538,15 +538,13 @@ inline Bool_t passLooseElectronSelectionV2(const pat::Electron & el, const reco:
      //float abseta = fabs(el.eta());
 
      float abseta = fabs(fabs(el.superCluster()->eta()));
-
-
-     if (abseta >= 0.0 && abseta < 1.0 ) EffectiveArea = 0.1752;
-     if (abseta >= 1.0 && abseta < 1.479 ) EffectiveArea = 0.1862;
-     if (abseta >= 1.479 && abseta < 2.0 ) EffectiveArea = 0.1411;
-     if (abseta >= 2.0 && abseta < 2.2 ) EffectiveArea = 0.1534;
-     if (abseta >= 2.2 && abseta < 2.3 ) EffectiveArea = 0.1903;
-     if (abseta >= 2.3 && abseta < 2.4 ) EffectiveArea = 0.2243;
-     if (abseta >= 2.4 && abseta < 5.0 ) EffectiveArea = 0.2687;
+     if (abseta >= 0.0 && abseta < 1.0 ) EffectiveArea = 0.1703;
+     if (abseta >= 1.0 && abseta < 1.479 ) EffectiveArea = 0.1715;
+     if (abseta >= 1.479 && abseta < 2.0 ) EffectiveArea = 0.1213;
+     if (abseta >= 2.0 && abseta < 2.2 ) EffectiveArea = 0.1230;
+     if (abseta >= 2.2 && abseta < 2.3 ) EffectiveArea = 0.1635;
+     if (abseta >= 2.3 && abseta < 2.4 ) EffectiveArea = 0.1937;
+     if (abseta >= 2.4 && abseta < 5.0 ) EffectiveArea = 0.2393;
 
      Float_t absiso = pfIso.sumChargedHadronPt + std::max(0.0 , pfIso.sumNeutralHadronEt + pfIso.sumPhotonEt - rho * EffectiveArea );
      Float_t relIsoWithDBeta = absiso/el.pt();
@@ -564,24 +562,24 @@ inline Bool_t passLooseElectronSelectionV2(const pat::Electron & el, const reco:
      else
        ooEmooP = fabs(1.0/el.ecalEnergy() - el.eSuperClusterOverP()/el.ecalEnergy() );
 
-     //medium working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
+     //tight working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
      if(fabs(el.superCluster()->eta()) < 2.5 && fabs(el.superCluster()->eta()) > 1.479 ){
        if(
-	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) < 0.00733 )
+	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) < 0.00605)
 	  &&
-	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.114)
+	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.0394)
 	  &&
-	  (el.full5x5_sigmaIetaIeta() < 0.0283)
+	  (el.full5x5_sigmaIetaIeta() < 0.0292)
 	  &&
-	  ( el.hcalOverEcal() < 0.0678)
+	  ( el.hcalOverEcal() < 0.0641)
 	  &&
-	  //	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.0739 )
-	  //	  &&
-	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.602 )
+	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.05)
 	  &&
-	  (fabs(ooEmooP) < 0.0898)
+	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.1)
 	  &&
-	  (relIsoWithDBeta < 0.0678*10)
+	  (fabs(ooEmooP) < 0.0129)
+	  &&
+	  (relIsoWithDBeta < 0.0571)
 	  &&
 	  (el.passConversionVeto())
 	  &&
@@ -590,29 +588,28 @@ inline Bool_t passLooseElectronSelectionV2(const pat::Electron & el, const reco:
 	 pass = kTRUE;
      } else if (fabs(el.superCluster()->eta()) < 1.479) {
        if(
-	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) < 0.0103)
+	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) <  0.00308)
 	  &&
-	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.0336)
+	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.0816)
 	  &&
-	  (el.full5x5_sigmaIetaIeta() < 0.0101)
+	  (el.full5x5_sigmaIetaIeta() < 0.00998)
 	  &&
-	  ( el.hcalOverEcal() < 0.0876)
+	  ( el.hcalOverEcal() < 0.0414)
 	  &&
-	  //	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.0118)
-	  //	  &&
-	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.373)
+	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.1 )
 	  &&
-	  (fabs(ooEmooP) < 0.0174)
+	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.2 )
 	  &&
-	  (relIsoWithDBeta < 0.0766*10)
+	  (fabs(ooEmooP) < 0.0129)
+	  &&
+	  (relIsoWithDBeta < 0.0588)
 	  &&
 	  (el.passConversionVeto())
 	  &&
-	  (el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 2  )
+	  (el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1)
 	  )
 	 pass = kTRUE;
      } 
-
 
 
   return pass;
@@ -635,15 +632,16 @@ inline Bool_t passLooseElectronSelectionV3(const pat::Electron & el, const reco:
      //float abseta = fabs(el.eta());
      float abseta = fabs(fabs(el.superCluster()->eta()));
 
-     if (abseta >= 0.0 && abseta < 1.0 ) EffectiveArea = 0.1752;
-     if (abseta >= 1.0 && abseta < 1.479 ) EffectiveArea = 0.1862;
-     if (abseta >= 1.479 && abseta < 2.0 ) EffectiveArea = 0.1411;
-     if (abseta >= 2.0 && abseta < 2.2 ) EffectiveArea = 0.1534;
-     if (abseta >= 2.2 && abseta < 2.3 ) EffectiveArea = 0.1903;
-     if (abseta >= 2.3 && abseta < 2.4 ) EffectiveArea = 0.2243;
-     if (abseta >= 2.4 && abseta < 5.0 ) EffectiveArea = 0.2687;
+     if (abseta >= 0.0 && abseta < 1.0 ) EffectiveArea = 0.1703;
+     if (abseta >= 1.0 && abseta < 1.479 ) EffectiveArea = 0.1715;
+     if (abseta >= 1.479 && abseta < 2.0 ) EffectiveArea = 0.1213;
+     if (abseta >= 2.0 && abseta < 2.2 ) EffectiveArea = 0.1230;
+     if (abseta >= 2.2 && abseta < 2.3 ) EffectiveArea = 0.1635;
+     if (abseta >= 2.3 && abseta < 2.4 ) EffectiveArea = 0.1937;
+     if (abseta >= 2.4 && abseta < 5.0 ) EffectiveArea = 0.2393;
 
      Float_t absiso = pfIso.sumChargedHadronPt + std::max(0.0 , pfIso.sumNeutralHadronEt + pfIso.sumPhotonEt - rho * EffectiveArea );
+
      Float_t relIsoWithDBeta = absiso/el.pt();
      Float_t ooEmooP = 0;
 
@@ -662,21 +660,21 @@ inline Bool_t passLooseElectronSelectionV3(const pat::Electron & el, const reco:
      //tight working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
      if(fabs(el.superCluster()->eta()) < 2.5 && fabs(el.superCluster()->eta()) > 1.479 ){
        if(
-	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) < 0.00724 )
+	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) < 0.00605)
 	  &&
-	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.0918)
+	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.0394)
 	  &&
-	  (el.full5x5_sigmaIetaIeta() < 0.0279)
+	  (el.full5x5_sigmaIetaIeta() < 0.0292)
 	  &&
-	  ( el.hcalOverEcal() < 0.0646)
+	  ( el.hcalOverEcal() < 0.0641)
 	  &&
-	  //	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) <  0.0351)
-	  //	  &&
-	  (  fabs(el.gsfTrack()->dz( PV.position() )) <  0.471)
+	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.05)
 	  &&
-	  (fabs(ooEmooP) < 0.00999)
+	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.1)
 	  &&
-	  (relIsoWithDBeta < 10*0.0646)
+	  (fabs(ooEmooP) < 0.0129)
+	  &&
+	  (relIsoWithDBeta < 0.0571)
 	  &&
 	  (el.passConversionVeto())
 	  &&
@@ -685,28 +683,29 @@ inline Bool_t passLooseElectronSelectionV3(const pat::Electron & el, const reco:
 	 pass = kTRUE;
      } else if (fabs(el.superCluster()->eta()) < 1.479) {
        if(
-	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) < 0.00926)
+	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) <  0.00308)
 	  &&
-	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.0336)
+	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.0816)
 	  &&
-	  (el.full5x5_sigmaIetaIeta() < 0.0101)
+	  (el.full5x5_sigmaIetaIeta() < 0.00998)
 	  &&
-	  ( el.hcalOverEcal() < 0.0597)
+	  ( el.hcalOverEcal() < 0.0414)
 	  &&
-	  //	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.0111)
-	  //	  &&
-	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.0466)
+	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.1 )
 	  &&
-	  (fabs(ooEmooP) < 0.012)
+	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.2 )
 	  &&
-	  (relIsoWithDBeta < 10*0.0354)
+	  (fabs(ooEmooP) < 0.0129)
+	  &&
+	  (relIsoWithDBeta < 0.0588)
 	  &&
 	  (el.passConversionVeto())
 	  &&
-	  (el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 2 )
+	  (el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1)
 	  )
 	 pass = kTRUE;
      } 
+
 
   return pass;
 
@@ -728,13 +727,13 @@ inline Bool_t passLooseElectronSelectionV4(const pat::Electron & el, const reco:
      //float abseta = fabs(el.eta());
      float abseta = fabs(fabs(el.superCluster()->eta()));
 
-     if (abseta >= 0.0 && abseta < 1.0 ) EffectiveArea = 0.1752;
-     if (abseta >= 1.0 && abseta < 1.479 ) EffectiveArea = 0.1862;
-     if (abseta >= 1.479 && abseta < 2.0 ) EffectiveArea = 0.1411;
-     if (abseta >= 2.0 && abseta < 2.2 ) EffectiveArea = 0.1534;
-     if (abseta >= 2.2 && abseta < 2.3 ) EffectiveArea = 0.1903;
-     if (abseta >= 2.3 && abseta < 2.4 ) EffectiveArea = 0.2243;
-     if (abseta >= 2.4 && abseta < 5.0 ) EffectiveArea = 0.2687;
+     if (abseta >= 0.0 && abseta < 1.0 ) EffectiveArea = 0.1703;
+     if (abseta >= 1.0 && abseta < 1.479 ) EffectiveArea = 0.1715;
+     if (abseta >= 1.479 && abseta < 2.0 ) EffectiveArea = 0.1213;
+     if (abseta >= 2.0 && abseta < 2.2 ) EffectiveArea = 0.1230;
+     if (abseta >= 2.2 && abseta < 2.3 ) EffectiveArea = 0.1635;
+     if (abseta >= 2.3 && abseta < 2.4 ) EffectiveArea = 0.1937;
+     if (abseta >= 2.4 && abseta < 5.0 ) EffectiveArea = 0.2393;
 
      Float_t absiso = pfIso.sumChargedHadronPt + std::max(0.0 , pfIso.sumNeutralHadronEt + pfIso.sumPhotonEt - rho * EffectiveArea );
      Float_t relIsoWithDBeta = absiso/el.pt();
@@ -755,21 +754,21 @@ inline Bool_t passLooseElectronSelectionV4(const pat::Electron & el, const reco:
      //tight working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
      if(fabs(el.superCluster()->eta()) < 2.5 && fabs(el.superCluster()->eta()) > 1.479 ){
        if(
-	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) < 0.00724 )
+	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) < 0.00605)
 	  &&
-	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.0918)
+	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.0394)
 	  &&
-	  (el.full5x5_sigmaIetaIeta() < 0.0279)
+	  (el.full5x5_sigmaIetaIeta() < 0.0292)
 	  &&
-	  ( el.hcalOverEcal() < 0.0646)
+	  ( el.hcalOverEcal() < 0.0641)
 	  &&
-	  //	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) <  0.0351)
-	  //	  &&
-	  (  fabs(el.gsfTrack()->dz( PV.position() )) <  0.471)
+	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.05)
 	  &&
-	  (fabs(ooEmooP) < 0.00999)
+	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.1)
 	  &&
-	  (relIsoWithDBeta < 20*0.0646)
+	  (fabs(ooEmooP) < 0.0129)
+	  &&
+	  (relIsoWithDBeta < 0.0571)
 	  &&
 	  (el.passConversionVeto())
 	  &&
@@ -778,25 +777,25 @@ inline Bool_t passLooseElectronSelectionV4(const pat::Electron & el, const reco:
 	 pass = kTRUE;
      } else if (fabs(el.superCluster()->eta()) < 1.479) {
        if(
-	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) < 0.00926)
+	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) <  0.00308)
 	  &&
-	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.0336)
+	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.0816)
 	  &&
-	  (el.full5x5_sigmaIetaIeta() < 0.0101)
+	  (el.full5x5_sigmaIetaIeta() < 0.00998)
 	  &&
-	  ( el.hcalOverEcal() < 0.0597)
+	  ( el.hcalOverEcal() < 0.0414)
 	  &&
-	  //	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.0111)
-	  //	  &&
-	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.0466)
+	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.1 )
 	  &&
-	  (fabs(ooEmooP) < 0.012)
+	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.2 )
 	  &&
-	  (relIsoWithDBeta < 20*0.0354)
+	  (fabs(ooEmooP) < 0.0129)
+	  &&
+	  (relIsoWithDBeta < 0.0588)
 	  &&
 	  (el.passConversionVeto())
 	  &&
-	  (el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 2 )
+	  (el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1)
 	  )
 	 pass = kTRUE;
      } 
