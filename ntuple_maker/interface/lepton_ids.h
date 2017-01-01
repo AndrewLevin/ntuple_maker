@@ -172,8 +172,8 @@ inline Bool_t passTightMuonIdV1(const pat::Muon & muon, const reco::Vertex &vtx)
     muon.innerTrack()->hitPattern().numberOfValidPixelHits() > 0; 
 
   //tighten the d0 cut from 0.2 to 0.02 because the muon POG ids consider muons from bs as real
-  
-  bool ip = fabs(muon.muonBestTrack()->dxy(vtx.position())) < 0.02 && fabs(muon.muonBestTrack()->dz(vtx.position())) < 0.5;
+
+  bool ip = fabs(muon.muonBestTrack()->dxy(vtx.position())) < 0.02 && fabs(muon.muonBestTrack()->dz(vtx.position())) < 0.1;
   
   return muID && hits && ip;
 
@@ -189,7 +189,7 @@ inline Bool_t passTightMuonIdV2(const pat::Muon & muon, const reco::Vertex &vtx)
   bool hits = muon.innerTrack()->hitPattern().trackerLayersWithMeasurement() > 5 &&
     muon.innerTrack()->hitPattern().numberOfValidPixelHits() > 0; 
 
-  bool ip = fabs(muon.muonBestTrack()->dxy(vtx.position())) < 0.2 && fabs(muon.muonBestTrack()->dz(vtx.position())) < 0.5;
+  bool ip = fabs(muon.muonBestTrack()->dxy(vtx.position())) < 0.2 && fabs(muon.muonBestTrack()->dz(vtx.position())) < 0.1;
   
   return muID && hits && ip;
 
