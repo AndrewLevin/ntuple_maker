@@ -685,9 +685,9 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
      for(UInt_t i = 0; i < electrons->size(); i++){
 
-       if ( passWLLJJVetoElectronId( (*electrons)[i], PV ) ) 
+       if ( passWLLJJVetoElectronId( (*electrons)[i], PV ) && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) {
 	 flags = flags | WLLJJVetoV2;
-
+       }
      }
 
 
@@ -764,7 +764,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if (i == ie)
 	 continue;
 
-       if ( passWLLJJVetoElectronId( (*electrons)[i], PV ) ) 
+       if ( passWLLJJVetoElectronId( (*electrons)[i], PV )  && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) 
 	 flags = flags | WLLJJVetoV2;
 
 
@@ -840,7 +840,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if (i == i1 || i == i2)
 	 continue;
 
-       if ( passWLLJJVetoElectronId( (*electrons)[i],PV ) ) 
+       if ( passWLLJJVetoElectronId( (*electrons)[i],PV )  && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) 
 	 flags = flags | WLLJJVetoV2;
 
      }
@@ -923,7 +923,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
      for(UInt_t i = 0; i < electrons->size(); i++){
 
-       if ( passWLLJJVetoElectronId( (*electrons)[i], PV ) ) 
+       if ( passWLLJJVetoElectronId( (*electrons)[i], PV )  && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) 
 	 flags = flags | WLLJJVetoV2;
 
      }
@@ -998,7 +998,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if (i == ie)
 	 continue;
 
-       if ( passWLLJJVetoElectronId( (*electrons)[i], PV ) ) 
+       if ( passWLLJJVetoElectronId( (*electrons)[i], PV )  && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) 
 	 flags = flags | WLLJJVetoV2;
 
 
@@ -1078,7 +1078,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if (i == ie)
 	 continue;
 
-       if ( passWLLJJVetoElectronId( (*electrons)[i], PV ) ) 
+       if ( passWLLJJVetoElectronId( (*electrons)[i], PV ) && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5  ) 
 	 flags = flags | WLLJJVetoV2;
 
 
@@ -1150,7 +1150,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if (i == i1 || i == i2)
 	 continue;
 
-       if ( passWLLJJVetoElectronId( (*electrons)[i],PV ) ) 
+       if ( passWLLJJVetoElectronId( (*electrons)[i],PV )  && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) 
 	 flags = flags | WLLJJVetoV2;
 
      }
@@ -1167,14 +1167,32 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
        if (fabs(tau.eta()) > 2.3) continue;
 
-       if ( reco::deltaR(tau.p4(),lep1) < 0.4 || reco::deltaR(tau.p4(),lep2) < 0.4 )
-       continue;
+       if ( reco::deltaR(tau.p4(),lep1) < 0.4 || reco::deltaR(tau.p4(),lep2) < 0.4 ) continue;
 
        //std::cout << tau.tauID("byMediumIsolationMVArun2v1DBnewDMwLT") << std::endl;
        //std::cout << tau.charge() << std::endl;
 
-       if(tau.tauID("byMediumIsolationMVArun2v1DBnewDMwLT"))
+       if(tau.tauID("byMediumIsolationMVArun2v1DBnewDMwLT")){
 	 flags = flags | WLLJJVetoV3;
+       }
+
+       float iso_sum = 0;
+
+       for(const reco::CandidatePtr& gamma_cand: tau.isolationGammaCands() ){
+	 iso_sum = iso_sum + gamma_cand->pt();
+       }
+
+       for(const reco::CandidatePtr& charged_hadron_cand: tau.isolationChargedHadrCands()){
+	   iso_sum = iso_sum + charged_hadron_cand->pt();
+	 }
+
+       for(const reco::CandidatePtr& neutral_hadron_cand: tau.isolationNeutrHadrCands()){
+	 iso_sum = iso_sum + neutral_hadron_cand->pt();
+       }
+
+       if(tau.tauID("decayModeFinding") && tau.tauID("decayModeFindingNewDMs") && iso_sum < 5.0){
+	 flags = flags | WLLJJVetoV7;
+       }
      }
 
 
