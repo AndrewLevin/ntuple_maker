@@ -173,7 +173,7 @@ public:
   TH1F * n_events_run_over;
   TH1F * n_weighted_events_run_over;
   UInt_t flags;
-  UInt_t event;
+  ULong64_t event;
   UInt_t run;
   UInt_t lumi;
   UInt_t nvtx;
@@ -468,9 +468,13 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   const edm::TriggerNames &names = iEvent.triggerNames(*triggerResultsHandle);
 
+  //  std::cout << "andrew debug 1" << std::endl;
+
   if (apply_trigger_ && ! trigger_fired(names,triggerResultsHandle,"doublelepton"))
   //    if (apply_trigger_ && ! trigger_fired(names,triggerResultsHandle,"soup"))
         return;
+
+  //  std::cout << "andrew debug 2" << std::endl;
 
   /*
 
@@ -502,7 +506,9 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    using namespace edm;
 
    run=iEvent.eventAuxiliary().run(); 
+
    lumi=iEvent.eventAuxiliary().luminosityBlock();
+
    event=iEvent.eventAuxiliary().event();
 
    edm::Handle<reco::VertexCollection> vertices;
@@ -605,8 +611,8 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     }
 
 
-   //   std::cout << "tight_electron_indices.size() = " << tight_electron_indices.size() << std::endl;
-   //   std::cout << "tight_muon_indices.size() = " << tight_muon_indices.size() << std::endl;
+   //      std::cout << "tight_electron_indices.size() = " << tight_electron_indices.size() << std::endl;
+   //      std::cout << "tight_muon_indices.size() = " << tight_muon_indices.size() << std::endl;
 
    if(tight_muon_indices.size() >= 2){
 
@@ -1196,10 +1202,13 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      }
 
 
-
+    
    std::vector<float> corrected_jet_pts;
 
    for (const pat::Jet &j : *jets) {
+
+     if (abs(j.eta()) > 4.7)
+       continue;
 
      if ( reco::deltaR(j.p4(),lep1) < 0.4 || reco::deltaR(j.p4(),lep2) < 0.4 ){
        continue;
@@ -1303,7 +1312,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    std::pair<int,int> highest_pt_jet_indices = get_two_highest_pt_jet_indices(corrected_jet_pts);
 
-   if (cleaned_jets[highest_pt_jet_indices.first]->pt() < 20 || cleaned_jets[highest_pt_jet_indices.second]->pt() < 20)
+   if (cleaned_jets[highest_pt_jet_indices.first]->pt() < 30 || cleaned_jets[highest_pt_jet_indices.second]->pt() < 30)
      return;
 
    float NHF0    = cleaned_jets[highest_pt_jet_indices.first]->neutralHadronEnergyFraction();

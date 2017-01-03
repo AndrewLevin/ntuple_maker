@@ -64,9 +64,10 @@ inline Bool_t passSoftMuonId(const pat::Muon & muon, const reco::Vertex &vtx){
 
 inline Bool_t passWLLJJVetoMuonId(const pat::Muon & muon, const reco::Vertex &vtx){
 
-  Float_t relative_isolation = ( muon.pfIsolationR04().sumChargedHadronPt+ std::max(0.0,muon.pfIsolationR04().sumNeutralHadronEt + muon.pfIsolationR04().sumPhotonEt - 0.5 * muon.pfIsolationR04().sumPUPt) )/muon.pt();  
+  //  Float_t relative_isolation = ( muon.pfIsolationR04().sumChargedHadronPt+ std::max(0.0,muon.pfIsolationR04().sumNeutralHadronEt + muon.pfIsolationR04().sumPhotonEt - 0.5 * muon.pfIsolationR04().sumPUPt) )/muon.pt();  
+  //  Float_t relative_isolation = ( muon.pfIsolationR04().sumChargedHadronPt+ std::max(0.0,muon.pfIsolationR04().sumNeutralHadronEt  - 0.5 * muon.pfIsolationR04().sumPUPt) )/muon.pt();  
 
-  if (relative_isolation < 0.2 && muon.isSoftMuon(vtx) && fabs(muon.muonBestTrack()->dxy(vtx.position())) < 0.02 && fabs(muon.muonBestTrack()->dz(vtx.position())) < 0.1)
+  if (muon.isSoftMuon(vtx) && fabs(muon.muonBestTrack()->dxy(vtx.position())) < 0.02 && fabs(muon.muonBestTrack()->dz(vtx.position())) < 0.1)
     return true;
   else
     return false;
@@ -266,7 +267,7 @@ inline Bool_t passTightElectronSelectionV1(const pat::Electron & el, const reco:
      //medium working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
      if(fabs(el.superCluster()->eta()) < 2.5 && fabs(el.superCluster()->eta()) > 1.479 ){
        if(
-	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) < 0.00609 )
+	  (fabs(el.deltaEtaSuperClusterTrackAtVtx() - el.superCluster()->eta() + el.superCluster()->seed()->eta()) < 0.00609 )
 	  &&
 	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.045)
 	  &&
@@ -376,7 +377,7 @@ inline Bool_t passTightElectronSelectionV2(const pat::Electron & el, const reco:
      //tight working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
      if(fabs(el.superCluster()->eta()) < 2.5 && fabs(el.superCluster()->eta()) > 1.479 ){
        if(
-	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) < 0.00605)
+	  (fabs(el.deltaEtaSuperClusterTrackAtVtx() - el.superCluster()->eta() + el.superCluster()->seed()->eta()) < 0.00605)
 	  &&
 	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.0394)
 	  &&
@@ -422,12 +423,13 @@ inline Bool_t passTightElectronSelectionV2(const pat::Electron & el, const reco:
 	 pass = kTRUE;
      } 
 
+
   return pass;
 
 }    
 
 inline Bool_t passTightElectronSelectionV3(const pat::Electron & el, const reco::Vertex &PV, const double &rho) {
-
+  
   return el.electronID("cutBasedElectronID-Spring15-25ns-V1-standalone-tight");
 
 }    
