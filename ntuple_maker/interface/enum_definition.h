@@ -27,7 +27,10 @@ enum Cuts {
   WLLJJVetoV3 = 1UL << 23,
   WLLJJVetoV4 = 1UL << 24,
   WLLJJVetoV5 = 1UL << 25,
-  WLLJJVetoV6 = 1UL << 26
+  WLLJJVetoV6 = 1UL << 26,
+  WLLJJVetoV7 = 1UL << 27,
+  WLLJJVetoV8 = 1UL << 28,
+  WLLJJVetoV9 = 1UL << 29
 };
 
 #endif
