@@ -1,7 +1,7 @@
 #ifndef NTUPLEMAKER_ENUM_DEFINITION_H
 #define NTUPLEMAKER_ENUM_DEFINITION_H
 
-enum Cuts {
+enum LeptonSelections {
   Lep1TightSelectionV1  = 1UL<<1,
   Lep1TightSelectionV2  = 1UL<<2,
   Lep1TightSelectionV3  = 1UL<<3,
@@ -22,15 +22,24 @@ enum Cuts {
   Lep2LooseSelectionV3  = 1UL<<18,
   Lep2LooseSelectionV4  = 1UL<<19,
   Lep2LooseSelectionV5  = 1UL<<20,
-  WLLJJVetoV1 = 1UL << 21,
-  WLLJJVetoV2 = 1UL << 22,
-  WLLJJVetoV3 = 1UL << 23,
-  WLLJJVetoV4 = 1UL << 24,
-  WLLJJVetoV5 = 1UL << 25,
-  WLLJJVetoV6 = 1UL << 26,
-  WLLJJVetoV7 = 1UL << 27,
-  WLLJJVetoV8 = 1UL << 28,
-  WLLJJVetoV9 = 1UL << 29
+
+};
+
+enum Cuts {
+
+  WLLJJVetoV1 = 1UL << 1,
+  WLLJJVetoV2 = 1UL << 2,
+  WLLJJVetoV3 = 1UL << 3,
+  WLLJJVetoV4 = 1UL << 4,
+  WLLJJVetoV5 = 1UL << 5,
+  WLLJJVetoV6 = 1UL << 6,
+  WLLJJVetoV7 = 1UL << 7,
+  WLLJJVetoV8 = 1UL << 8,
+  WLLJJVetoV9 = 1UL << 9,
+  WLLJJVetoV10 = 1UL << 10,
+  WLLJJVetoV11 = 1UL << 11,
+  PassTriggerV1 = 1UL << 12,
+  PassTriggerV2 = 1UL << 13,
 };
 
 #endif
