@@ -25,6 +25,7 @@ process.source = cms.Source("PoolSource",
 
 '/store/data/Run2016H/MuonEG/MINIAOD/PromptReco-v2/000/283/876/00000/AA7CCD56-C19C-E611-8F3B-02163E011872.root'
 
+)
 #eventsToProcess = cms.untracked.VEventRange('283876:158:189263031-283876:158:189263031'),
 
 )
