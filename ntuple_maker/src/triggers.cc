@@ -19,27 +19,31 @@ bool trigger_fired(const edm::TriggerNames &names, const edm::Handle< edm::Trigg
 
   if (which_triggers == "soup") {
 
-    triggerNames.push_back("HLT_Mu8_TrkIsoVVL_Ele17_CaloIdL_TrackIdL_IsoVL_v");
-    triggerNames.push_back("HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_v");
-    triggerNames.push_back("HLT_Mu17_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v");
-    triggerNames.push_back("HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v");
-    triggerNames.push_back("HLT_Mu23_TrkIsoVVL_Ele8_CaloIdL_TrackIdL_IsoVL_v");
+    triggerNames.push_back("HLT_Ele25_eta2p1_WPTight_Gsf_v");
+    triggerNames.push_back("HLT_Ele27_eta2p1_WPLoose_Gsf_v");
+    triggerNames.push_back("HLT_IsoMu24_v");
+    triggerNames.push_back("HLT_IsoTkMu24_v");
+    triggerNames.push_back("HLT_Ele27_WPTight_Gsf_v");
+    triggerNames.push_back("HLT_Ele30_WPTight_Gsf_v");
+    triggerNames.push_back("HLT_Ele35_WPLoose_Gsf_v");
+    triggerNames.push_back("HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v");
+    triggerNames.push_back("HLT_DoubleEle24_22_eta2p1_WPLoose_Gsf_v");
+    triggerNames.push_back("HLT_IsoMu22_v");
+    triggerNames.push_back("HLT_IsoTkMu22_v");
+    triggerNames.push_back("HLT_Mu45_eta2p1_v");
+    triggerNames.push_back("HLT_Mu50_v");
     triggerNames.push_back("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_v");
     triggerNames.push_back("HLT_Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_v");
     triggerNames.push_back("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_v");
     triggerNames.push_back("HLT_Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_DZ_v");
-    triggerNames.push_back("HLT_IsoMu20_v");
-    triggerNames.push_back("HLT_IsoTkMu20_v");
-    triggerNames.push_back("HLT_IsoMu22_v");
-    triggerNames.push_back("HLT_IsoTkMu22_v");
-    triggerNames.push_back("HLT_IsoMu24_v");
-    triggerNames.push_back("HLT_IsoTkMu24_v");
-    triggerNames.push_back("HLT_Ele17_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v");
-    triggerNames.push_back("HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v");
-    triggerNames.push_back("HLT_Ele25_eta2p1_WPTight_Gsf_v");
-    triggerNames.push_back("HLT_Ele27_eta2p1_WPLoose_Gsf_v");
-    triggerNames.push_back("HLT_Ele27_WPTight_Gsf_v");
-    triggerNames.push_back("HLT_Ele35_WPLoose_Gsf_v");
+    triggerNames.push_back("HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ_v");
+    triggerNames.push_back("HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_v");
+    triggerNames.push_back("HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v");
+    triggerNames.push_back("HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v");
+    triggerNames.push_back("HLT_Mu23_TrkIsoVVL_Ele8_CaloIdL_TrackIdL_IsoVL_DZ_v");
+    triggerNames.push_back("HLT_Mu23_TrkIsoVVL_Ele8_CaloIdL_TrackIdL_IsoVL_v");
+    triggerNames.push_back("HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ_v");
+    triggerNames.push_back("HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_v");
 
   }
 
@@ -62,6 +66,11 @@ if (which_triggers == "doublemu" || which_triggers == "doublelepton") {
   } 
 
  if (which_triggers == "muoneg" || which_triggers == "doublelepton") {
+
+   triggerNames.push_back("HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ_v");
+   triggerNames.push_back("HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ_v");
+   triggerNames.push_back("HLT_Mu23_TrkIsoVVL_Ele8_CaloIdL_TrackIdL_IsoVL_DZ_v");
+   triggerNames.push_back("HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v");
 
    triggerNames.push_back("HLT_Mu17_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v");
    triggerNames.push_back("HLT_Mu8_TrkIsoVVL_Ele17_CaloIdL_TrackIdL_IsoVL_v");
@@ -100,8 +109,8 @@ if (which_triggers == "doublemu" || which_triggers == "doublelepton") {
   for (unsigned int i = 0; i < names.size(); i++) {
     
     //std::cout << "names.triggerName(i) = " << names.triggerName(i) << std::endl;                                                                                     
-    //if (triggerResultsHandle->accept(i))
-    //	std::cout << "names.triggerName(i) = " << names.triggerName(i) << std::endl;                                                                                     
+    //            if (triggerResultsHandle->accept(i))
+    //      	std::cout << "names.triggerName(i) = " << names.triggerName(i) << std::endl;                                                                                     
       
 
     
