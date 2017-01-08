@@ -169,6 +169,8 @@ public:
   edm::EDGetTokenT<GenEventInfoProduct> genEvtToken_;
   edm::EDGetTokenT<edm::View<reco::GenParticle> > prunedGenToken_;
   edm::EDGetTokenT<double> rhoToken_;
+  edm::EDGetTokenT<double> rhoHLTElectronSelectionToken_;
+
 
   TH1F * n_events_run_over;
   TH1F * n_weighted_events_run_over;
@@ -260,6 +262,7 @@ ntuple_maker::ntuple_maker(const edm::ParameterSet& iConfig):
   lheEvtToken_(consumes<LHEEventProduct>(iConfig.getParameter<edm::InputTag>("lheevent"))),
   genEvtToken_(consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("genevent"))),
   rhoToken_(consumes<double>(iConfig.getParameter<edm::InputTag>("rho"))),
+  rhoHLTElectronSelectionToken_(consumes<double>(iConfig.getParameter<edm::InputTag>("rhoHLTElectronSelection"))),
   syscalcinfo_(iConfig.getUntrackedParameter<bool>("syscalcinfo")),
   mgreweightinfo_(iConfig.getUntrackedParameter<bool>("mgreweightinfo")),
   apply_trigger_(iConfig.getUntrackedParameter<bool>("apply_trigger")),
@@ -334,6 +337,13 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   float rho    =  *rhoHandle;
 
+  edm::Handle<double> rhoHLTElectronSelectionHandle;
+
+  iEvent.getByToken(rhoHLTElectronSelectionToken_,rhoHLTElectronSelectionHandle);
+
+  float rhoHLTElectronSelection  =  *rhoHLTElectronSelectionHandle;
+
+  
   if (isMC_){
     n_events_run_over->Fill(0.5);
 
@@ -342,7 +352,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     edm::Handle<GenEventInfoProduct> hGenEvt;
     iEvent.getByToken(genEvtToken_,hGenEvt);
-
+    
     //std::cout << "hGenEvt->weight() = " << hGenEvt->weight() << std::endl;
     //std::cout << "hLheEvt->originalXWGTUP() = " << hLheEvt->originalXWGTUP() << std::endl;
 
@@ -635,9 +645,6 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     }
 
 
-   //   std::cout << "tight_electron_indices.size() = " << tight_electron_indices.size() << std::endl;
-   //   std::cout << "tight_muon_indices.size() = " << tight_muon_indices.size() << std::endl;
-
    if(tight_muon_indices.size() >= 2){
 
      UInt_t i1 = tight_muon_indices[0];
@@ -715,7 +722,9 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
      for(UInt_t i = 0; i < electrons->size(); i++){
 
-       if ( passWLLJJVetoElectronId( (*electrons)[i], PV ) && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) {
+       if ( passWLLJJVetoElectronId( (*electrons)[i], PV, rhoHLTElectronSelection ) && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) {
+
+
 	 flags = flags | WLLJJVetoV2;
        }
      }
@@ -757,6 +766,8 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      lep1id = (*muons)[im].pdgId();
      lep1iso = muon_isolation((*muons)[im],PV);
 
+
+
      if (passTightElectronSelectionV1((*electrons)[ie], PV,rho))
        lepton_selection_flags = lepton_selection_flags | Lep2TightSelectionV1;
      if (passTightElectronSelectionV2((*electrons)[ie], PV,rho))
@@ -797,9 +808,10 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if (i == ie)
 	 continue;
 
-       if ( passWLLJJVetoElectronId( (*electrons)[i], PV )  && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) 
-	 flags = flags | WLLJJVetoV2;
+       if ( passWLLJJVetoElectronId( (*electrons)[i], PV, rhoHLTElectronSelection)  && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) {
 
+	 flags = flags | WLLJJVetoV2;
+       }
 
      }
 
@@ -877,7 +889,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if (i == i1 || i == i2)
 	 continue;
 
-       if ( passWLLJJVetoElectronId( (*electrons)[i],PV )  && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) 
+       if ( passWLLJJVetoElectronId( (*electrons)[i],PV,rhoHLTElectronSelection )  && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) 
 	 flags = flags | WLLJJVetoV2;
 
      }
@@ -960,7 +972,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
      for(UInt_t i = 0; i < electrons->size(); i++){
 
-       if ( passWLLJJVetoElectronId( (*electrons)[i], PV )  && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) 
+       if ( passWLLJJVetoElectronId( (*electrons)[i], PV, rhoHLTElectronSelection )  && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) 
 	 flags = flags | WLLJJVetoV2;
 
      }
@@ -1037,7 +1049,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if (i == ie)
 	 continue;
 
-       if ( passWLLJJVetoElectronId( (*electrons)[i], PV )  && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) 
+       if ( passWLLJJVetoElectronId( (*electrons)[i], PV , rhoHLTElectronSelection )  && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) 
 	 flags = flags | WLLJJVetoV2;
 
 
@@ -1119,7 +1131,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if (i == ie)
 	 continue;
 
-       if ( passWLLJJVetoElectronId( (*electrons)[i], PV ) && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5  ) 
+       if ( passWLLJJVetoElectronId( (*electrons)[i], PV , rhoHLTElectronSelection) && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5  ) 
 	 flags = flags | WLLJJVetoV2;
 
 
@@ -1195,7 +1207,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if (i == i1 || i == i2)
 	 continue;
 
-       if ( passWLLJJVetoElectronId( (*electrons)[i],PV )  && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) 
+       if ( passWLLJJVetoElectronId( (*electrons)[i],PV ,  rhoHLTElectronSelection)  && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) 
 	 flags = flags | WLLJJVetoV2;
 
      }

@@ -152,6 +152,8 @@ apply_trigger = cms.untracked.bool(True),
 pileup_summary = cms.InputTag("slimmedAddPileupInfo"),
 genevent = cms.InputTag("generator"),
 rho = cms.InputTag("fixedGridRhoFastjetAll"),
+rhoHLTElectronSelection = cms.InputTag("fixedGridRhoFastjetCentralCalo"),
+
 jes = cms.untracked.string("nominal"),
 jer = cms.untracked.string("nominal"),
 lheleptoninfo = cms.untracked.bool(False)

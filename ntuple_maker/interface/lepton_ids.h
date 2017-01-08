@@ -75,7 +75,104 @@ inline Bool_t passWLLJJVetoMuonId(const pat::Muon & muon, const reco::Vertex &vt
 
 }
 
-inline Bool_t passWLLJJVetoElectronId(const pat::Electron & el, const reco::Vertex &PV){
+inline Bool_t passWLLJJVetoElectronId(const pat::Electron & el, const reco::Vertex &PV, const float &rho){
+
+  Bool_t pass = kFALSE;
+
+  if (!el.chargeInfo().isGsfCtfScPixConsistent)
+    return kFALSE;
+
+     //see here https://indico.cern.ch/event/369239/contribution/4/attachments/1134761/1623262/talk_effective_areas_25ns.pdf slide 12
+
+     double EAecal = 0;
+     double EAhcal = 0;
+
+     //float abseta = fabs(el.eta());
+     float abseta = fabs(fabs(el.superCluster()->eta()));
+     if (abseta >= 0.0 && abseta < 1.479 ) EAecal = 0.165;
+     if (abseta >= 1.479 && abseta < 5.0 ) EAecal = 0.132;
+     if (abseta >= 0.0 && abseta < 1.479 ) EAhcal = 0.060;
+     if (abseta >= 1.479 && abseta < 5.0 ) EAhcal = 0.131;
+
+     Float_t ooEmooP = 0;
+
+     if( el.ecalEnergy() == 0 ){
+
+       std::cout << "Electron energy is zero!" << std::endl;
+       ooEmooP = 1e30;
+     }
+     else if (!std::isfinite(el.ecalEnergy())){
+       std::cout << "Electron energy is not finite!" << std::endl;
+       ooEmooP = 1e30;
+     }
+     else
+       ooEmooP = fabs(1.0/el.ecalEnergy() - el.eSuperClusterOverP()/el.ecalEnergy() );
+
+     
+     /*
+
+     std::cout << "rho = " << rho << std::endl;
+     std::cout << el.superCluster()->eta() << std::endl;
+     std::cout << fabs(el.deltaEtaSuperClusterTrackAtVtx()) << std::endl;
+     std::cout << fabs(el.deltaPhiSuperClusterTrackAtVtx()) << std::endl;
+     std::cout << el.full5x5_sigmaIetaIeta() << std::endl;
+     std::cout << el.hcalOverEcal() << std::endl;
+     std::cout << fabs((-1) * el.gsfTrack()->dxy(PV.position())) << std::endl;
+     std::cout << fabs(el.gsfTrack()->dz( PV.position() )) << std::endl;
+     std::cout << fabs(ooEmooP) << std::endl;
+     std::cout << relIsoWithDBeta  << std::endl;
+     std::cout << el.passConversionVeto() << std::endl;
+     std::cout << el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) << std::endl;
+
+     */
+
+
+
+     //tight working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
+     if(fabs(el.superCluster()->eta()) < 2.5 && fabs(el.superCluster()->eta()) > 1.479 ){
+       if(
+	  (el.full5x5_sigmaIetaIeta() < 0.031)
+	  &&
+	  ( el.hadronicOverEm() < 0.065)
+	  &&
+	  (fabs(ooEmooP) < 0.013)
+	  &&
+	  (std::max(0.0, el.ecalPFClusterIso() - rho*EAecal)/el.pt() < 0.120)
+	  &&
+	  (std::max(0.0, el.hcalPFClusterIso() - rho*EAhcal)/el.pt() < 0.120)
+	  &&
+	  (el.dr03TkSumPt()/el.pt() < 0.08)
+          &&
+	  ((el.gsfTrack().isNonnull() ? el.gsfTrack()->normalizedChi2() : std::numeric_limits<float>::max()) < 3.0)
+	  )
+	 pass = kTRUE;
+     } else if (fabs(el.superCluster()->eta()) < 1.479) {
+       if(
+	  (el.full5x5_sigmaIetaIeta() < 0.011)
+	  &&
+	  (fabs(el.deltaEtaSuperClusterTrackAtVtx() - el.superCluster()->eta() + el.superCluster()->seed()->eta()) <  0.004)
+	  &&
+	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.020)
+	  &&
+	  ( el.hadronicOverEm() < 0.060)
+	  &&
+	  (fabs(ooEmooP) < 0.013)
+	  &&
+	  (std::max(0.0, el.ecalPFClusterIso() - rho*EAecal)/el.pt() < 0.160)
+	  &&
+	  (std::max(0.0, el.hcalPFClusterIso() - rho*EAhcal)/el.pt() < 0.120)
+	  &&
+	  (el.dr03TkSumPt()/el.pt() < 0.08)
+	  )
+	 pass = kTRUE;
+     } 
+
+     pass = pass && el.passConversionVeto();
+
+  return pass;
+
+
+  /*
 
   reco::GsfElectron::PflowIsolationVariables pfIso = el.pfIsolationVariables();
   
@@ -86,6 +183,8 @@ inline Bool_t passWLLJJVetoElectronId(const pat::Electron & el, const reco::Vert
     return true;
   else
     return false;
+
+  */
 
 }
 
@@ -475,7 +574,7 @@ inline Bool_t passTightElectronSelectionV4(const pat::Electron & el, const reco:
        ooEmooP = fabs(1.0/el.ecalEnergy() - el.eSuperClusterOverP()/el.ecalEnergy() );
 
      
-     /*
+     /*     
 
      std::cout << "rho = " << rho << std::endl;
      std::cout << el.superCluster()->eta() << std::endl;
