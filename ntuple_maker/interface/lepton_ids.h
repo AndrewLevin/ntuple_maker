@@ -492,6 +492,8 @@ inline Bool_t passTightElectronSelectionV4(const pat::Electron & el, const reco:
 
      */
 
+
+
      //tight working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
      if(fabs(el.superCluster()->eta()) < 2.5 && fabs(el.superCluster()->eta()) > 1.479 ){
        if(
@@ -501,7 +503,7 @@ inline Bool_t passTightElectronSelectionV4(const pat::Electron & el, const reco:
 	  &&
 	  (el.full5x5_sigmaIetaIeta() < 0.0292)
 	  &&
-	  ( el.hcalOverEcal() < 0.0641)
+	  ( el.hadronicOverEm() < 0.0641)
 	  &&
 	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.1)
 	  &&
@@ -512,8 +514,8 @@ inline Bool_t passTightElectronSelectionV4(const pat::Electron & el, const reco:
 	  (relIsoWithDBeta < 0.0571)
 	  &&
 	  (el.passConversionVeto())
-	  //	  &&
-	  //	  (el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1 )
+	  &&
+	  (el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 0 ) //changed from 1 to 0
 	  )
 	 pass = kTRUE;
      } else if (fabs(el.superCluster()->eta()) < 1.479) {
@@ -524,7 +526,7 @@ inline Bool_t passTightElectronSelectionV4(const pat::Electron & el, const reco:
 	  &&
 	  (el.full5x5_sigmaIetaIeta() < 0.00998)
 	  &&
-	  ( el.hcalOverEcal() < 0.0414)
+	  ( el.hadronicOverEm() < 0.0414)
 	  &&
 	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.05 )
 	  &&
@@ -535,8 +537,8 @@ inline Bool_t passTightElectronSelectionV4(const pat::Electron & el, const reco:
 	  (relIsoWithDBeta < 0.0588)
 	  &&
 	  (el.passConversionVeto())
-	  //	  &&
-	  //	  (el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1)
+	  &&
+	  (el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 0) //changed from 1 to 0
 	  )
 	 pass = kTRUE;
      } 
