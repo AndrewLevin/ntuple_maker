@@ -13,7 +13,7 @@
 
 bool trigger_fired(const edm::TriggerNames &names, const edm::Handle< edm::TriggerResults> &triggerResultsHandle, std::string which_triggers){
 
-  assert(which_triggers == "doubleeg" || which_triggers == "doublemu" || which_triggers == "muoneg" || which_triggers == "doublelepton" || which_triggers == "electron_fake_rate" || which_triggers == "muon_fake_rate" || which_triggers == "soup");
+  assert(which_triggers == "doubleeg" || which_triggers == "doublemu" || which_triggers == "muoneg" || which_triggers == "doublelepton" || which_triggers == "electron_fake_rate" || which_triggers == "muon_fake_rate" || which_triggers == "soup" || which_triggers == "doublemudz");
   
   std::vector<std::string> triggerNames;
 
@@ -54,7 +54,7 @@ bool trigger_fired(const edm::TriggerNames &names, const edm::Handle< edm::Trigg
   } 
 
 
-if (which_triggers == "doublemu" || which_triggers == "doublelepton") {
+ if (which_triggers == "doublemu" || which_triggers == "doublelepton") {
 
   triggerNames.push_back("HLT_Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_DZ_v");
   triggerNames.push_back("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_v");
@@ -64,6 +64,14 @@ if (which_triggers == "doublemu" || which_triggers == "doublelepton") {
   triggerNames.push_back("HLT_Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_v");
 
   } 
+
+ if (which_triggers == "doublemudz") {
+
+  triggerNames.push_back("HLT_Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_DZ_v");
+  triggerNames.push_back("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_v");
+  
+  } 
+
 
  if (which_triggers == "muoneg" || which_triggers == "doublelepton") {
 

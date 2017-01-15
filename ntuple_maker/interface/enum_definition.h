@@ -40,6 +40,10 @@ enum Cuts {
   WLLJJVetoV11 = 1UL << 11,
   PassTriggerV1 = 1UL << 12,
   PassTriggerV2 = 1UL << 13,
+  PassTriggerV3 = 1UL << 14,
+  PassTriggerV4 = 1UL << 15,
+  PassTriggerV5 = 1UL << 16,
+  PassTriggerV6 = 1UL << 17,
 };
 
 #endif
