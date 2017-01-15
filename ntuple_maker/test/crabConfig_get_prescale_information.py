@@ -2,7 +2,7 @@ from WMCore.Configuration import Configuration
 config = Configuration()
 
 config.section_("General")
-config.General.requestName = 'prescale_ntuples_v600'
+config.General.requestName = 'prescale_ntuples_v800'
 config.General.workArea = 'crab_projects'
 
 config.section_("JobType")
@@ -13,14 +13,15 @@ config.section_("Data")
 
 config.Data.inputDataset='/ZeroBias/Run2016B-23Sep2016-v3/MINIAOD'
 
-
 config.Data.inputDBS = 'global'
 config.Data.splitting = 'LumiBased'
 config.Data.unitsPerJob = 100
 #config.Data.lumiMask = 'lumi_mask_JSON.txt'
-config.Data.publication = True
+config.Data.publication = False
 config.Data.publishDBS = 'phys03'
-config.Data.outputDatasetTag = 'prescale_ntuples_v600'
+config.Data.outputDatasetTag = 'prescale_ntuples_v800'
+config.Data.ignoreLocality = True
+
 
 config.section_("Site")
 config.Site.storageSite = 'T2_CH_CERN'
