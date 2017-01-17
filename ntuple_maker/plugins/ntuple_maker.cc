@@ -592,7 +592,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 	 flags = flags | WLLJJVetoV8;
 
-	 if( passLooseElectronSelectionV5((*electrons)[i],PV,rho) && passLooseElectronSelectionV5((*electrons)[j],PV,rho))
+	 if( passLooseElectronSelectionV5((*electrons)[i],PV,rho,rhoHLTElectronSelection) && passLooseElectronSelectionV5((*electrons)[j],PV,rho,rhoHLTElectronSelection))
 	   flags = flags | WLLJJVetoV9;
 	 
        }
@@ -617,7 +617,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
      if (passTightElectronSelectionV5((*electrons)[i],PV,rho))
        tight_electron_indices.push_back(i);
-     else if (passVeryLooseElectronSelection((*electrons)[i],PV,rho))
+     else if (passVeryLooseElectronSelection((*electrons)[i],PV,rho,rhoHLTElectronSelection))
        veryloose_electron_indices.push_back(i);
 
 
@@ -657,6 +657,8 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    //   std::cout << "tight_muon_indices.size() = " << tight_muon_indices.size() << std::endl;
    //   std::cout << "tight_electron_indices.size() = " << tight_electron_indices.size() << std::endl;
+   //   std::cout << "veryloose_muon_indices.size() = " << veryloose_muon_indices.size() << std::endl;
+   //   std::cout << "veryloose_electron_indices.size() = " << veryloose_electron_indices.size() << std::endl;
 
    if(tight_muon_indices.size() >= 2){
 
@@ -735,7 +737,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
      for(UInt_t i = 0; i < electrons->size(); i++){
 
-       if ( passWLLJJVetoElectronId( (*electrons)[i], PV, rhoHLTElectronSelection ) && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) {
+       if ( passWLLJJVetoElectronId( (*electrons)[i], PV, rho, rhoHLTElectronSelection ) && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) {
 
 
 	 flags = flags | WLLJJVetoV2;
@@ -791,15 +793,15 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        lepton_selection_flags = lepton_selection_flags | Lep2TightSelectionV4;
      if (passTightElectronSelectionV5((*electrons)[ie], PV,rho))
        lepton_selection_flags = lepton_selection_flags | Lep2TightSelectionV5;
-     if (passLooseElectronSelectionV1((*electrons)[ie],PV,rho))
+     if (passLooseElectronSelectionV1((*electrons)[ie],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep2LooseSelectionV1;
-     if (passLooseElectronSelectionV2((*electrons)[ie],PV,rho))
+     if (passLooseElectronSelectionV2((*electrons)[ie],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep2LooseSelectionV2;
-     if (passLooseElectronSelectionV3((*electrons)[ie],PV,rho))
+     if (passLooseElectronSelectionV3((*electrons)[ie],PV,rho,rhoHLTElectronSelection))
        lepton_selection_flags = lepton_selection_flags | Lep2LooseSelectionV3;
-     if (passLooseElectronSelectionV4((*electrons)[ie],PV,rho))
+     if (passLooseElectronSelectionV4((*electrons)[ie],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep2LooseSelectionV4;
-     if (passLooseElectronSelectionV5((*electrons)[ie],PV,rho))
+     if (passLooseElectronSelectionV5((*electrons)[ie],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep2LooseSelectionV5;
        
      lep2= (*electrons)[ie].p4();
@@ -823,7 +825,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if (i == ie)
 	 continue;
 
-       if ( passWLLJJVetoElectronId( (*electrons)[i], PV, rhoHLTElectronSelection)  && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) {
+       if ( passWLLJJVetoElectronId( (*electrons)[i], PV, rho, rhoHLTElectronSelection)  && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) {
 
 	 flags = flags | WLLJJVetoV2;
        }
@@ -872,25 +874,25 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      //     std::cout << "lepton_selection_flags & Lep1TightSelectionV2 = " << (lepton_selection_flags & Lep1TightSelectionV2) << std::endl;
      //     std::cout << "lepton_selection_flags & Lep2TightSelectionV2 = " << (lepton_selection_flags & Lep2TightSelectionV2) << std::endl;
 
-     if (passLooseElectronSelectionV1((*electrons)[i1],PV,rho))
+     if (passLooseElectronSelectionV1((*electrons)[i1],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep1LooseSelectionV1;
-     if (passLooseElectronSelectionV1((*electrons)[i2],PV,rho))
+     if (passLooseElectronSelectionV1((*electrons)[i2],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep2LooseSelectionV1;
-     if (passLooseElectronSelectionV2((*electrons)[i1],PV,rho))
+     if (passLooseElectronSelectionV2((*electrons)[i1],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep1LooseSelectionV2;
-     if (passLooseElectronSelectionV2((*electrons)[i2],PV,rho))
+     if (passLooseElectronSelectionV2((*electrons)[i2],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep2LooseSelectionV2;
-     if (passLooseElectronSelectionV3((*electrons)[i1],PV,rho))
+     if (passLooseElectronSelectionV3((*electrons)[i1],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep1LooseSelectionV3;
-     if (passLooseElectronSelectionV3((*electrons)[i2],PV,rho))
+     if (passLooseElectronSelectionV3((*electrons)[i2],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep2LooseSelectionV3;
-     if (passLooseElectronSelectionV4((*electrons)[i1],PV,rho))
+     if (passLooseElectronSelectionV4((*electrons)[i1],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep1LooseSelectionV4;
-     if (passLooseElectronSelectionV4((*electrons)[i2],PV,rho))
+     if (passLooseElectronSelectionV4((*electrons)[i2],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep2LooseSelectionV4;
-     if (passLooseElectronSelectionV5((*electrons)[i1],PV,rho))
+     if (passLooseElectronSelectionV5((*electrons)[i1],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep1LooseSelectionV5;
-     if (passLooseElectronSelectionV5((*electrons)[i2],PV,rho))
+     if (passLooseElectronSelectionV5((*electrons)[i2],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep2LooseSelectionV5;
 
      //     std::cout << "lepton_selection_flags & Lep2LooseSelectionV5 = " << bool(lepton_selection_flags & Lep2LooseSelectionV5) << std::endl;
@@ -908,7 +910,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if (i == i1 || i == i2)
 	 continue;
 
-       if ( passWLLJJVetoElectronId( (*electrons)[i],PV,rhoHLTElectronSelection )  && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) 
+       if ( passWLLJJVetoElectronId( (*electrons)[i],PV, rho, rhoHLTElectronSelection )  && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) 
 	 flags = flags | WLLJJVetoV2;
 
      }
@@ -991,7 +993,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
      for(UInt_t i = 0; i < electrons->size(); i++){
 
-       if ( passWLLJJVetoElectronId( (*electrons)[i], PV, rhoHLTElectronSelection )  && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) 
+       if ( passWLLJJVetoElectronId( (*electrons)[i], PV,  rho, rhoHLTElectronSelection )  && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) 
 	 flags = flags | WLLJJVetoV2;
 
      }
@@ -1040,15 +1042,15 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        lepton_selection_flags = lepton_selection_flags | Lep2TightSelectionV4;
      if (passTightElectronSelectionV5((*electrons)[ie], PV,rho))
        lepton_selection_flags = lepton_selection_flags | Lep2TightSelectionV5;
-     if (passLooseElectronSelectionV1((*electrons)[ie],PV,rho))
+     if (passLooseElectronSelectionV1((*electrons)[ie],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep2LooseSelectionV1;
-     if (passLooseElectronSelectionV2((*electrons)[ie],PV,rho))
+     if (passLooseElectronSelectionV2((*electrons)[ie],PV,rho, rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep2LooseSelectionV2;
-     if (passLooseElectronSelectionV3((*electrons)[ie],PV,rho))
+     if (passLooseElectronSelectionV3((*electrons)[ie],PV,rho,rhoHLTElectronSelection))
        lepton_selection_flags = lepton_selection_flags | Lep2LooseSelectionV3;
-     if (passLooseElectronSelectionV4((*electrons)[ie],PV,rho))
+     if (passLooseElectronSelectionV4((*electrons)[ie],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep2LooseSelectionV4;
-     if (passLooseElectronSelectionV5((*electrons)[ie],PV,rho))
+     if (passLooseElectronSelectionV5((*electrons)[ie],PV,rho, rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep2LooseSelectionV5;
        
      lep2= (*electrons)[ie].p4();
@@ -1070,7 +1072,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if (i == ie)
 	 continue;
 
-       if ( passWLLJJVetoElectronId( (*electrons)[i], PV , rhoHLTElectronSelection )  && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) 
+       if ( passWLLJJVetoElectronId( (*electrons)[i], PV ,rho,  rhoHLTElectronSelection )  && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) 
 	 flags = flags | WLLJJVetoV2;
 
 
@@ -1123,15 +1125,15 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        lepton_selection_flags = lepton_selection_flags | Lep2TightSelectionV4;
      if (passTightElectronSelectionV5((*electrons)[ie], PV,rho))
        lepton_selection_flags = lepton_selection_flags | Lep2TightSelectionV5;
-     if (passLooseElectronSelectionV1((*electrons)[ie],PV,rho))
+     if (passLooseElectronSelectionV1((*electrons)[ie],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep2LooseSelectionV1;
-     if (passLooseElectronSelectionV2((*electrons)[ie],PV,rho))
+     if (passLooseElectronSelectionV2((*electrons)[ie],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep2LooseSelectionV2;
-     if (passLooseElectronSelectionV3((*electrons)[ie],PV,rho))
+     if (passLooseElectronSelectionV3((*electrons)[ie],PV,rho,rhoHLTElectronSelection))
        lepton_selection_flags = lepton_selection_flags | Lep2LooseSelectionV3;
-     if (passLooseElectronSelectionV4((*electrons)[ie],PV,rho))
+     if (passLooseElectronSelectionV4((*electrons)[ie],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep2LooseSelectionV4;
-     if (passLooseElectronSelectionV5((*electrons)[ie],PV,rho))
+     if (passLooseElectronSelectionV5((*electrons)[ie],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep2LooseSelectionV5;
        
      lep2= (*electrons)[ie].p4();
@@ -1154,7 +1156,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if (i == ie)
 	 continue;
 
-       if ( passWLLJJVetoElectronId( (*electrons)[i], PV , rhoHLTElectronSelection) && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5  ) 
+       if ( passWLLJJVetoElectronId( (*electrons)[i], PV , rho, rhoHLTElectronSelection) && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5  ) 
 	 flags = flags | WLLJJVetoV2;
 
 
@@ -1198,25 +1200,25 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      if (passTightElectronSelectionV5((*electrons)[i2],PV,rho))
 	 lepton_selection_flags = lepton_selection_flags | Lep2TightSelectionV5;
 
-     if (passLooseElectronSelectionV1((*electrons)[i1],PV,rho))
+     if (passLooseElectronSelectionV1((*electrons)[i1],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep1LooseSelectionV1;
-     if (passLooseElectronSelectionV1((*electrons)[i2],PV,rho))
+     if (passLooseElectronSelectionV1((*electrons)[i2],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep2LooseSelectionV1;
-     if (passLooseElectronSelectionV2((*electrons)[i1],PV,rho))
+     if (passLooseElectronSelectionV2((*electrons)[i1],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep1LooseSelectionV2;
-     if (passLooseElectronSelectionV2((*electrons)[i2],PV,rho))
+     if (passLooseElectronSelectionV2((*electrons)[i2],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep2LooseSelectionV2;
-     if (passLooseElectronSelectionV3((*electrons)[i1],PV,rho))
+     if (passLooseElectronSelectionV3((*electrons)[i1],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep1LooseSelectionV3;
-     if (passLooseElectronSelectionV3((*electrons)[i2],PV,rho))
+     if (passLooseElectronSelectionV3((*electrons)[i2],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep2LooseSelectionV3;
-     if (passLooseElectronSelectionV4((*electrons)[i1],PV,rho))
+     if (passLooseElectronSelectionV4((*electrons)[i1],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep1LooseSelectionV4;
-     if (passLooseElectronSelectionV4((*electrons)[i2],PV,rho))
+     if (passLooseElectronSelectionV4((*electrons)[i2],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep2LooseSelectionV4;
-     if (passLooseElectronSelectionV5((*electrons)[i1],PV,rho))
+     if (passLooseElectronSelectionV5((*electrons)[i1],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep1LooseSelectionV5;
-     if (passLooseElectronSelectionV5((*electrons)[i2],PV,rho))
+     if (passLooseElectronSelectionV5((*electrons)[i2],PV,rho,rhoHLTElectronSelection))
 	 lepton_selection_flags = lepton_selection_flags | Lep2LooseSelectionV5;
 
      //     std::cout << "lepton_selection_flags & Lep2LooseSelectionV5 = " << bool(lepton_selection_flags & Lep2LooseSelectionV5) << std::endl;
@@ -1234,7 +1236,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if (i == i1 || i == i2)
 	 continue;
 
-       if ( passWLLJJVetoElectronId( (*electrons)[i],PV ,  rhoHLTElectronSelection)  && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) 
+       if ( passWLLJJVetoElectronId( (*electrons)[i],PV , rho,  rhoHLTElectronSelection)  && (*electrons)[i].pt() > 10 && abs((*electrons)[i].eta()) < 2.5) 
 	 flags = flags | WLLJJVetoV2;
 
      }

@@ -112,7 +112,7 @@ public:
   edm::EDGetTokenT<double> rhoToken_;
   edm::EDGetTokenT<LHEEventProduct> lheEvtToken_;
   edm::EDGetTokenT<GenEventInfoProduct> genEvtToken_;
-
+  edm::EDGetTokenT<double> rhoHLTElectronSelectionToken_;
 
 
   TH1F * n_events_run_over;
@@ -193,6 +193,8 @@ threeljj_ntuple_maker::threeljj_ntuple_maker(const edm::ParameterSet& iConfig):
   rhoToken_(consumes<double>(iConfig.getParameter<edm::InputTag>("rho"))),
   lheEvtToken_(consumes<LHEEventProduct>(iConfig.getParameter<edm::InputTag>("lheevent"))),
   genEvtToken_(consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("genevent"))),
+  rhoHLTElectronSelectionToken_(consumes<double>(iConfig.getParameter<edm::InputTag>("rhoHLTElectronSelection"))),
+
   syscalcinfo_(iConfig.getUntrackedParameter<bool>("syscalcinfo")),
   mgreweightinfo_(iConfig.getUntrackedParameter<bool>("mgreweightinfo")),
   apply_trigger_(iConfig.getUntrackedParameter<bool>("apply_trigger")),
@@ -251,6 +253,11 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   float rho    =  *rhoHandle;
 
+  edm::Handle<double> rhoHLTElectronSelectionHandle;
+  
+  iEvent.getByToken(rhoHLTElectronSelectionToken_,rhoHLTElectronSelectionHandle);
+
+  float rhoHLTElectronSelection  =  *rhoHLTElectronSelectionHandle;
 
   flags = 0;
 
@@ -349,7 +356,7 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
      if (passTightElectronSelectionV2((*electrons)[i],PV,rho))
        tight_electron_indices.push_back(i);
-     else  if (passVeryLooseElectronSelection((*electrons)[i],PV,rho))
+     else  if (passVeryLooseElectronSelection((*electrons)[i],PV,rho, rhoHLTElectronSelection))
        veryloose_electron_indices.push_back(i);
 
    }
@@ -477,7 +484,7 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
        flags = flags | Lep3TightSelectionV1;
      if (passTightElectronSelectionV2((*electrons)[ie], PV,rho))
        flags = flags | Lep3TightSelectionV2;
-     if (passLooseElectronSelectionV5((*electrons)[ie],PV,rho))
+     if (passLooseElectronSelectionV5((*electrons)[ie],PV,rho,rhoHLTElectronSelection))
 	 flags = flags | Lep3LooseSelectionV5;
        
      lep3= (*electrons)[ie].p4();
@@ -512,14 +519,14 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
        flags = flags | Lep2TightSelectionV1;
      if (passTightElectronSelectionV2((*electrons)[ie1], PV,rho))
        flags = flags | Lep2TightSelectionV2;
-     if (passLooseElectronSelectionV5((*electrons)[ie1],PV,rho))
+     if (passLooseElectronSelectionV5((*electrons)[ie1],PV,rho, rhoHLTElectronSelection))
 	 flags = flags | Lep2LooseSelectionV5;
 
      if (passTightElectronSelectionV1((*electrons)[ie2], PV,rho))
        flags = flags | Lep3TightSelectionV1;
      if (passTightElectronSelectionV2((*electrons)[ie2], PV,rho))
        flags = flags | Lep3TightSelectionV2;
-     if (passLooseElectronSelectionV5((*electrons)[ie2],PV,rho))
+     if (passLooseElectronSelectionV5((*electrons)[ie2],PV,rho, rhoHLTElectronSelection))
 	 flags = flags | Lep3LooseSelectionV5;
 
      lep2= (*electrons)[ie1].p4();
@@ -569,11 +576,11 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	 flags = flags | Lep3TightSelectionV2;
 
 
-     if (passLooseElectronSelectionV5((*electrons)[i1],PV,rho))
+     if (passLooseElectronSelectionV5((*electrons)[i1],PV,rho, rhoHLTElectronSelection))
 	 flags = flags | Lep1LooseSelectionV5;
-     if (passLooseElectronSelectionV5((*electrons)[i2],PV,rho))
+     if (passLooseElectronSelectionV5((*electrons)[i2],PV,rho, rhoHLTElectronSelection))
 	 flags = flags | Lep2LooseSelectionV5;
-     if (passLooseElectronSelectionV5((*electrons)[i3],PV,rho))
+     if (passLooseElectronSelectionV5((*electrons)[i3],PV,rho, rhoHLTElectronSelection))
 	 flags = flags | Lep3LooseSelectionV5;
 
    } else if(tight_muon_indices.size() >= 2 && veryloose_muon_indices.size() >= 1){
@@ -677,7 +684,7 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
        flags = flags | Lep3TightSelectionV1;
      if (passTightElectronSelectionV2((*electrons)[ie], PV,rho))
        flags = flags | Lep3TightSelectionV2;
-     if (passLooseElectronSelectionV5((*electrons)[ie],PV,rho))
+     if (passLooseElectronSelectionV5((*electrons)[ie],PV,rho, rhoHLTElectronSelection))
 	 flags = flags | Lep3LooseSelectionV5;
        
      lep3= (*electrons)[ie].p4();
@@ -713,7 +720,7 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
        flags = flags | Lep2TightSelectionV1;
      if (passTightElectronSelectionV2((*electrons)[ie1], PV,rho))
        flags = flags | Lep2TightSelectionV2;
-     if (passLooseElectronSelectionV5((*electrons)[ie1],PV,rho))
+     if (passLooseElectronSelectionV5((*electrons)[ie1],PV,rho, rhoHLTElectronSelection))
 	 flags = flags | Lep2LooseSelectionV5;
 
 
@@ -721,7 +728,7 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
        flags = flags | Lep3TightSelectionV1;
      if (passTightElectronSelectionV2((*electrons)[ie2], PV,rho))
        flags = flags | Lep3TightSelectionV2;
-     if (passLooseElectronSelectionV5((*electrons)[ie2],PV,rho))
+     if (passLooseElectronSelectionV5((*electrons)[ie2],PV,rho, rhoHLTElectronSelection))
 	 flags = flags | Lep3LooseSelectionV5;
 
        
@@ -771,11 +778,11 @@ threeljj_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 	 flags = flags | Lep3TightSelectionV2;
 
 
-     if (passLooseElectronSelectionV5((*electrons)[i1],PV,rho))
+     if (passLooseElectronSelectionV5((*electrons)[i1],PV,rho, rhoHLTElectronSelection))
 	 flags = flags | Lep1LooseSelectionV5;
-     if (passLooseElectronSelectionV5((*electrons)[i2],PV,rho))
+     if (passLooseElectronSelectionV5((*electrons)[i2],PV,rho, rhoHLTElectronSelection))
 	 flags = flags | Lep2LooseSelectionV5;
-     if (passLooseElectronSelectionV5((*electrons)[i3],PV,rho))
+     if (passLooseElectronSelectionV5((*electrons)[i3],PV,rho, rhoHLTElectronSelection))
 	 flags = flags | Lep3LooseSelectionV5;
 
  } else 

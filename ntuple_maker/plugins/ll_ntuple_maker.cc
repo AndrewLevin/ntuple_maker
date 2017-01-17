@@ -112,6 +112,7 @@ public:
   edm::EDGetTokenT< pat::PackedCandidateCollection> pfToken_;
   edm::EDGetTokenT< std::vector<PileupSummaryInfo> > pileupSummaryToken_;
   edm::EDGetTokenT<double> rhoToken_;
+  edm::EDGetTokenT<double> rhoHLTElectronSelectionToken_;
 
   TH1F * n_events_run_over;
   UInt_t flags;
@@ -173,6 +174,7 @@ ll_ntuple_maker::ll_ntuple_maker(const edm::ParameterSet& iConfig):
   pfToken_(consumes<pat::PackedCandidateCollection>(iConfig.getParameter<edm::InputTag>("pfCands"))),
   pileupSummaryToken_(consumes <std::vector<PileupSummaryInfo> >(iConfig.getParameter<edm::InputTag>("pileup_summary"))),
   rhoToken_(consumes<double>(iConfig.getParameter<edm::InputTag>("rho"))),
+  rhoHLTElectronSelectionToken_(consumes<double>(iConfig.getParameter<edm::InputTag>("rhoHLTElectronSelection"))),
   syscalcinfo_(iConfig.getUntrackedParameter<bool>("syscalcinfo")),
   lheinfo_(iConfig.getUntrackedParameter<bool>("lheinfo")),
   isMC_(iConfig.getUntrackedParameter<bool>("isMC")),
@@ -222,6 +224,12 @@ ll_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
   iEvent.getByToken(rhoToken_,rhoHandle);
 
   float rho    =  *rhoHandle;
+
+  edm::Handle<double> rhoHLTElectronSelectionHandle;
+
+  iEvent.getByToken(rhoHLTElectronSelectionToken_,rhoHLTElectronSelectionHandle);
+
+  float rhoHLTElectronSelection  =  *rhoHLTElectronSelectionHandle;
 
   if (isMC_)
     n_events_run_over->Fill(0.5);
@@ -446,7 +454,7 @@ ll_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
      if( (*electrons)[i].pt() < 10) 
        continue;
 
-     if (!passVeryLooseElectronSelection((*electrons)[i],PV,rho))
+     if (!passVeryLooseElectronSelection((*electrons)[i],PV,rho,rhoHLTElectronSelection))
        continue;
 
      veryloose_electron_indices.push_back(i);
@@ -531,7 +539,7 @@ ll_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
 
      for(UInt_t i = 0; i < electrons->size(); i++){
 
-       if ( passWLLJJVetoElectronId( (*electrons)[i], PV ) ) 
+       if ( passWLLJJVetoElectronId( (*electrons)[i], PV , rho, rhoHLTElectronSelection) ) 
 	 flags = flags | WLLJJVetoV2;
 
      }
@@ -561,9 +569,9 @@ ll_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
 
      if (passTightElectronSelectionV2((*electrons)[ie], PV,rho))
        flags = flags | Lep2TightSelectionV1;
-     if (passLooseElectronSelectionV1((*electrons)[ie],PV,rho))
+     if (passLooseElectronSelectionV1((*electrons)[ie],PV,rho, rhoHLTElectronSelection))
 	 flags = flags | Lep2LooseSelectionV1;
-     if (passLooseElectronSelectionV2((*electrons)[ie],PV,rho))
+     if (passLooseElectronSelectionV2((*electrons)[ie],PV,rho, rhoHLTElectronSelection))
 	 flags = flags | Lep2LooseSelectionV2;
        
      lep2= (*electrons)[ie].p4();
@@ -588,7 +596,7 @@ ll_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
        if (i == ie)
 	 continue;
 
-       if ( passWLLJJVetoElectronId( (*electrons)[i], PV ) ) 
+       if ( passWLLJJVetoElectronId( (*electrons)[i], PV , rho, rhoHLTElectronSelection) ) 
 	 flags = flags | WLLJJVetoV2;
 
 
@@ -612,13 +620,13 @@ ll_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
 	 flags = flags | Lep1TightSelectionV1;
      if (passTightElectronSelectionV2((*electrons)[i2],PV,rho))
 	 flags = flags | Lep2TightSelectionV1;
-     if (passLooseElectronSelectionV1((*electrons)[i1],PV,rho))
+     if (passLooseElectronSelectionV1((*electrons)[i1],PV,rho, rhoHLTElectronSelection))
 	 flags = flags | Lep1LooseSelectionV1;
-     if (passLooseElectronSelectionV1((*electrons)[i2],PV,rho))
+     if (passLooseElectronSelectionV1((*electrons)[i2],PV,rho, rhoHLTElectronSelection))
 	 flags = flags | Lep2LooseSelectionV1;
-     if (passLooseElectronSelectionV2((*electrons)[i1],PV,rho))
+     if (passLooseElectronSelectionV2((*electrons)[i1],PV,rho, rhoHLTElectronSelection))
 	 flags = flags | Lep1LooseSelectionV2;
-     if (passLooseElectronSelectionV2((*electrons)[i2],PV,rho))
+     if (passLooseElectronSelectionV2((*electrons)[i2],PV,rho, rhoHLTElectronSelection))
 	 flags = flags | Lep2LooseSelectionV2;
 
      for(UInt_t i = 0; i < muons->size(); i++){
@@ -636,7 +644,7 @@ ll_ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
        if (i == i1 || i == i2)
 	 continue;
 
-       if ( passWLLJJVetoElectronId( (*electrons)[i],PV ) ) 
+       if ( passWLLJJVetoElectronId( (*electrons)[i],PV, rho , rhoHLTElectronSelection) ) 
 	 flags = flags | WLLJJVetoV2;
 
      }

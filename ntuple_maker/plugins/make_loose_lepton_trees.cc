@@ -107,6 +107,7 @@ public:
   edm::EDGetTokenT<GenEventInfoProduct> genEvtToken_;
   edm::EDGetTokenT<double> rhoToken_;
   //  edm::EDGetTokenT<LHEEventProduct> lheEvtToken_;
+  edm::EDGetTokenT<double> rhoHLTElectronSelectionToken_;
 
   TH1F * n_events_run_over;
   TH1F * n_weighted_events_run_over;
@@ -178,10 +179,12 @@ make_loose_lepton_trees::make_loose_lepton_trees(const edm::ParameterSet& iConfi
   metToken_(consumes<pat::METCollection>(iConfig.getParameter<edm::InputTag>("mets"))),
   prunedGenToken_(consumes<edm::View<reco::GenParticle> >(iConfig.getParameter<edm::InputTag>("prunedgenparticles"))),
   packedGenToken_(consumes<edm::View<pat::PackedGenParticle> >(iConfig.getParameter<edm::InputTag>("packedgenparticles"))),
-  triggerResultsToken_(consumes< edm::TriggerResults >(edm::InputTag("TriggerResults","","HLT"))),
+  //  triggerResultsToken_(consumes< edm::TriggerResults >(edm::InputTag("TriggerResults","","HLT"))),
+  triggerResultsToken_(consumes< edm::TriggerResults >(edm::InputTag("TriggerResults","","HLT2"))),
   triggerObjectToken_( consumes< pat::TriggerObjectStandAloneCollection >(edm::InputTag("selectedPatTrigger"))),
   genEvtToken_(consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("genevent"))),
   rhoToken_(consumes<double>(iConfig.getParameter<edm::InputTag>("rho"))),
+  rhoHLTElectronSelectionToken_(consumes<double>(iConfig.getParameter<edm::InputTag>("rhoHLTElectronSelection"))),
   //  lheEvtToken_(consumes<LHEEventProduct>(iConfig.getParameter<edm::InputTag>("lheevent"))),
   isMC_(iConfig.getUntrackedParameter<bool>("isMC")),
   lepton_flavor_(iConfig.getUntrackedParameter<std::string>("lepton_flavor")),
@@ -258,6 +261,12 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
 
   float rho    =  *rhoHandle;
 
+  edm::Handle<double> rhoHLTElectronSelectionHandle;
+
+  iEvent.getByToken(rhoHLTElectronSelectionToken_,rhoHLTElectronSelectionHandle);
+
+  float rhoHLTElectronSelection  =  *rhoHLTElectronSelectionHandle;
+
   edm::Handle< edm::TriggerResults> triggerResultsHandle;
 
   iEvent.getByToken(triggerResultsToken_,triggerResultsHandle);
@@ -266,6 +275,7 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
 
   if (! trigger_fired(names,triggerResultsHandle,which_triggers_))
     return;
+
 
   edm::Handle<pat::TriggerObjectStandAloneCollection > triggerObjectHandle;
 
@@ -382,30 +392,35 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
      if( (*electrons)[i].pt() < 10)
        continue;
 
-     if (! passVeryLooseElectronSelection((*electrons)[i], PV,rho))
+     if (! passVeryLooseElectronSelection((*electrons)[i], PV,rho,rhoHLTElectronSelection))
        continue;
 
      n_veryloose_electrons++;
 
-     if (passLooseElectronSelectionV1((*electrons)[i], PV,rho))
+     if (passLooseElectronSelectionV1((*electrons)[i], PV,rho,rhoHLTElectronSelection))
        flags = flags | LepLooseSelectionV1;
-     if (passLooseElectronSelectionV2((*electrons)[i], PV,rho))
+     if (passLooseElectronSelectionV2((*electrons)[i], PV,rho,rhoHLTElectronSelection))
        flags = flags | LepLooseSelectionV2;
-     if (passLooseElectronSelectionV3((*electrons)[i], PV,rho))
+     if (passLooseElectronSelectionV3((*electrons)[i], PV,rho,rhoHLTElectronSelection))
        flags = flags | LepLooseSelectionV3;
-     if (passLooseElectronSelectionV4((*electrons)[i], PV,rho))
+     if (passLooseElectronSelectionV4((*electrons)[i], PV,rho,rhoHLTElectronSelection))
        flags = flags | LepLooseSelectionV4;
-     if (passLooseElectronSelectionV5((*electrons)[i], PV,rho))
+     if (passLooseElectronSelectionV5((*electrons)[i], PV,rho,rhoHLTElectronSelection))
        flags = flags | LepLooseSelectionV5;
 
      electron_4mom = (*electrons)[i].p4();
      ie = i;
 
-
      if (passTightElectronSelectionV1((*electrons)[i], PV,rho))
        flags = flags | LepTightSelectionV1;
      if (passTightElectronSelectionV2((*electrons)[i], PV,rho))
        flags = flags | LepTightSelectionV2;
+     if (passTightElectronSelectionV3((*electrons)[i], PV,rho))
+       flags = flags | LepTightSelectionV3;
+     if (passTightElectronSelectionV4((*electrons)[i], PV,rho))
+       flags = flags | LepTightSelectionV4;
+     if (passTightElectronSelectionV5((*electrons)[i], PV,rho))
+       flags = flags | LepTightSelectionV5;
      
    }
 
