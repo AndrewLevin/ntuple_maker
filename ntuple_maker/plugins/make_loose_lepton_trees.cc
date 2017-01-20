@@ -349,6 +349,8 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
    UInt_t ie = 0;
    UInt_t im = 0;
 
+   //need to be careful because flags can be filled multiple times in each event if there are multiple loose leptons
+
    for(UInt_t i = 0; i < muons->size(); i++){
 
      if( (*muons)[i].pt() < 10)
@@ -464,7 +466,7 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
      nearestparton_pdgid=0;
    }
 
-   if (lepton_flavor_ == "electron" && n_veryloose_electrons == 1){
+   if (lepton_flavor_ == "electron" && n_veryloose_electrons == 1 && n_veryloose_muons == 0){
 
      if (isMC_){
 
@@ -517,7 +519,7 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
 
      electron_tree->Fill();
    }
-   else if (lepton_flavor_ == "muon" && n_veryloose_muons == 1){
+   else if (lepton_flavor_ == "muon" && n_veryloose_muons == 1 && n_veryloose_electrons == 0){
 
      if(isMC_){
 
