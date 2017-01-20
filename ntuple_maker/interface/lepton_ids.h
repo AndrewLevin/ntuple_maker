@@ -188,79 +188,6 @@ inline Bool_t passWLLJJVetoElectronId(const pat::Electron & el, const reco::Vert
 
 }
 
-
-inline Bool_t passLooseMuonId(const pat::Muon & muon, const reco::Vertex &vtx) {
-
-  if(!muon.isPFMuon() || !muon.isGlobalMuon() ) return false;
-
-  bool muID = muon.isGlobalMuon() && muon.globalTrack()->normalizedChi2()<10. && muon.globalTrack()->hitPattern().numberOfValidMuonHits() >0 && (muon.numberOfMatchedStations() > 1);
-  
-  bool hits = muon.innerTrack()->hitPattern().trackerLayersWithMeasurement() > 5 &&
-    muon.innerTrack()->hitPattern().numberOfValidPixelHits() > 0; 
-  
-  bool ip = fabs(muon.muonBestTrack()->dxy(vtx.position())) < 0.02 && fabs(muon.muonBestTrack()->dz(vtx.position())) < 0.5;
-
-  return muID && hits && ip;
-
-}
-
-
-inline Bool_t passLooseMuonSelectionV1(const pat::Muon & muon, const reco::Vertex &vtx) {
-
-  Float_t relative_isolation = ( muon.pfIsolationR04().sumChargedHadronPt+ std::max(0.0,muon.pfIsolationR04().sumNeutralHadronEt + muon.pfIsolationR04().sumPhotonEt - 0.5 * muon.pfIsolationR04().sumPUPt) )/muon.pt();
-
-  return passLooseMuonId(muon,vtx) && relative_isolation < 1.0;
-
-}
-
-inline Bool_t passLooseMuonSelectionV2(const pat::Muon & muon, const reco::Vertex &vtx) {
-
-  if(!muon.isGlobalMuon() ) return false;
-
-  return fabs(muon.muonBestTrack()->dxy(vtx.position())) < 0.5 && fabs(muon.muonBestTrack()->dz(vtx.position())) < 1;
-
-}
-
-inline Bool_t passLooseMuonSelectionV3(const pat::Muon & muon, const reco::Vertex &vtx) {
-
-  if(!muon.isPFMuon() || !muon.isGlobalMuon() ) return false;
-
-  bool muID = muon.isGlobalMuon() && muon.globalTrack()->normalizedChi2()<10. && muon.globalTrack()->hitPattern().numberOfValidMuonHits() >0 && (muon.numberOfMatchedStations() > 1);
-  
-  bool hits = muon.innerTrack()->hitPattern().trackerLayersWithMeasurement() > 5 &&
-    muon.innerTrack()->hitPattern().numberOfValidPixelHits() > 0; 
-
-  bool ip = fabs(muon.muonBestTrack()->dxy(vtx.position())) < 0.5 && fabs(muon.muonBestTrack()->dz(vtx.position())) < 1;
-
-  return muID && hits && ip;
-
-}
-
-
-inline Bool_t passLooseMuonSelectionV4(const pat::Muon & muon, const reco::Vertex &vtx) {
-
-  if(!muon.isPFMuon() || !(muon.isGlobalMuon() || muon.isTrackerMuon()) ) return false;
-
-  Float_t relative_total_isolation = ( muon.pfIsolationR04().sumChargedHadronPt+ std::max(0.0,muon.pfIsolationR04().sumNeutralHadronEt + muon.pfIsolationR04().sumPhotonEt - 0.5 * muon.pfIsolationR04().sumPUPt) )/muon.pt();
-
-  //from https://github.com/MiT-HEP/NeroProducer/blob/master/Nero/src/NeroLeptons.cpp#L94
-  //bool iso = ((relative_total_isolation < 0.4) && (muon.isolationR03().sumPt/muon.pt() < 0.4));
-
-  //bool iso = (relative_total_isolation < 0.4);
-
-  bool iso = (muon.isolationR03().sumPt/muon.pt() < 0.4);
-
-  return iso;  
-
-}
-
-inline Bool_t passLooseMuonSelectionV5(const pat::Muon & muon, const reco::Vertex &vtx) {
-
-  return fabs(muon.muonBestTrack()->dxy(vtx.position())) < 0.5 && fabs(muon.muonBestTrack()->dz(vtx.position())) < 1;
-
-}
-
-
 inline Bool_t passTightMuonIdV1(const pat::Muon & muon, const reco::Vertex &vtx) {
 
   if(!muon.isPFMuon() || !muon.isGlobalMuon() ) return false;
@@ -320,6 +247,81 @@ inline Bool_t passTightMuonSelectionV3(const pat::Muon & muon, const reco::Verte
   return passTightMuonIdV1(muon,vtx) && relative_isolation < 0.4;
 
 }
+
+
+inline Bool_t passLooseMuonId(const pat::Muon & muon, const reco::Vertex &vtx) {
+
+  if(!muon.isPFMuon() || !muon.isGlobalMuon() ) return false;
+
+  bool muID = muon.isGlobalMuon() && muon.globalTrack()->normalizedChi2()<10. && muon.globalTrack()->hitPattern().numberOfValidMuonHits() >0 && (muon.numberOfMatchedStations() > 1);
+  
+  bool hits = muon.innerTrack()->hitPattern().trackerLayersWithMeasurement() > 5 &&
+    muon.innerTrack()->hitPattern().numberOfValidPixelHits() > 0; 
+  
+  bool ip = fabs(muon.muonBestTrack()->dxy(vtx.position())) < 0.02 && fabs(muon.muonBestTrack()->dz(vtx.position())) < 0.5;
+
+  return muID && hits && ip;
+
+}
+
+
+inline Bool_t passLooseMuonSelectionV1(const pat::Muon & muon, const reco::Vertex &vtx) {
+
+  Float_t relative_isolation = ( muon.pfIsolationR04().sumChargedHadronPt+ std::max(0.0,muon.pfIsolationR04().sumNeutralHadronEt + muon.pfIsolationR04().sumPhotonEt - 0.5 * muon.pfIsolationR04().sumPUPt) )/muon.pt();
+
+  return passLooseMuonId(muon,vtx) && relative_isolation < 1.0;
+
+}
+
+inline Bool_t passLooseMuonSelectionV2(const pat::Muon & muon, const reco::Vertex &vtx) {
+
+  if(!muon.isGlobalMuon() ) return false;
+
+  return fabs(muon.muonBestTrack()->dxy(vtx.position())) < 0.5 && fabs(muon.muonBestTrack()->dz(vtx.position())) < 1;
+
+}
+
+//Guillelmo's loose muon selection
+inline Bool_t passLooseMuonSelectionV3(const pat::Muon & muon, const reco::Vertex &vtx) {
+
+  Float_t relative_total_isolation = ( muon.pfIsolationR04().sumChargedHadronPt+ std::max(0.0,muon.pfIsolationR04().sumNeutralHadronEt + muon.pfIsolationR04().sumPhotonEt - 0.5 * muon.pfIsolationR04().sumPUPt) )/muon.pt();
+
+  //from https://github.com/MiT-HEP/NeroProducer/blob/master/Nero/src/NeroLeptons.cpp#L94
+  bool iso = ((relative_total_isolation < 0.4) && (muon.isolationR03().sumPt/muon.pt() < 0.4));
+
+  //bool iso = (relative_total_isolation < 0.4);
+
+  //bool iso = (muon.isolationR03().sumPt/muon.pt() < 0.4);
+
+  return iso && passTightMuonIdV1(muon,vtx);
+
+}
+
+//Guillelmo's loose muon selection
+inline Bool_t passLooseMuonSelectionV4(const pat::Muon & muon, const reco::Vertex &vtx) {
+
+  if(!muon.isPFMuon() || !(muon.isGlobalMuon() || muon.isTrackerMuon()) ) return false;
+
+  Float_t relative_total_isolation = ( muon.pfIsolationR04().sumChargedHadronPt+ std::max(0.0,muon.pfIsolationR04().sumNeutralHadronEt + muon.pfIsolationR04().sumPhotonEt - 0.5 * muon.pfIsolationR04().sumPUPt) )/muon.pt();
+
+  //from https://github.com/MiT-HEP/NeroProducer/blob/master/Nero/src/NeroLeptons.cpp#L94
+  //bool iso = ((relative_total_isolation < 0.4) && (muon.isolationR03().sumPt/muon.pt() < 0.4));
+
+  //bool iso = (relative_total_isolation < 0.4);
+
+  bool iso = (muon.isolationR03().sumPt/muon.pt() < 0.4);
+
+  return iso;  
+
+}
+
+inline Bool_t passLooseMuonSelectionV5(const pat::Muon & muon, const reco::Vertex &vtx) {
+
+  return fabs(muon.muonBestTrack()->dxy(vtx.position())) < 0.5 && fabs(muon.muonBestTrack()->dz(vtx.position())) < 1;
+
+}
+
+
 
 
 inline Bool_t passTightElectronSelectionV1(const pat::Electron & el, const reco::Vertex &PV, const double &rho) {
@@ -629,6 +631,8 @@ inline Bool_t passTightElectronSelectionV4(const pat::Electron & el, const reco:
 
 }    
 
+
+//Guillelmo's electron selection
 inline Bool_t passTightElectronSelectionV5(const pat::Electron & el, const reco::Vertex &PV, const double &rho) {
 
   Bool_t pass = kFALSE;
@@ -726,7 +730,6 @@ inline Bool_t passTightElectronSelectionV5(const pat::Electron & el, const reco:
 	  )
 	 pass = kTRUE;
      } 
-
 
   return pass;
 
@@ -855,15 +858,15 @@ inline Bool_t passLooseElectronSelectionV2(const pat::Electron & el, const reco:
      else
        ooEmooP = fabs(1.0/el.ecalEnergy() - el.eSuperClusterOverP()/el.ecalEnergy() );
 
-     /*
 
+     /*
      std::cout << "el.full5x5_sigmaIetaIeta() = " << el.full5x5_sigmaIetaIeta() << std::endl;
      std::cout << "el.hadronicOverEm() = " << el.hadronicOverEm() << std::endl;
      std::cout << "fabs(ooEmooP) = " << fabs(ooEmooP) << std::endl;
      std::cout << "std::max(0.0, el.ecalPFClusterIso() - rho*EAecal)/el.pt() = " << std::max(0.0, el.ecalPFClusterIso() - rho*EAecal)/el.pt() << std::endl;
      std::cout << "std::max(0.0, el.hcalPFClusterIso() - rho*EAhcal)/el.pt() = " << std::max(0.0, el.hcalPFClusterIso() - rho*EAhcal)/el.pt() << std::endl;
      std::cout << "el.dr03TkSumPt()/el.pt() = " << el.dr03TkSumPt()/el.pt() << std::endl;
-     std::cout << "(el.gsfTrack().isNonnull() ? el.gsfTrack()->normalizedChi2() : std::numeric_limits<float>::max()) = " << (el.gsfTrack().isNonnull() ? el.gsfTrack()->normalizedChi2() : std::numeric_limits<float>::max()) << std::endl;
+     std::cout << "std::abs(el.gsfTrack().isNonnull() ? el.gsfTrack()->normalizedChi2() : std::numeric_limits<float>::max()) = " << std::abs(el.gsfTrack().isNonnull() ? el.gsfTrack()->normalizedChi2() : std::numeric_limits<float>::max()) << std::endl;
 
      */
 
@@ -1110,7 +1113,8 @@ inline Bool_t passLooseElectronSelectionV5(const pat::Electron & el, const reco:
 
 inline Bool_t passVeryLooseElectronSelection(const pat::Electron & el, const reco::Vertex &PV, const double &rho, const double &rhoHLTElectronSelection) {
 
-  return passLooseElectronSelectionV5(el,PV,rho,rhoHLTElectronSelection) || passLooseElectronSelectionV4(el,PV,rho,rhoHLTElectronSelection) || passLooseElectronSelectionV3(el,PV,rho,rhoHLTElectronSelection) || passLooseElectronSelectionV2(el,PV,rho,rhoHLTElectronSelection) || passLooseElectronSelectionV1(el,PV,rho,rhoHLTElectronSelection);
+  //  return passLooseElectronSelectionV5(el,PV,rho,rhoHLTElectronSelection) || passLooseElectronSelectionV4(el,PV,rho,rhoHLTElectronSelection) || passLooseElectronSelectionV3(el,PV,rho,rhoHLTElectronSelection) || passLooseElectronSelectionV2(el,PV,rho,rhoHLTElectronSelection) || passLooseElectronSelectionV1(el,PV,rho,rhoHLTElectronSelection);
+  return passLooseElectronSelectionV2(el,PV,rho,rhoHLTElectronSelection);
   //return passTightElectronSelectionV3(el,PV,rho);
 
 }    
@@ -1120,7 +1124,8 @@ inline Bool_t passVeryLooseMuonSelection(const pat::Muon & muon, const reco::Ver
 
   //return passTightMuonSelectionV1(muon,vtx);
 
-  return passLooseMuonSelectionV1(muon,vtx) || passLooseMuonSelectionV2(muon,vtx) || passLooseMuonSelectionV3(muon,vtx) || passLooseMuonSelectionV4(muon,vtx) || passLooseMuonSelectionV5(muon,vtx);
+  //  return passLooseMuonSelectionV1(muon,vtx) || passLooseMuonSelectionV2(muon,vtx) || passLooseMuonSelectionV3(muon,vtx) || passLooseMuonSelectionV4(muon,vtx) || passLooseMuonSelectionV5(muon,vtx);
+  return passLooseMuonSelectionV3(muon,vtx);
 
 }
 
