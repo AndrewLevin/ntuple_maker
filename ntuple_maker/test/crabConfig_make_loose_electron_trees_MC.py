@@ -7,16 +7,11 @@ config.General.workArea = 'crab_projects'
 
 config.section_("JobType")
 config.JobType.pluginName = 'Analysis'
-config.JobType.psetName = 'ntuple_maker/ntuple_maker/python/ConfFile_make_loose_electron_trees_MC_cfg.py'
+config.JobType.psetName = 'src/ntuple_maker/ntuple_maker/python/ConfFile_make_loose_electron_trees_MC_cfg.py'
 
 config.section_("Data")
 
-#config.Data.inputDataset='/DoubleEG/Run2015B-PromptReco-v1/MINIAOD'
-#config.Data.inputDataset='/DoubleEG/Run2015C-PromptReco-v1/MINIAOD'
-#config.Data.inputDataset='/DoubleEG/Run2015D-PromptReco-v3/MINIAOD'
-#config.Data.inputDataset='/DoubleEG/Run2015D-PromptReco-v4/MINIAOD'
-
-config.Data.inputDataset='/WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/MINIAODSIM'
+config.Data.inputDataset='/WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/RunIISpring16MiniAODv2-PUSpring16RAWAODSIM_reHLT_80X_mcRun2_asymptotic_v14_ext1-v1/MINIAODSIM'
 
 config.Data.inputDBS = 'global'
 config.Data.splitting = 'LumiBased'
