@@ -570,12 +570,25 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    for (UInt_t i = 0; i < muons->size(); i++){
      for (UInt_t j = i+1; j < muons->size(); j++){
 
-       if ((*muons)[i].pt() < 10 || (*muons)[j].pt() < 5 || abs((*muons)[i].eta()) > 2.4 || abs((*muons)[j].eta()) > 2.4)
+       if (abs((*muons)[i].eta()) > 2.4 || abs((*muons)[j].eta()) > 2.4)
 	 continue;
 
+
+
        if ((*muons)[j].charge() != (*muons)[i].charge() && abs(((*muons)[i].p4() + (*muons)[j].p4()).mass() - z_mass)  < 15){
-	 
-	 flags = flags | WLLJJVetoV10;
+
+
+	 if (
+
+	     (passTightMuonSelectionV1( (*muons)[i],PV )  && passLooseMuonSelectionV1( (*muons)[j],PV ) && (*muons)[i].pt() > 10 && (*muons)[j].pt() > 5)
+
+	     ||
+
+	     (passTightMuonSelectionV1( (*muons)[j],PV )  && passLooseMuonSelectionV1( (*muons)[i],PV ) && (*muons)[j].pt() > 10 && (*muons)[i].pt() > 5) 
+
+	     )
+
+	   flags = flags | WLLJJVetoV10;
 	 
        }
 
@@ -583,7 +596,10 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    }
 
    for(UInt_t i = 0; i < electrons->size(); i++){
-     for(UInt_t j = i+1; j < electrons->size(); j++){
+     for(UInt_t j = 0; j < electrons->size(); j++){
+
+       if (i == j)
+	 continue;
 
        if ((*electrons)[i].pt() < 10 || (*electrons)[j].pt() < 10 || abs((*electrons)[i].eta()) > 2.5 || abs((*electrons)[j].eta()) > 2.5)
 	 continue;
@@ -592,9 +608,12 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 	 flags = flags | WLLJJVetoV8;
 
-	 if( passLooseElectronSelectionV5((*electrons)[i],PV,rho,rhoHLTElectronSelection) && passLooseElectronSelectionV5((*electrons)[j],PV,rho,rhoHLTElectronSelection))
+	 if( passTightElectronSelectionV4((*electrons)[i],PV,rho) && passVeryLooseElectronSelection((*electrons)[j],PV,rho,rhoHLTElectronSelection)){
+
 	   flags = flags | WLLJJVetoV9;
 	 
+	 }
+
        }
      }
    }
@@ -615,7 +634,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
      if (should_be_cleaned) continue;
 
-     if (passTightElectronSelectionV5((*electrons)[i],PV,rho))
+     if (passTightElectronSelectionV4((*electrons)[i],PV,rho))
        tight_electron_indices.push_back(i);
      else if (passVeryLooseElectronSelection((*electrons)[i],PV,rho,rhoHLTElectronSelection))
        veryloose_electron_indices.push_back(i);
@@ -655,10 +674,10 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     }
 
-   //   std::cout << "tight_muon_indices.size() = " << tight_muon_indices.size() << std::endl;
-   //   std::cout << "tight_electron_indices.size() = " << tight_electron_indices.size() << std::endl;
-   //   std::cout << "veryloose_muon_indices.size() = " << veryloose_muon_indices.size() << std::endl;
-   //   std::cout << "veryloose_electron_indices.size() = " << veryloose_electron_indices.size() << std::endl;
+   //      std::cout << "tight_muon_indices.size() = " << tight_muon_indices.size() << std::endl;
+   //      std::cout << "tight_electron_indices.size() = " << tight_electron_indices.size() << std::endl;
+   //      std::cout << "veryloose_muon_indices.size() = " << veryloose_muon_indices.size() << std::endl;
+   //      std::cout << "veryloose_electron_indices.size() = " << veryloose_electron_indices.size() << std::endl;
 
    if(tight_muon_indices.size() >= 2){
 
@@ -724,6 +743,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      lep2q = (*muons)[i2].charge();
      lep2id = (*muons)[i2].pdgId();
      lep2iso = muon_isolation((*muons)[i2],PV);
+
      
      for(UInt_t i = 0; i < muons->size(); i++){
 
@@ -808,6 +828,8 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      lep2q = (*electrons)[ie].charge();
      lep2id = (*electrons)[ie].pdgId();
      lep2iso = electron_isolation((*electrons)[ie],PV,rho);
+
+     //     std::cout << "lep2.pt() = " << lep2.pt() << std::endl;
 
      for(UInt_t i = 0; i < muons->size(); i++){
 
@@ -1357,14 +1379,15 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	 corrected_jet_pts.push_back(newptUp);
        else if (jer_ == "down")
 	 corrected_jet_pts.push_back(newptDown);
+       else if (jer_ == "no_correction")
+	 corrected_jet_pts.push_back(j.pt());
        else
 	 assert(0);
        
      }
      else
-       corrected_jet_pts.push_back(j.pt());
-     
-     
+       corrected_jet_pts.push_back(j.pt());     
+
      cleaned_jets.push_back(&j);
    }
 

@@ -251,25 +251,27 @@ inline Bool_t passTightMuonSelectionV3(const pat::Muon & muon, const reco::Verte
 
 inline Bool_t passLooseMuonId(const pat::Muon & muon, const reco::Vertex &vtx) {
 
-  if(!muon.isPFMuon() || !muon.isGlobalMuon() ) return false;
+  if(!muon.isPFMuon()) return false;
 
-  bool muID = muon.isGlobalMuon() && muon.globalTrack()->normalizedChi2()<10. && muon.globalTrack()->hitPattern().numberOfValidMuonHits() >0 && (muon.numberOfMatchedStations() > 1);
-  
-  bool hits = muon.innerTrack()->hitPattern().trackerLayersWithMeasurement() > 5 &&
-    muon.innerTrack()->hitPattern().numberOfValidPixelHits() > 0; 
-  
-  bool ip = fabs(muon.muonBestTrack()->dxy(vtx.position())) < 0.02 && fabs(muon.muonBestTrack()->dz(vtx.position())) < 0.5;
+  if(!muon.isTrackerMuon() && !muon.isGlobalMuon() ) return false;
 
-  return muID && hits && ip;
+  //  bool muID = muon.isGlobalMuon() && muon.globalTrack()->normalizedChi2()<10. && muon.globalTrack()->hitPattern().numberOfValidMuonHits() >0 && (muon.numberOfMatchedStations() > 1);
+  
+  //  bool hits = muon.innerTrack()->hitPattern().trackerLayersWithMeasurement() > 5 &&
+  //    muon.innerTrack()->hitPattern().numberOfValidPixelHits() > 0; 
+  
+    //  bool ip = fabs(muon.muonBestTrack()->dxy(vtx.position())) < 0.02 && fabs(muon.muonBestTrack()->dz(vtx.position())) < 0.5;
+
+  return true;
 
 }
 
 
 inline Bool_t passLooseMuonSelectionV1(const pat::Muon & muon, const reco::Vertex &vtx) {
 
-  Float_t relative_isolation = ( muon.pfIsolationR04().sumChargedHadronPt+ std::max(0.0,muon.pfIsolationR04().sumNeutralHadronEt + muon.pfIsolationR04().sumPhotonEt - 0.5 * muon.pfIsolationR04().sumPUPt) )/muon.pt();
+  //  Float_t relative_isolation = ( muon.pfIsolationR04().sumChargedHadronPt+ std::max(0.0,muon.pfIsolationR04().sumNeutralHadronEt + muon.pfIsolationR04().sumPhotonEt - 0.5 * muon.pfIsolationR04().sumPUPt) )/muon.pt();
 
-  return passLooseMuonId(muon,vtx) && relative_isolation < 1.0;
+  return passLooseMuonId(muon,vtx); // && relative_isolation < 1.0;
 
 }
 
@@ -624,8 +626,14 @@ inline Bool_t passTightElectronSelectionV4(const pat::Electron & el, const reco:
 	 pass = kTRUE;
      } 
 
-     if (el.gsfTrack()->numberOfLostHits () != 0)
-       pass = false;
+     //     std::cout << "el.pt() = " << el.pt() << std::endl;
+     //std::cout << "el.eta() = " << el.eta() << std::endl;
+     //std::cout << "el.gsfTrack()->dz( PV.position() ) = " << el.gsfTrack()->dz( PV.position() ) << std::endl;
+
+     //     std::cout << "el.gsfTrack()->numberOfLostHits () = " << el.gsfTrack()->numberOfLostHits () << std::endl;
+
+     //     if (el.gsfTrack()->numberOfLostHits () != 0)
+     //       pass = false;
 
   return pass;
 
