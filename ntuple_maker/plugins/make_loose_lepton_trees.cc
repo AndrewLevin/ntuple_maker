@@ -179,8 +179,8 @@ make_loose_lepton_trees::make_loose_lepton_trees(const edm::ParameterSet& iConfi
   metToken_(consumes<pat::METCollection>(iConfig.getParameter<edm::InputTag>("mets"))),
   prunedGenToken_(consumes<edm::View<reco::GenParticle> >(iConfig.getParameter<edm::InputTag>("prunedgenparticles"))),
   packedGenToken_(consumes<edm::View<pat::PackedGenParticle> >(iConfig.getParameter<edm::InputTag>("packedgenparticles"))),
-    triggerResultsToken_(consumes< edm::TriggerResults >(edm::InputTag("TriggerResults","","HLT"))),
-  //  triggerResultsToken_(consumes< edm::TriggerResults >(edm::InputTag("TriggerResults","","HLT2"))),
+      triggerResultsToken_(consumes< edm::TriggerResults >(edm::InputTag("TriggerResults","","HLT"))),
+  //    triggerResultsToken_(consumes< edm::TriggerResults >(edm::InputTag("TriggerResults","","HLT2"))),
   triggerObjectToken_( consumes< pat::TriggerObjectStandAloneCollection >(edm::InputTag("selectedPatTrigger"))),
   genEvtToken_(consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("genevent"))),
   rhoToken_(consumes<double>(iConfig.getParameter<edm::InputTag>("rho"))),
@@ -353,7 +353,7 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
 
    for(UInt_t i = 0; i < muons->size(); i++){
 
-     if( (*muons)[i].pt() < 10)
+     if( (*muons)[i].pt() < 5)
        continue;
 
      if ( ! passVeryLooseMuonSelection((*muons)[i],PV)  )
@@ -427,8 +427,8 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
    }
 
 
-   //std::cout << "n_veryloose_electrons = " << n_veryloose_electrons << std::endl;
-   //std::cout << "n_veryloose_muon = " << n_veryloose_muons << std::endl;
+   //   std::cout << "n_veryloose_electrons = " << n_veryloose_electrons << std::endl;
+   //   std::cout << "n_veryloose_muon = " << n_veryloose_muons << std::endl;
    
    edm::Handle<pat::JetCollection> jets;
    iEvent.getByToken(jetToken_, jets);
@@ -563,8 +563,11 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
 
      for (const pat::Jet &j : *jets) {
 
-       if (j.pt() > maxptjetaway && reco::deltaR(j,muon_4mom) > 1)
+       if (j.pt() > maxptjetaway && reco::deltaR(j,muon_4mom) > 0.3){
 	 maxptjetaway = j.pt();
+
+       }
+
      }
 
      ptjetaway=maxptjetaway;
