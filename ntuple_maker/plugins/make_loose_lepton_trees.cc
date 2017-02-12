@@ -17,7 +17,7 @@
 //
 //
 
-
+#include "TLorentzVector.h"
 
 // system include files
 #include <memory>
@@ -353,7 +353,7 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
 
    for(UInt_t i = 0; i < muons->size(); i++){
 
-     if( (*muons)[i].pt() < 5)
+     if( (*muons)[i].pt() < 5 || fabs((*muons)[i].eta()) > 2.4)
        continue;
 
      if ( ! passVeryLooseMuonSelection((*muons)[i],PV)  )
@@ -391,7 +391,7 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
 
    for(UInt_t i = 0; i < electrons->size(); i++){
 
-     if( (*electrons)[i].pt() < 10)
+     if( (*electrons)[i].pt() < 10 || fabs((*electrons)[i].eta()) > 2.5)
        continue;
 
      if (! passVeryLooseElectronSelection((*electrons)[i], PV,rho,rhoHLTElectronSelection))
@@ -427,8 +427,8 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
    }
 
 
-   //   std::cout << "n_veryloose_electrons = " << n_veryloose_electrons << std::endl;
-   //   std::cout << "n_veryloose_muon = " << n_veryloose_muons << std::endl;
+   //         std::cout << "n_veryloose_electrons = " << n_veryloose_electrons << std::endl;
+   //         std::cout << "n_veryloose_muon = " << n_veryloose_muons << std::endl;
    
    edm::Handle<pat::JetCollection> jets;
    iEvent.getByToken(jetToken_, jets);
@@ -509,6 +509,9 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
 
      for (const pat::Jet &j : *jets) {
 
+       if (fabs(j.eta()) > 4.7)
+	 continue;
+
        if (j.pt() > maxptjetaway && reco::deltaR(j,electron_4mom) > 1)
 	 maxptjetaway = j.pt();
      }
@@ -562,6 +565,9 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
      Float_t maxptjetaway = -1;
 
      for (const pat::Jet &j : *jets) {
+
+       if (fabs(j.eta()) > 4.7)
+	 continue;
 
        if (j.pt() > maxptjetaway && reco::deltaR(j,muon_4mom) > 0.3){
 	 maxptjetaway = j.pt();
