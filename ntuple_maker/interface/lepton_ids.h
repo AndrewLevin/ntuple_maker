@@ -137,9 +137,9 @@ inline Bool_t passWLLJJVetoElectronId(const pat::Electron & el, const reco::Vert
 	  &&
 	  (fabs(ooEmooP) < 0.013)
 	  &&
-	  (std::max(0.0, el.ecalPFClusterIso() - rho*EAecal)/el.pt() < 0.120)
+	  (std::max(0.0, el.ecalPFClusterIso() - rhoHLTElectronSelection*EAecal)/el.pt() < 0.120)
 	  &&
-	  (std::max(0.0, el.hcalPFClusterIso() - rho*EAhcal)/el.pt() < 0.120)
+	  (std::max(0.0, el.hcalPFClusterIso() - rhoHLTElectronSelection*EAhcal)/el.pt() < 0.120)
 	  &&
 	  (el.dr03TkSumPt()/el.pt() < 0.08)
           &&
@@ -158,9 +158,9 @@ inline Bool_t passWLLJJVetoElectronId(const pat::Electron & el, const reco::Vert
 	  &&
 	  (fabs(ooEmooP) < 0.013)
 	  &&
-	  (std::max(0.0, el.ecalPFClusterIso() - rho*EAecal)/el.pt() < 0.160)
+	  (std::max(0.0, el.ecalPFClusterIso() - rhoHLTElectronSelection*EAecal)/el.pt() < 0.160)
 	  &&
-	  (std::max(0.0, el.hcalPFClusterIso() - rho*EAhcal)/el.pt() < 0.120)
+	  (std::max(0.0, el.hcalPFClusterIso() - rhoHLTElectronSelection*EAhcal)/el.pt() < 0.120)
 	  &&
 	  (el.dr03TkSumPt()/el.pt() < 0.08)
 	  )
@@ -200,7 +200,7 @@ inline Bool_t passTightMuonIdV1(const pat::Muon & muon, const reco::Vertex &vtx)
   //tighten the d0 cut from 0.2 to 0.02 because the muon POG ids consider muons from bs as real
 
   bool ip = fabs(muon.muonBestTrack()->dxy(vtx.position())) < 0.02 && fabs(muon.muonBestTrack()->dz(vtx.position())) < 0.1;
-  
+
   return muID && hits && ip;
 
 }
@@ -739,6 +739,7 @@ inline Bool_t passTightElectronSelectionV5(const pat::Electron & el, const reco:
 	 pass = kTRUE;
      } 
 
+
   return pass;
 
 }    
@@ -866,18 +867,20 @@ inline Bool_t passLooseElectronSelectionV2(const pat::Electron & el, const reco:
      else
        ooEmooP = fabs(1.0/el.ecalEnergy() - el.eSuperClusterOverP()/el.ecalEnergy() );
 
-
      /*
+     
      std::cout << "el.full5x5_sigmaIetaIeta() = " << el.full5x5_sigmaIetaIeta() << std::endl;
      std::cout << "el.hadronicOverEm() = " << el.hadronicOverEm() << std::endl;
      std::cout << "fabs(ooEmooP) = " << fabs(ooEmooP) << std::endl;
-     std::cout << "std::max(0.0, el.ecalPFClusterIso() - rho*EAecal)/el.pt() = " << std::max(0.0, el.ecalPFClusterIso() - rho*EAecal)/el.pt() << std::endl;
-     std::cout << "std::max(0.0, el.hcalPFClusterIso() - rho*EAhcal)/el.pt() = " << std::max(0.0, el.hcalPFClusterIso() - rho*EAhcal)/el.pt() << std::endl;
+     std::cout << "std::max(0.0, el.ecalPFClusterIso() - rhoHLTElectronSelection*EAecal)/el.pt() = " << std::max(0.0, el.ecalPFClusterIso() - rhoHLTElectronSelection*EAecal)/el.pt() << std::endl;
+     std::cout << "std::max(0.0, el.hcalPFClusterIso() - rhoHLTElectronSelection*EAhcal)/el.pt() = " << std::max(0.0, el.hcalPFClusterIso() - rhoHLTElectronSelection*EAhcal)/el.pt() << std::endl;
      std::cout << "el.dr03TkSumPt()/el.pt() = " << el.dr03TkSumPt()/el.pt() << std::endl;
      std::cout << "std::abs(el.gsfTrack().isNonnull() ? el.gsfTrack()->normalizedChi2() : std::numeric_limits<float>::max()) = " << std::abs(el.gsfTrack().isNonnull() ? el.gsfTrack()->normalizedChi2() : std::numeric_limits<float>::max()) << std::endl;
 
      */
 
+     //     std::cout << "el.electronID(\"cutBasedElectronID-Spring15-25ns-V1-standalone-loose\") = " << el.electronID("cutBasedElectronID-Spring15-25ns-V1-standalone-loose") << std::endl;
+     
      if(fabs(el.superCluster()->eta()) < 2.5 && fabs(el.superCluster()->eta()) > 1.479 ){
        if(
 	  (el.full5x5_sigmaIetaIeta() < 0.031)
@@ -886,9 +889,9 @@ inline Bool_t passLooseElectronSelectionV2(const pat::Electron & el, const reco:
 	  &&
 	  (fabs(ooEmooP) < 0.013)
 	  &&
-	  (std::max(0.0, el.ecalPFClusterIso() - rho*EAecal)/el.pt() < 0.120)
+	  (std::max(0.0, el.ecalPFClusterIso() - rhoHLTElectronSelection*EAecal)/el.pt() < 0.120)
 	  &&
-	  (std::max(0.0, el.hcalPFClusterIso() - rho*EAhcal)/el.pt() < 0.120)
+	  (std::max(0.0, el.hcalPFClusterIso() - rhoHLTElectronSelection*EAhcal)/el.pt() < 0.120)
 	  &&
 	  (el.dr03TkSumPt()/el.pt() < 0.08)
           &&
@@ -907,9 +910,9 @@ inline Bool_t passLooseElectronSelectionV2(const pat::Electron & el, const reco:
 	  &&
 	  (fabs(ooEmooP) < 0.013)
 	  &&
-	  (std::max(0.0, el.ecalPFClusterIso() - rho*EAecal)/el.pt() < 0.160)
+	  (std::max(0.0, el.ecalPFClusterIso() - rhoHLTElectronSelection*EAecal)/el.pt() < 0.160)
 	  &&
-	  (std::max(0.0, el.hcalPFClusterIso() - rho*EAhcal)/el.pt() < 0.120)
+	  (std::max(0.0, el.hcalPFClusterIso() - rhoHLTElectronSelection*EAhcal)/el.pt() < 0.120)
 	  &&
 	  (el.dr03TkSumPt()/el.pt() < 0.08)
 	  )
@@ -955,9 +958,9 @@ inline Bool_t passLooseElectronSelectionV3(const pat::Electron & el, const reco:
 	  &&
 	  (el.dr03TkSumPt()/el.pt() < 0.2)
 	  &&
-	  (std::max(0.0, el.ecalPFClusterIso() - rho*EAecal)/el.pt() < 0.132)
+	  (std::max(0.0, el.ecalPFClusterIso() - rhoHLTElectronSelection*EAecal)/el.pt() < 0.132)
 	  &&
-	  (std::max(0.0, el.hcalPFClusterIso() - rho*EAhcal)/el.pt() < 0.131)
+	  (std::max(0.0, el.hcalPFClusterIso() - rhoHLTElectronSelection*EAhcal)/el.pt() < 0.131)
 	  )
 	 pass = kTRUE;
      } else if (fabs(el.superCluster()->eta()) < 1.479) {
@@ -976,9 +979,9 @@ inline Bool_t passLooseElectronSelectionV3(const pat::Electron & el, const reco:
 	  &&
 	  (el.dr03TkSumPt()/el.pt() < 0.2)
 	  &&
-	  (std::max(0.0, el.ecalPFClusterIso() - rho*EAecal)/el.pt() < 0.165)
+	  (std::max(0.0, el.ecalPFClusterIso() - rhoHLTElectronSelection*EAecal)/el.pt() < 0.165)
 	  &&
-	  (std::max(0.0, el.hcalPFClusterIso() - rho*EAhcal)/el.pt() < 0.06)
+	  (std::max(0.0, el.hcalPFClusterIso() - rhoHLTElectronSelection*EAhcal)/el.pt() < 0.06)
 	  )
 	 pass = kTRUE;
      } 
@@ -1030,8 +1033,8 @@ inline Bool_t passLooseElectronSelectionV4(const pat::Electron & el, const reco:
      std::cout << "el.full5x5_sigmaIetaIeta() = " << el.full5x5_sigmaIetaIeta() << std::endl;
      std::cout << "el.hadronicOverEm() = " << el.hadronicOverEm() << std::endl;
      std::cout << "fabs(ooEmooP) = " << fabs(ooEmooP) << std::endl;
-     std::cout << "std::max(0.0, el.ecalPFClusterIso() - rho*EAecal)/el.pt() = " << std::max(0.0, el.ecalPFClusterIso() - rho*EAecal)/el.pt() << std::endl;
-     std::cout << "std::max(0.0, el.hcalPFClusterIso() - rho*EAhcal)/el.pt() = " << std::max(0.0, el.hcalPFClusterIso() - rho*EAhcal)/el.pt() << std::endl;
+     std::cout << "std::max(0.0, el.ecalPFClusterIso() - rhoHLTElectronSelection*EAecal)/el.pt() = " << std::max(0.0, el.ecalPFClusterIso() - rhoHLTElectronSelection*EAecal)/el.pt() << std::endl;
+     std::cout << "std::max(0.0, el.hcalPFClusterIso() - rhoHLTElectronSelection*EAhcal)/el.pt() = " << std::max(0.0, el.hcalPFClusterIso() - rhoHLTElectronSelection*EAhcal)/el.pt() << std::endl;
      std::cout << "el.dr03TkSumPt()/el.pt() = " << el.dr03TkSumPt()/el.pt() << std::endl;
      std::cout << "(el.gsfTrack().isNonnull() ? el.gsfTrack()->normalizedChi2() : std::numeric_limits<float>::max()) = " << (el.gsfTrack().isNonnull() ? el.gsfTrack()->normalizedChi2() : std::numeric_limits<float>::max()) << std::endl;
 
@@ -1045,9 +1048,9 @@ inline Bool_t passLooseElectronSelectionV4(const pat::Electron & el, const reco:
 	  &&
 	  (fabs(ooEmooP) < 0.013)
 	  &&
-	  (std::max(0.0, el.ecalPFClusterIso() - rho*EAecal)/el.pt() < 0.120)
+	  (std::max(0.0, el.ecalPFClusterIso() - rhoHLTElectronSelection*EAecal)/el.pt() < 0.120)
 	  &&
-	  (std::max(0.0, el.hcalPFClusterIso() - rho*EAhcal)/el.pt() < 0.120)
+	  (std::max(0.0, el.hcalPFClusterIso() - rhoHLTElectronSelection*EAhcal)/el.pt() < 0.120)
 	  &&
 	  (el.dr03TkSumPt()/el.pt() < 0.08)
           &&
@@ -1066,9 +1069,9 @@ inline Bool_t passLooseElectronSelectionV4(const pat::Electron & el, const reco:
 	  &&
 	  (fabs(ooEmooP) < 0.013)
 	  &&
-	  (std::max(0.0, el.ecalPFClusterIso() - rho*EAecal)/el.pt() < 0.160)
+	  (std::max(0.0, el.ecalPFClusterIso() - rhoHLTElectronSelection*EAecal)/el.pt() < 0.160)
 	  &&
-	  (std::max(0.0, el.hcalPFClusterIso() - rho*EAhcal)/el.pt() < 0.120)
+	  (std::max(0.0, el.hcalPFClusterIso() - rhoHLTElectronSelection*EAhcal)/el.pt() < 0.120)
 	  &&
 	  (el.dr03TkSumPt()/el.pt() < 0.08)
 	  )
