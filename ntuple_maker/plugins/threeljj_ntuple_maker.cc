@@ -118,7 +118,7 @@ public:
   TH1F * n_events_run_over;
   TH1F * n_weighted_events_run_over;
   UInt_t flags;
-  UInt_t event;
+  ULong64_t event;
   UInt_t run;
   UInt_t lumi;
   UInt_t nvtx;

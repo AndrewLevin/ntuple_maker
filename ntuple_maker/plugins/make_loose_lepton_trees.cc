@@ -113,7 +113,7 @@ public:
   TH1F * n_weighted_events_run_over;
 
   UInt_t flags;
-  UInt_t event;
+  ULong64_t event;
   UInt_t run;
   Float_t iso;
 
@@ -273,9 +273,9 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
 
   const edm::TriggerNames &names = iEvent.triggerNames(*triggerResultsHandle);
 
+
   if (! trigger_fired(names,triggerResultsHandle,which_triggers_))
     return;
-
 
   edm::Handle<pat::TriggerObjectStandAloneCollection > triggerObjectHandle;
 
