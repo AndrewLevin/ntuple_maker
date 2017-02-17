@@ -153,7 +153,8 @@ process.demo = cms.EDAnalyzer('make_loose_lepton_trees',
   rhoHLTElectronSelection = cms.InputTag("fixedGridRhoFastjetCentralCalo"),
   genevent = cms.InputTag("generator"),
   lheevent = cms.InputTag("externalLHEProducer"),
-  which_triggers = cms.untracked.string('muon_fake_rate')
+  which_triggers = cms.untracked.string('muon_fake_rate'),
+  trigger_results = cms.untracked.string('HLT')                             
 
 )
 

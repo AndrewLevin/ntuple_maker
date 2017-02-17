@@ -47,11 +47,33 @@ process.source = cms.Source("PoolSource",
 
 #'/store/data/Run2016B/DoubleEG/MINIAOD/23Sep2016-v3/110000/549ADDCD-5D98-E611-82C0-FA163EC3811B.root'
 
-'/store/data/Run2016B/MuonEG/MINIAOD/23Sep2016-v3/120000/B66DCFF5-759A-E611-9379-0025907B4EC8.root'
+#'/store/data/Run2016B/MuonEG/MINIAOD/23Sep2016-v3/120000/B66DCFF5-759A-E611-9379-0025907B4EC8.root'
+
+#'/store/data/Run2016B/SingleElectron/MINIAOD/23Sep2016-v3/110000/F669150C-509B-E611-BBBE-0CC47A7C345E.root'
+
+#'/store/data/Run2016B/MuonEG/MINIAOD/23Sep2016-v3/00000/96714B21-A297-E611-9E1F-008CFA1974E4.root'
+
+#'/store/data/Run2016B/DoubleMuon/MINIAOD/23Sep2016-v3/60000/CC540CC6-609B-E611-95B4-0CC47AD98CFA.root'
+
+#'/store/data/Run2016B/SingleMuon/MINIAOD/23Sep2016-v3/60000/9A4314CC-E997-E611-B185-002590586F7C.root'
+
+#'/store/data/Run2016B/DoubleEG/MINIAOD/23Sep2016-v3/60000/C857AE8E-8297-E611-9890-FA163E9FC492.root'
+
+#'/store/data/Run2016F/DoubleEG/MINIAOD/23Sep2016-v1/50000/D6280756-9288-E611-A242-008CFA1979EC.root'
+
+#'/store/data/Run2016F/SingleElectron/MINIAOD/23Sep2016-v1/100000/A826E6AA-C592-E611-9A75-7845C4FC39C5.root'
+
+#'/store/data/Run2016G/DoubleEG/MINIAOD/23Sep2016-v1/50000/828C2666-F289-E611-B636-008CFA111188.root'
+
+#'/store/data/Run2016G/SingleElectron/MINIAOD/23Sep2016-v1/80000/06C82E89-498E-E611-B23E-001E677924C6.root'
+
+#'/store/data/Run2016G/SingleElectron/MINIAOD/23Sep2016-v1/50000/EC297894-ED93-E611-9A3B-0CC47A74525A.root'
+
+'/store/data/Run2016G/DoubleEG/MINIAOD/23Sep2016-v1/90000/644796B6-E188-E611-82F0-0CC47AA989C6.root'
 
     ),
 
-#eventsToProcess = cms.untracked.VEventRange('275073:286:516519502-275073:286:516519502'),
+#eventsToProcess = cms.untracked.VEventRange('279931:2610:190288108-279931:2610:190288108'),
 
 )
 
@@ -153,7 +175,8 @@ process.demo = cms.EDAnalyzer('make_loose_lepton_trees',
   rhoHLTElectronSelection = cms.InputTag("fixedGridRhoFastjetCentralCalo"),
   genevent = cms.InputTag("generator"),
   lheevent = cms.InputTag("externalLHEProducer"),
-  which_triggers = cms.untracked.string('electron_fake_rate')
+  which_triggers = cms.untracked.string('electron_fake_rate'),
+  trigger_results_process = cms.untracked.string('HLT'),
 
 )
 
