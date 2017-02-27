@@ -254,7 +254,7 @@ ntuple_maker::ntuple_maker(const edm::ParameterSet& iConfig):
   jetToken_(consumes<pat::JetCollection>(iConfig.getParameter<edm::InputTag>("jets"))),
   fatjetToken_(consumes<pat::JetCollection>(iConfig.getParameter<edm::InputTag>("fatjets"))),
   metToken_(consumes<pat::METCollection>(iConfig.getParameter<edm::InputTag>("mets"))),
-  triggerResultsToken_(consumes< edm::TriggerResults >(edm::InputTag("TriggerResults","","HLT"))),
+  triggerResultsToken_(consumes< edm::TriggerResults >(edm::InputTag("TriggerResults","",iConfig.getUntrackedParameter<std::string>("trigger_results_process")))),
   triggerObjectToken_( consumes< pat::TriggerObjectStandAloneCollection >(edm::InputTag("selectedPatTrigger"))),
   lheRunInfoLabel_(iConfig.getParameter<edm::InputTag>("lheruninfo")),
   pfToken_(consumes<pat::PackedCandidateCollection>(iConfig.getParameter<edm::InputTag>("pfCands"))),
@@ -634,7 +634,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
      if (should_be_cleaned) continue;
 
-     if (passTightElectronSelectionV4((*electrons)[i],PV,rho))
+     if (passTightElectronSelectionV5((*electrons)[i],PV,rho))
        tight_electron_indices.push_back(i);
      else if (passVeryLooseElectronSelection((*electrons)[i],PV,rho,rhoHLTElectronSelection))
        veryloose_electron_indices.push_back(i);
@@ -1717,9 +1717,6 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      metgenmetpt = met.genMET()->pt();
    else
      metgenmetpt = 0;
-
-   //   std::cout << "metpt = " << metpt << std::endl;
-
 
    //metptshiftup = met.shiftedPt(pat::MET::JetEnUp);
 

@@ -13,7 +13,7 @@
 
 bool trigger_fired(const edm::TriggerNames &names, const edm::Handle< edm::TriggerResults> &triggerResultsHandle, std::string which_triggers){
 
-  assert(which_triggers == "doubleeg" || which_triggers == "doublemu" || which_triggers == "muoneg" || which_triggers == "doublelepton" || which_triggers == "electron_fake_rate" || which_triggers == "muon_fake_rate" || which_triggers == "soup" || which_triggers == "doublemudz");
+  assert(which_triggers == "doubleeg" || which_triggers == "doublemu" || which_triggers == "muoneg" || which_triggers == "doublelepton" || which_triggers == "electron_fake_rate" || which_triggers == "muon_fake_rate" || which_triggers == "soup" || which_triggers == "doublemudz" || which_triggers == "muon_fake_rate_mu17" || which_triggers == "electron_fake_rate_ele12" || which_triggers == "electron_fake_rate_ele17" || which_triggers == "electron_fake_rate_ele23");
   
   std::vector<std::string> triggerNames;
 
@@ -97,6 +97,18 @@ bool trigger_fired(const edm::TriggerNames &names, const edm::Handle< edm::Trigg
 
   }
 
+ if (which_triggers == "muon_fake_rate_mu17") {
+
+   //triggerNames.push_back("HLT_Mu8_v");
+   
+   //triggerNames.push_back("HLT_Mu17_v");
+   triggerNames.push_back("HLT_Mu17_TrkIsoVVL_v");
+   
+   //triggerNames.push_back("HLT_Mu24_v"); //not present for some of the 2015 data
+   //triggerNames.push_back("HLT_Mu34_v"); //not present for some of the 2015 data
+
+  }
+
  if (which_triggers == "electron_fake_rate") {
 
    triggerNames.push_back("HLT_Ele12_CaloIdL_TrackIdL_IsoVL_PFJet30_v");
@@ -110,6 +122,24 @@ bool trigger_fired(const edm::TriggerNames &names, const edm::Handle< edm::Trigg
 
   }
 
+ if (which_triggers == "electron_fake_rate_ele12") {
+
+   triggerNames.push_back("HLT_Ele12_CaloIdL_TrackIdL_IsoVL_PFJet30_v");
+
+  }
+
+ if (which_triggers == "electron_fake_rate_ele17") {
+
+   triggerNames.push_back("HLT_Ele17_CaloIdL_TrackIdL_IsoVL_PFJet30_v");
+
+  }
+
+ if (which_triggers == "electron_fake_rate_ele23") {
+
+   triggerNames.push_back("HLT_Ele23_CaloIdL_TrackIdL_IsoVL_PFJet30_v");
+
+  }
+
   edm::Handle<pat::TriggerObjectStandAloneCollection > triggerObjectHandle;
   
   Bool_t trigger_fired = kFALSE;
@@ -117,8 +147,8 @@ bool trigger_fired(const edm::TriggerNames &names, const edm::Handle< edm::Trigg
   for (unsigned int i = 0; i < names.size(); i++) {
     
     //std::cout << "names.triggerName(i) = " << names.triggerName(i) << std::endl;                                                                                     
-    //            if (triggerResultsHandle->accept(i))
-    //      	std::cout << "names.triggerName(i) = " << names.triggerName(i) << std::endl;                                                                                     
+    //                    if (triggerResultsHandle->accept(i))
+    //              	std::cout << "names.triggerName(i) = " << names.triggerName(i) << std::endl;                                                                                     
       
 
     

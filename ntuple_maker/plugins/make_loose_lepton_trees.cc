@@ -214,6 +214,7 @@ void
 make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
 
+  flags = 0;
 
   if(isMC_){
 
@@ -273,9 +274,32 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
 
   const edm::TriggerNames &names = iEvent.triggerNames(*triggerResultsHandle);
 
+  if( which_triggers_ == "electron_fake_rate" ){
 
-  if (! trigger_fired(names,triggerResultsHandle,which_triggers_))
-    return;
+    if (trigger_fired(names,triggerResultsHandle,"electron_fake_rate_ele12")){
+      flags = flags | PassTriggerV1;
+    }
+
+    if (trigger_fired(names,triggerResultsHandle,"electron_fake_rate_ele17")){
+      flags = flags | PassTriggerV2;
+    }
+
+    if (trigger_fired(names,triggerResultsHandle,"electron_fake_rate_ele23")){
+      flags = flags | PassTriggerV3;
+    }
+
+  }
+
+  if( which_triggers_ == "muon_fake_rate" ){
+
+    if (trigger_fired(names,triggerResultsHandle,"muon_fake_rate_mu17")){
+      flags = flags | PassTriggerV4;
+    }
+
+  }
+
+  //  if (! trigger_fired(names,triggerResultsHandle,which_triggers_))
+  //    return;
 
   edm::Handle<pat::TriggerObjectStandAloneCollection > triggerObjectHandle;
 
@@ -315,7 +339,8 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
   std::vector<UInt_t> loose_muon_indices;
   std::vector<UInt_t> loose_electron_indices;
 
-  flags = 0;
+
+
 
    using namespace edm;
 
@@ -395,7 +420,7 @@ make_loose_lepton_trees::analyze(const edm::Event& iEvent, const edm::EventSetup
        continue;
 
      if (! passVeryLooseElectronSelection((*electrons)[i], PV,rho,rhoHLTElectronSelection))
-       continue;
+            continue;
 
      n_veryloose_electrons++;
 

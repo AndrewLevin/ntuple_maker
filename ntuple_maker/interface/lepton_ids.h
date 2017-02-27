@@ -739,7 +739,6 @@ inline Bool_t passTightElectronSelectionV5(const pat::Electron & el, const reco:
 	 pass = kTRUE;
      } 
 
-
   return pass;
 
 }    
@@ -1125,7 +1124,7 @@ inline Bool_t passLooseElectronSelectionV5(const pat::Electron & el, const reco:
 inline Bool_t passVeryLooseElectronSelection(const pat::Electron & el, const reco::Vertex &PV, const double &rho, const double &rhoHLTElectronSelection) {
 
   //  return passLooseElectronSelectionV5(el,PV,rho,rhoHLTElectronSelection) || passLooseElectronSelectionV4(el,PV,rho,rhoHLTElectronSelection) || passLooseElectronSelectionV3(el,PV,rho,rhoHLTElectronSelection) || passLooseElectronSelectionV2(el,PV,rho,rhoHLTElectronSelection) || passLooseElectronSelectionV1(el,PV,rho,rhoHLTElectronSelection);
-  return passLooseElectronSelectionV2(el,PV,rho,rhoHLTElectronSelection);
+  return passLooseElectronSelectionV2(el,PV,rho,rhoHLTElectronSelection) || passTightElectronSelectionV5(el,PV,rho);
   //return passTightElectronSelectionV3(el,PV,rho);
 
 }    

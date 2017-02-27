@@ -14,6 +14,10 @@ enum Flags {
   LepLooseSelectionV3  = 1UL<<10,
   LepLooseSelectionV4  = 1UL<<11,
   LepLooseSelectionV5  = 1UL<<12,
+  PassTriggerV1 = 1UL << 13,
+  PassTriggerV2 = 1UL << 14,
+  PassTriggerV3 = 1UL << 15,
+  PassTriggerV4 = 1UL << 16,
 };
 
 #endif
