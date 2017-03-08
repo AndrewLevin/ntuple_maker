@@ -14,7 +14,11 @@ process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use
     fileNames = cms.untracked.vstring(
 
-'/store/mc/RunIISpring16MiniAODv2/WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/PUSpring16RAWAODSIM_reHLT_80X_mcRun2_asymptotic_v14_ext1-v1/20000/02652A75-C654-E611-9734-0CC47A4D7686.root'
+'root://cmsxrootd-site.fnal.gov//store/mc/RunIISummer16MiniAODv2/QCD_Pt_30to80_bcToE_TuneCUETP8M1_13TeV_pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/60000/041255A6-0ECF-E611-83F9-02163E019B60.root'
+
+#'/store/mc/RunIISpring16MiniAODv2/QCD_Pt_30to80_bcToE_TuneCUETP8M1_13TeV_pythia8/MINIAODSIM/PUSpring16_80X_mcRun2_asymptotic_2016_miniAODv2_v0-v2/70000/00592CAC-182D-E611-BE50-000101000023.root'
+
+#'/store/mc/RunIISpring16MiniAODv2/WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/PUSpring16RAWAODSIM_reHLT_80X_mcRun2_asymptotic_v14_ext1-v1/20000/02652A75-C654-E611-9734-0CC47A4D7686.root'
 
 #'/store/mc/RunIISpring16MiniAODv2/WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/PUSpring16_80X_mcRun2_asymptotic_2016_miniAODv2_v0-v1/00000/127DD5B1-DC1A-E611-93AE-0025905AC824.root'
 
@@ -141,7 +145,7 @@ rhoHLTElectronSelection = cms.InputTag("fixedGridRhoFastjetCentralCalo"),
   lheevent = cms.InputTag("externalLHEProducer"),
   genevent = cms.InputTag("generator"),
   which_triggers = cms.untracked.string("electron_fake_rate"),
-  trigger_results_process = cms.untracked.string("HLT2")
+  trigger_results_process = cms.untracked.string("HLT")
 
 )
 
