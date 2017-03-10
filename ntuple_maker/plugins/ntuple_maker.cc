@@ -620,8 +620,14 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    for(UInt_t i = 0; i < electrons->size(); i++){
 
+     std::cout << "(*electrons)[i].pt() = " << (*electrons)[i].pt() << std::endl;
+     std::cout << "(*electrons)[i].eta() = " << (*electrons)[i].eta() << std::endl;
+
      if( (*electrons)[i].pt() < 20 || abs((*electrons)[i].eta()) > 2.5) 
        continue;
+
+     std::cout << "(*electrons)[i].pt() = " << (*electrons)[i].pt() << std::endl;
+     std::cout << "(*electrons)[i].eta() = " << (*electrons)[i].eta() << std::endl;
 
      bool should_be_cleaned = false;
 
@@ -634,7 +640,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
      if (should_be_cleaned) continue;
 
-     if (passTightElectronSelectionV5((*electrons)[i],PV,rho))
+     if (passTightElectronSelectionV4((*electrons)[i],PV,rho))
        tight_electron_indices.push_back(i);
      else if (passVeryLooseElectronSelection((*electrons)[i],PV,rho,rhoHLTElectronSelection))
        veryloose_electron_indices.push_back(i);
@@ -674,10 +680,10 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     }
 
-   //      std::cout << "tight_muon_indices.size() = " << tight_muon_indices.size() << std::endl;
-   //      std::cout << "tight_electron_indices.size() = " << tight_electron_indices.size() << std::endl;
-   //      std::cout << "veryloose_muon_indices.size() = " << veryloose_muon_indices.size() << std::endl;
-   //      std::cout << "veryloose_electron_indices.size() = " << veryloose_electron_indices.size() << std::endl;
+         std::cout << "tight_muon_indices.size() = " << tight_muon_indices.size() << std::endl;
+         std::cout << "tight_electron_indices.size() = " << tight_electron_indices.size() << std::endl;
+         std::cout << "veryloose_muon_indices.size() = " << veryloose_muon_indices.size() << std::endl;
+         std::cout << "veryloose_electron_indices.size() = " << veryloose_electron_indices.size() << std::endl;
 
    if(tight_muon_indices.size() >= 2){
 

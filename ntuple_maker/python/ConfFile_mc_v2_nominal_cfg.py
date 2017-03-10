@@ -29,23 +29,16 @@ process.source = cms.Source("PoolSource",
 
     fileNames = cms.untracked.vstring(
 
-#'/store/mc/RunIIFall15MiniAODv2/WLLJJToLNu_M-60_EWK_QCD_TuneCUETP8M1_13TeV-madgraph-pythia8/MINIAODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/00000/C69294D5-4CB8-E511-9FF5-001E67E95C40.root'
+'/store/mc/RunIISummer16MiniAODv2/WpWpJJ_EWK_TuneCUETP8M1_13TeV-madgraph-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/80000/044AEFD6-92DE-E611-B842-0CC47A4D7616.root',
 
-#'/store/mc/RunIISummer16MiniAODv2/WpWpJJ_EWK_TuneCUETP8M1_13TeV-madgraph-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/80000/044AEFD6-92DE-E611-B842-0CC47A4D7616.root'
+'/store/mc/RunIISummer16MiniAODv2/WpWpJJ_EWK_TuneCUETP8M1_13TeV-madgraph-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/80000/CA3039C2-9CDE-E611-9E74-0CC47A4D7662.root',
 
-#'/store/mc/RunIISpring16MiniAODv2/WmWmJJ_13TeV-powheg-pythia8_TuneCUETP8M1/MINIAODSIM/PUSpring16_80X_mcRun2_asymptotic_2016_miniAODv2_v0-v2/00000/1C2655B1-5A38-E611-A3C0-C4346BC8C638.root'
+'/store/mc/RunIISummer16MiniAODv2/WpWpJJ_EWK_TuneCUETP8M1_13TeV-madgraph-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/80000/E40448C3-94DE-E611-9C31-0CC47A78A340.root'
 
-#'/store/mc/RunIISpring16MiniAODv2/WLLJJToLNu_M-60_EWK_13TeV-madgraph-pythia8/MINIAODSIM/premix_withHLT_80X_mcRun2_asymptotic_v14-v1/80000/064D833C-537F-E611-987E-20CF3027A5BC.root'
-
-#'/store/mc/RunIISpring16MiniAODv2/WpWpJJ_EWK_TuneCUETP8M1_13TeV-madgraph-pythia8/MINIAODSIM/PUSpring16_80X_mcRun2_asymptotic_2016_miniAODv2_v0-v1/50000/08277AB0-F225-E611-8046-D4AE526A33F5.root'
-
-#'/store/mc/RunIISpring16MiniAODv2/WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/PUSpring16RAWAODSIM_reHLT_80X_mcRun2_asymptotic_v14_ext1-v1/20000/02652A75-C654-E611-9734-0CC47A4D7686.root'
-
-'/store/mc/RunIISpring16MiniAODv2/WLLJJToLNu_M-60_EWK_13TeV-madgraph-pythia8/MINIAODSIM/premix_withHLT_80X_mcRun2_asymptotic_v14-v1/80000/064D833C-537F-E611-987E-20CF3027A5BC.root'
 
     ),
 
-#eventsToProcess = cms.untracked.VEventRange('1:985:121697-1:985:121697'),
+eventsToProcess = cms.untracked.VEventRange('1:1010:124689-1:1010:124689'),
 
 )
 
@@ -63,7 +56,7 @@ from CondCore.DBCommon.CondDBSetup_cfi import *
 
 #jecString = cms.string('sqlite:src/ntuple_maker/ntuple_maker/data/jec/Spring16_25nsV1_MC.db')
 
-jecString = cms.string('sqlite:src/ntuple_maker/ntuple_maker/data/jec/Spring16_23Sep2016V1_MC.db')
+jecString = cms.string('sqlite:src/ntuple_maker/ntuple_maker/data/jec/Summer16_23Sep2016V4_MC.db')
 
 process.jec = cms.ESSource("PoolDBESSource",
       DBParameters = cms.PSet(
@@ -73,7 +66,7 @@ process.jec = cms.ESSource("PoolDBESSource",
       toGet = cms.VPSet(
       cms.PSet(
             record = cms.string('JetCorrectionsRecord'),
-            tag    = cms.string('JetCorrectorParametersCollection_Spring16_23Sep2016V1_MC_AK4PFchs'),
+            tag    = cms.string('JetCorrectorParametersCollection_Summer16_23Sep2016V4_MC_AK4PFchs'),
 #            tag    = cms.string('JetCorrectorParametersCollection_Spring16_25nsV1_MC_AK4PFchs'),
             label  = cms.untracked.string('AK4PFchs')
             ),
@@ -142,6 +135,13 @@ runMetCorAndUncFromMiniAOD(process,
 
            )
 
+process.load('EgammaAnalysis.ElectronTools.regressionApplication_cff')
+from EgammaAnalysis.ElectronTools.regressionWeights_cfi import regressionWeights
+process = regressionWeights(process)
+
+process.load('EgammaAnalysis.ElectronTools.calibratedElectronsRun2_cfi')
+process.load('EgammaAnalysis.ElectronTools.calibratedPhotonsRun2_cfi')
+
 
 process.demo = cms.EDAnalyzer('ntuple_maker',
 
@@ -154,7 +154,8 @@ process.demo = cms.EDAnalyzer('ntuple_maker',
 #  lheruninfo = cms.InputTag("source"),
 #  lheevent = cms.InputTag("source"),
   muons = cms.InputTag("slimmedMuons"),
-  electrons = cms.InputTag("slimmedElectrons"),
+electrons = cms.InputTag("calibratedPatElectrons"),                              
+#  electrons = cms.InputTag("slimmedElectrons"),
   taus = cms.InputTag("slimmedTaus"),
   photons = cms.InputTag("slimmedPhotons"),
 jets = cms.InputTag("updatedPatJetsUpdatedJEC"),
@@ -184,5 +185,5 @@ mets = cms.InputTag('slimmedMETs','','Demo'),
   trigger_results_process = cms.untracked.string("HLT")                              
 )
 
-process.p = cms.Path(process.fullPatMetSequence*process.jecSequence*  process.cleanedMu*process.demo)
+process.p = cms.Path(process.fullPatMetSequence* process.calibratedPatElectrons  * process.jecSequence*  process.cleanedMu*process.demo)
 

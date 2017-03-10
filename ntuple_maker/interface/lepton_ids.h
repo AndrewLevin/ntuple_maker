@@ -598,7 +598,7 @@ inline Bool_t passTightElectronSelectionV4(const pat::Electron & el, const reco:
 	  &&
 	  (el.passConversionVeto())
 	  &&
-	  (el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1 )
+	  (el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 0)
 	  )
 	 pass = kTRUE;
      } else if (fabs(el.superCluster()->eta()) < 1.479) {
@@ -621,14 +621,16 @@ inline Bool_t passTightElectronSelectionV4(const pat::Electron & el, const reco:
 	  &&
 	  (el.passConversionVeto())
 	  &&
-	  (el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1) 
+	  (el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 0) 
 	  )
 	 pass = kTRUE;
      } 
 
-     //     std::cout << "el.pt() = " << el.pt() << std::endl;
-     //std::cout << "el.eta() = " << el.eta() << std::endl;
-     //std::cout << "el.gsfTrack()->dz( PV.position() ) = " << el.gsfTrack()->dz( PV.position() ) << std::endl;
+     std::cout << "el.pt() = " << el.pt() << std::endl;
+     std::cout << "el.eta() = " << el.eta() << std::endl;
+     std::cout << "el.gsfTrack()->dz( PV.position() ) = " << el.gsfTrack()->dz( PV.position() ) << std::endl;
+     std::cout << "el.gsfTrack()->dxy( PV.position() ) = " << el.gsfTrack()->dxy( PV.position() ) << std::endl;
+     std::cout << "pass = " << pass << std::endl;
 
      //     std::cout << "el.gsfTrack()->numberOfLostHits () = " << el.gsfTrack()->numberOfLostHits () << std::endl;
 

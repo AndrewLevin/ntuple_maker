@@ -7,8 +7,8 @@ process.load("FWCore.MessageService.MessageLogger_cfi")
 process.TFileService = cms.Service("TFileService", fileName = cms.string("output_tree.root") )
 
 process.maxEvents = cms.untracked.PSet( 
+#input = cms.untracked.int32(100) ,
 input = cms.untracked.int32(-1) ,
-#input = cms.untracked.int32(-1) ,
 
 )
 
@@ -23,10 +23,35 @@ process.source = cms.Source("PoolSource",
 
     fileNames = cms.untracked.vstring(
 
+#'/store/data/Run2016D/DoubleMuon/MINIAOD/23Sep2016-v1/90000/1EEEE4BB-0B8C-E611-B87F-3417EBE480D1.root'
+
+#'/store/data/Run2016E/DoubleEG/MINIAOD/23Sep2016-v1/90000/1AF5373A-3C91-E611-AFC4-0CC47A4C8E8A.root'
+
+#'/store/data/Run2016E/DoubleEG/MINIAOD/23Sep2016-v1/80000/5E6F8078-BE88-E611-9D50-0CC47A4D764C.root'
+
+#'/store/data/Run2016B/DoubleEG/MINIAOD/23Sep2016-v3/110000/408DD8D7-3398-E611-BDC5-02163E014AD3.root'
+
+#'/store/data/Run2016B/DoubleEG/MINIAOD/23Sep2016-v3/120000/18E0EC8C-3598-E611-BF53-0CC47A78A3B4.root'
+
+#'/store/data/Run2016B/DoubleEG/MINIAOD/23Sep2016-v3/00000/84FFB190-E697-E611-AB0A-003048F5E840.root'
+
+#'/store/data/Run2016B/DoubleEG/MINIAOD/23Sep2016-v3/120000/18E0EC8C-3598-E611-BF53-0CC47A78A3B4.root'
+
+#'/store/data/Run2016B/SingleMuon/MINIAOD/23Sep2016-v3/60000/C81A53E1-8598-E611-9D91-F45214939730.root'
+
+#'/store/data/Run2016B/SingleElectron/MINIAOD/23Sep2016-v3/60000/F0FEEBFC-959A-E611-8E9B-0025905AA9CC.root'
+
+#'/store/data/Run2016B/DoubleEG/MINIAOD/23Sep2016-v3/110000/3E3AEF51-4898-E611-85CA-0025905A6084.root'
+
+#'/store/data/Run2016B/DoubleMuon/MINIAOD/23Sep2016-v3/00000/CC154516-589B-E611-A533-008CFA197E0C.root'
+
+#'/store/data/Run2016B/DoubleMuon/MINIAOD/23Sep2016-v3/00000/00269AA1-479B-E611-A359-0025905A6082.root'
+
 '/store/data/Run2016H/MuonEG/MINIAOD/PromptReco-v2/000/283/876/00000/AA7CCD56-C19C-E611-8F3B-02163E011872.root'
 
-)
-#eventsToProcess = cms.untracked.VEventRange('283876:158:189263031-283876:158:189263031'),
+),
+
+#eventsToProcess = cms.untracked.VEventRange('276525:394:592892349-276525:394:592892349'),
 
 )
 
