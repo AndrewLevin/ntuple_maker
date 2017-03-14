@@ -35,10 +35,9 @@ process.source = cms.Source("PoolSource",
 
 '/store/mc/RunIISummer16MiniAODv2/WpWpJJ_EWK_TuneCUETP8M1_13TeV-madgraph-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/80000/E40448C3-94DE-E611-9C31-0CC47A78A340.root'
 
-
     ),
 
-eventsToProcess = cms.untracked.VEventRange('1:1010:124689-1:1010:124689'),
+eventsToProcess = cms.untracked.VEventRange('1:1124:138798-1:1124:138798'),
 
 )
 
@@ -47,8 +46,8 @@ process.load('Configuration.StandardSequences.Services_cff')
 process.load("Configuration.StandardSequences.MagneticField_cff")
 
 #mc https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideFrontierConditions#Global_Tags_for_Run2_MC_Producti
-#process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff')
-#process.GlobalTag.globaltag = '76X_mcRun2_asymptotic_v12'
+process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff')
+process.GlobalTag.globaltag = '80X_mcRun2_asymptotic_2016_TrancheIV_v8'
 
 from CondCore.DBCommon.CondDBSetup_cfi import *
 
@@ -140,8 +139,6 @@ from EgammaAnalysis.ElectronTools.regressionWeights_cfi import regressionWeights
 process = regressionWeights(process)
 
 process.load('EgammaAnalysis.ElectronTools.calibratedElectronsRun2_cfi')
-process.load('EgammaAnalysis.ElectronTools.calibratedPhotonsRun2_cfi')
-
 
 process.demo = cms.EDAnalyzer('ntuple_maker',
 
@@ -154,7 +151,7 @@ process.demo = cms.EDAnalyzer('ntuple_maker',
 #  lheruninfo = cms.InputTag("source"),
 #  lheevent = cms.InputTag("source"),
   muons = cms.InputTag("slimmedMuons"),
-electrons = cms.InputTag("calibratedPatElectrons"),                              
+  electrons = cms.InputTag("calibratedPatElectrons"),
 #  electrons = cms.InputTag("slimmedElectrons"),
   taus = cms.InputTag("slimmedTaus"),
   photons = cms.InputTag("slimmedPhotons"),
@@ -185,5 +182,5 @@ mets = cms.InputTag('slimmedMETs','','Demo'),
   trigger_results_process = cms.untracked.string("HLT")                              
 )
 
-process.p = cms.Path(process.fullPatMetSequence* process.calibratedPatElectrons  * process.jecSequence*  process.cleanedMu*process.demo)
+process.p = cms.Path( process.regressionApplication * process.calibratedPatElectrons * process.fullPatMetSequence  * process.jecSequence*  process.cleanedMu*process.demo)
 

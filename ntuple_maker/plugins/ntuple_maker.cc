@@ -386,6 +386,8 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      edm::Handle<pat::TauCollection> taus;
      iEvent.getByToken(tauToken_, taus);
 
+     /*
+
      edm::Handle<pat::PackedCandidateCollection> pfs;
      iEvent.getByToken(pfToken_, pfs);
 
@@ -472,7 +474,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        }
      }     
 
-
+     */
 
   edm::Handle< edm::TriggerResults> triggerResultsHandle;
 
@@ -567,6 +569,8 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      }
    }
 
+   /*
+
    for (UInt_t i = 0; i < muons->size(); i++){
      for (UInt_t j = i+1; j < muons->size(); j++){
 
@@ -595,6 +599,8 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      }
    }
 
+   */
+
    for(UInt_t i = 0; i < electrons->size(); i++){
      for(UInt_t j = 0; j < electrons->size(); j++){
 
@@ -620,14 +626,8 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    for(UInt_t i = 0; i < electrons->size(); i++){
 
-     std::cout << "(*electrons)[i].pt() = " << (*electrons)[i].pt() << std::endl;
-     std::cout << "(*electrons)[i].eta() = " << (*electrons)[i].eta() << std::endl;
-
      if( (*electrons)[i].pt() < 20 || abs((*electrons)[i].eta()) > 2.5) 
        continue;
-
-     std::cout << "(*electrons)[i].pt() = " << (*electrons)[i].pt() << std::endl;
-     std::cout << "(*electrons)[i].eta() = " << (*electrons)[i].eta() << std::endl;
 
      bool should_be_cleaned = false;
 
@@ -680,10 +680,10 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     }
 
-         std::cout << "tight_muon_indices.size() = " << tight_muon_indices.size() << std::endl;
-         std::cout << "tight_electron_indices.size() = " << tight_electron_indices.size() << std::endl;
-         std::cout << "veryloose_muon_indices.size() = " << veryloose_muon_indices.size() << std::endl;
-         std::cout << "veryloose_electron_indices.size() = " << veryloose_electron_indices.size() << std::endl;
+   //   std::cout << "tight_muon_indices.size() = " << tight_muon_indices.size() << std::endl;
+   //   std::cout << "tight_electron_indices.size() = " << tight_electron_indices.size() << std::endl;
+   //   std::cout << "veryloose_muon_indices.size() = " << veryloose_muon_indices.size() << std::endl;
+   //   std::cout << "veryloose_electron_indices.size() = " << veryloose_electron_indices.size() << std::endl;
 
    if(tight_muon_indices.size() >= 2){
 
@@ -758,6 +758,9 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
        if (passWLLJJVetoMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 5 && abs((*muons)[i].eta()) < 2.4)
 	 flags = flags | WLLJJVetoV5;
+
+       if (passLooseMuonSelectionV1((*muons)[i],PV)  && (*muons)[i].pt() > 10 && abs((*muons)[i].eta()) < 2.4 )
+	 flags = flags | WLLJJVetoV4;
        
      }
 
@@ -845,6 +848,9 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if (passWLLJJVetoMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 5 && abs((*muons)[i].eta()) < 2.4)
 	 flags = flags | WLLJJVetoV5;
 
+       if (passLooseMuonSelectionV1((*muons)[i],PV)  && (*muons)[i].pt() > 10 && abs((*muons)[i].eta()) < 2.4 )
+	 flags = flags | WLLJJVetoV4;
+
 
      }
 
@@ -930,6 +936,9 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
        if (passWLLJJVetoMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 5 && abs((*muons)[i].eta()) < 2.4)
 	 flags = flags | WLLJJVetoV5;
+
+       if (passLooseMuonSelectionV1((*muons)[i],PV)  && (*muons)[i].pt() > 10 && abs((*muons)[i].eta()) < 2.4 )
+	 flags = flags | WLLJJVetoV4;
 
      }
 
@@ -1017,6 +1026,9 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if (passWLLJJVetoMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 5 && abs((*muons)[i].eta()) < 2.4)
 	 flags = flags | WLLJJVetoV5;
 
+       if (passLooseMuonSelectionV1((*muons)[i],PV)  && (*muons)[i].pt() > 10 && abs((*muons)[i].eta()) < 2.4 )
+	 flags = flags | WLLJJVetoV4;
+
      }
 
      for(UInt_t i = 0; i < electrons->size(); i++){
@@ -1093,6 +1105,10 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
        if (passWLLJJVetoMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 5 && abs((*muons)[i].eta()) < 2.4)
 	 flags = flags | WLLJJVetoV5;
+
+       if (passLooseMuonSelectionV1((*muons)[i],PV)  && (*muons)[i].pt() > 10 && abs((*muons)[i].eta()) < 2.4 )
+	 flags = flags | WLLJJVetoV4;
+
      }
 
      for(UInt_t i = 0; i < electrons->size(); i++){
@@ -1177,6 +1193,9 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if (passWLLJJVetoMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 5 && abs((*muons)[i].eta()) < 2.4)
 	 flags = flags | WLLJJVetoV5;
 
+       if (passLooseMuonSelectionV1((*muons)[i],PV)  && (*muons)[i].pt() > 10 && abs((*muons)[i].eta()) < 2.4 )
+	 flags = flags | WLLJJVetoV4;
+
      }
 
      for(UInt_t i = 0; i < electrons->size(); i++){
@@ -1255,6 +1274,9 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
        if (passWLLJJVetoMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 5 && abs((*muons)[i].eta()) < 2.4)
 	 flags = flags | WLLJJVetoV5;
+
+       if (passLooseMuonSelectionV1((*muons)[i],PV)  && (*muons)[i].pt() > 10 && abs((*muons)[i].eta()) < 2.4 )
+	 flags = flags | WLLJJVetoV4;
 
      }
 
@@ -1342,6 +1364,9 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        if (passWLLJJVetoMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 5 && abs((*muons)[i].eta()) < 2.4)
 	 flags = flags | WLLJJVetoV5;
 
+       if (passLooseMuonSelectionV1((*muons)[i],PV)  && (*muons)[i].pt() > 10 && abs((*muons)[i].eta()) < 2.4 )
+	 flags = flags | WLLJJVetoV4;
+
      }
 
      for(UInt_t i = 0; i < electrons->size(); i++){
@@ -1419,6 +1444,9 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
        if (passWLLJJVetoMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 5 && abs((*muons)[i].eta()) < 2.4)
 	 flags = flags | WLLJJVetoV5;
+
+       if (passLooseMuonSelectionV1((*muons)[i],PV)  && (*muons)[i].pt() > 10 && abs((*muons)[i].eta()) < 2.4 )
+	 flags = flags | WLLJJVetoV4;
      }
 
      for(UInt_t i = 0; i < electrons->size(); i++){
@@ -1497,6 +1525,9 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
        if (passWLLJJVetoMuonId( (*muons)[i],PV) && (*muons)[i].pt() > 5 && abs((*muons)[i].eta()) < 2.4)
 	 flags = flags | WLLJJVetoV5;
+
+       if (passLooseMuonSelectionV1((*muons)[i],PV)  && (*muons)[i].pt() > 10 && abs((*muons)[i].eta()) < 2.4 )
+	 flags = flags | WLLJJVetoV4;
 
      }
 

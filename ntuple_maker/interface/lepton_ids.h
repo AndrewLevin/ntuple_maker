@@ -62,131 +62,7 @@ inline Bool_t passSoftMuonId(const pat::Muon & muon, const reco::Vertex &vtx){
 
 }
 
-inline Bool_t passWLLJJVetoMuonId(const pat::Muon & muon, const reco::Vertex &vtx){
 
-  //  Float_t relative_isolation = ( muon.pfIsolationR04().sumChargedHadronPt+ std::max(0.0,muon.pfIsolationR04().sumNeutralHadronEt + muon.pfIsolationR04().sumPhotonEt - 0.5 * muon.pfIsolationR04().sumPUPt) )/muon.pt();  
-  //  Float_t relative_isolation = ( muon.pfIsolationR04().sumChargedHadronPt+ std::max(0.0,muon.pfIsolationR04().sumNeutralHadronEt  - 0.5 * muon.pfIsolationR04().sumPUPt) )/muon.pt();  
-
-  if (muon.isSoftMuon(vtx) && fabs(muon.muonBestTrack()->dxy(vtx.position())) < 0.02 && fabs(muon.muonBestTrack()->dz(vtx.position())) < 0.1)
-    return true;
-  else
-    return false;
-
-
-}
-
-inline Bool_t passWLLJJVetoElectronId(const pat::Electron & el, const reco::Vertex &PV, const float &rho, const double &rhoHLTElectronSelection){
-
-  Bool_t pass = kFALSE;
-
-  //  if (!el.chargeInfo().isGsfCtfScPixConsistent)
-  //    return kFALSE;
-
-     //see here https://indico.cern.ch/event/369239/contribution/4/attachments/1134761/1623262/talk_effective_areas_25ns.pdf slide 12
-
-     double EAecal = 0;
-     double EAhcal = 0;
-
-     //float abseta = fabs(el.eta());
-     float abseta = fabs(fabs(el.superCluster()->eta()));
-     if (abseta >= 0.0 && abseta < 1.479 ) EAecal = 0.165;
-     if (abseta >= 1.479 && abseta < 5.0 ) EAecal = 0.132;
-     if (abseta >= 0.0 && abseta < 1.479 ) EAhcal = 0.060;
-     if (abseta >= 1.479 && abseta < 5.0 ) EAhcal = 0.131;
-
-     Float_t ooEmooP = 0;
-
-     if( el.ecalEnergy() == 0 ){
-
-       std::cout << "Electron energy is zero!" << std::endl;
-       ooEmooP = 1e30;
-     }
-     else if (!std::isfinite(el.ecalEnergy())){
-       std::cout << "Electron energy is not finite!" << std::endl;
-       ooEmooP = 1e30;
-     }
-     else
-       ooEmooP = fabs(1.0/el.ecalEnergy() - el.eSuperClusterOverP()/el.ecalEnergy() );
-
-     
-     /*
-
-     std::cout << "rho = " << rho << std::endl;
-     std::cout << el.superCluster()->eta() << std::endl;
-     std::cout << fabs(el.deltaEtaSuperClusterTrackAtVtx()) << std::endl;
-     std::cout << fabs(el.deltaPhiSuperClusterTrackAtVtx()) << std::endl;
-     std::cout << el.full5x5_sigmaIetaIeta() << std::endl;
-     std::cout << el.hcalOverEcal() << std::endl;
-     std::cout << fabs((-1) * el.gsfTrack()->dxy(PV.position())) << std::endl;
-     std::cout << fabs(el.gsfTrack()->dz( PV.position() )) << std::endl;
-     std::cout << fabs(ooEmooP) << std::endl;
-     std::cout << relIsoWithDBeta  << std::endl;
-     std::cout << el.passConversionVeto() << std::endl;
-     std::cout << el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) << std::endl;
-
-     */
-
-
-
-     //tight working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
-     if(fabs(el.superCluster()->eta()) < 2.5 && fabs(el.superCluster()->eta()) > 1.479 ){
-       if(
-	  (el.full5x5_sigmaIetaIeta() < 0.031)
-	  &&
-	  ( el.hadronicOverEm() < 0.065)
-	  &&
-	  (fabs(ooEmooP) < 0.013)
-	  &&
-	  (std::max(0.0, el.ecalPFClusterIso() - rhoHLTElectronSelection*EAecal)/el.pt() < 0.120)
-	  &&
-	  (std::max(0.0, el.hcalPFClusterIso() - rhoHLTElectronSelection*EAhcal)/el.pt() < 0.120)
-	  &&
-	  (el.dr03TkSumPt()/el.pt() < 0.08)
-          &&
-	  ((el.gsfTrack().isNonnull() ? el.gsfTrack()->normalizedChi2() : std::numeric_limits<float>::max()) < 3.0)
-	  )
-	 pass = kTRUE;
-     } else if (fabs(el.superCluster()->eta()) < 1.479) {
-       if(
-	  (el.full5x5_sigmaIetaIeta() < 0.011)
-	  &&
-	  (fabs(el.deltaEtaSuperClusterTrackAtVtx() - el.superCluster()->eta() + el.superCluster()->seed()->eta()) <  0.004)
-	  &&
-	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.020)
-	  &&
-	  ( el.hadronicOverEm() < 0.060)
-	  &&
-	  (fabs(ooEmooP) < 0.013)
-	  &&
-	  (std::max(0.0, el.ecalPFClusterIso() - rhoHLTElectronSelection*EAecal)/el.pt() < 0.160)
-	  &&
-	  (std::max(0.0, el.hcalPFClusterIso() - rhoHLTElectronSelection*EAhcal)/el.pt() < 0.120)
-	  &&
-	  (el.dr03TkSumPt()/el.pt() < 0.08)
-	  )
-	 pass = kTRUE;
-     } 
-
-     pass = pass && el.passConversionVeto();
-
-  return pass;
-
-
-  /*
-
-  reco::GsfElectron::PflowIsolationVariables pfIso = el.pfIsolationVariables();
-  
-  Float_t absiso = pfIso.sumChargedHadronPt + std::max(0.0 , pfIso.sumNeutralHadronEt + pfIso.sumPhotonEt - 0.5 * pfIso.sumPUPt );
-  Float_t relIsoWithDBeta = absiso/el.pt();
-  
-  if (relIsoWithDBeta < 0.1 && fabs(el.gsfTrack()->dz( PV.position() )) < 0.02 && fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.1 )
-    return true;
-  else
-    return false;
-
-  */
-
-}
 
 inline Bool_t passTightMuonIdV1(const pat::Muon & muon, const reco::Vertex &vtx) {
 
@@ -560,7 +436,8 @@ inline Bool_t passTightElectronSelectionV4(const pat::Electron & el, const reco:
      else
        ooEmooP = fabs(1.0/el.ecalEnergy() - el.eSuperClusterOverP()/el.ecalEnergy() );
 
-     /*
+     
+     /*     
 
      std::cout << "rho = " << rho << std::endl;
      std::cout << el.superCluster()->eta() << std::endl;
@@ -588,10 +465,10 @@ inline Bool_t passTightElectronSelectionV4(const pat::Electron & el, const reco:
 	  &&
 	  ( el.hadronicOverEm() < 0.0641)
 	  &&
-	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.1)
-	  &&
-	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.2)
-	  &&
+	  //	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.1)
+	  //	  &&
+	  //	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.2)
+	  //	  &&
 	  (fabs(ooEmooP) < 0.0129)
 	  &&
 	  (relIsoWithDBeta < 0.0571)
@@ -611,10 +488,10 @@ inline Bool_t passTightElectronSelectionV4(const pat::Electron & el, const reco:
 	  &&
 	  ( el.hadronicOverEm() < 0.0414)
 	  &&
-	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.05 )
-	  &&
-	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.1 )
-	  &&
+	  //	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.05 )
+	  //	  &&
+	  //	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.1 )
+	  //	  &&
 	  (fabs(ooEmooP) < 0.0129)
 	  &&
 	  (relIsoWithDBeta < 0.0588)
@@ -626,16 +503,18 @@ inline Bool_t passTightElectronSelectionV4(const pat::Electron & el, const reco:
 	 pass = kTRUE;
      } 
 
-     std::cout << "el.pt() = " << el.pt() << std::endl;
-     std::cout << "el.eta() = " << el.eta() << std::endl;
-     std::cout << "el.gsfTrack()->dz( PV.position() ) = " << el.gsfTrack()->dz( PV.position() ) << std::endl;
-     std::cout << "el.gsfTrack()->dxy( PV.position() ) = " << el.gsfTrack()->dxy( PV.position() ) << std::endl;
-     std::cout << "pass = " << pass << std::endl;
-
      //     std::cout << "el.gsfTrack()->numberOfLostHits () = " << el.gsfTrack()->numberOfLostHits () << std::endl;
 
      //     if (el.gsfTrack()->numberOfLostHits () != 0)
      //       pass = false;
+
+
+     //     std::cout << "el.gsfTrack()->dz( PV.position() ) = " << el.gsfTrack()->dz( PV.position() ) << std::endl;
+
+     //     std::cout << "el.superCluster()->eta() = " << el.superCluster()->eta() << std::endl;
+     //     std::cout << "el.eta() = " << el.eta() << std::endl;
+     //     std::cout << "el.pt() = " << el.pt() << std::endl;
+     //     std::cout << "pass = " << pass << std::endl;
 
   return pass;
 
@@ -749,17 +628,18 @@ inline Bool_t passLooseElectronSelectionV1(const pat::Electron & el, const reco:
 
   Bool_t pass = kFALSE;
 
-  if (!el.chargeInfo().isGsfCtfScPixConsistent)
-    return kFALSE;
+  //  if (!el.chargeInfo().isGsfCtfScPixConsistent)
+  //    return kFALSE;
+
 
      reco::GsfElectron::PflowIsolationVariables pfIso = el.pfIsolationVariables();
+
+     //see here https://indico.cern.ch/event/369239/contribution/4/attachments/1134761/1623262/talk_effective_areas_25ns.pdf slide 12
 
      double EffectiveArea = 0;
 
      //float abseta = fabs(el.eta());
-
      float abseta = fabs(fabs(el.superCluster()->eta()));
-
      if (abseta >= 0.0 && abseta < 1.0 ) EffectiveArea = 0.1703;
      if (abseta >= 1.0 && abseta < 1.479 ) EffectiveArea = 0.1715;
      if (abseta >= 1.479 && abseta < 2.0 ) EffectiveArea = 0.1213;
@@ -773,7 +653,7 @@ inline Bool_t passLooseElectronSelectionV1(const pat::Electron & el, const reco:
      Float_t ooEmooP = 0;
 
      if( el.ecalEnergy() == 0 ){
-       std::cout << "el.pt() = " << el.pt() << std::endl;
+
        std::cout << "Electron energy is zero!" << std::endl;
        ooEmooP = 1e30;
      }
@@ -784,47 +664,66 @@ inline Bool_t passLooseElectronSelectionV1(const pat::Electron & el, const reco:
      else
        ooEmooP = fabs(1.0/el.ecalEnergy() - el.eSuperClusterOverP()/el.ecalEnergy() );
 
-     //tight working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
+     /*     
+
+     std::cout << "rho = " << rho << std::endl;
+     std::cout << el.superCluster()->eta() << std::endl;
+     std::cout << fabs(el.deltaEtaSuperClusterTrackAtVtx()) << std::endl;
+     std::cout << fabs(el.deltaPhiSuperClusterTrackAtVtx()) << std::endl;
+     std::cout << el.full5x5_sigmaIetaIeta() << std::endl;
+     std::cout << el.hcalOverEcal() << std::endl;
+     std::cout << fabs((-1) * el.gsfTrack()->dxy(PV.position())) << std::endl;
+     std::cout << fabs(el.gsfTrack()->dz( PV.position() )) << std::endl;
+     std::cout << fabs(ooEmooP) << std::endl;
+     std::cout << relIsoWithDBeta  << std::endl;
+     std::cout << el.passConversionVeto() << std::endl;
+     std::cout << el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) << std::endl;
+
+     */
+
+     //loose working point from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
      if(fabs(el.superCluster()->eta()) < 2.5 && fabs(el.superCluster()->eta()) > 1.479 ){
        if(
-	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) < 0.00605)
+	  (fabs(el.deltaEtaSuperClusterTrackAtVtx() - el.superCluster()->eta() + el.superCluster()->seed()->eta()) < 0.00868 )
 	  &&
-	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.0394)
+	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.213)
 	  &&
-	  (el.full5x5_sigmaIetaIeta() < 0.0292)
+	  (el.full5x5_sigmaIetaIeta() < 0.0314)
 	  &&
-	  ( el.hcalOverEcal() < 0.0641)
+	  ( el.hadronicOverEm() < 0.101)
 	  &&
-	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.05)
+	  //	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.05 )
+	  //	  &&
+	  //	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.1 )
+	  //	  &&
+	  (fabs(ooEmooP) < 0.14)
 	  &&
-	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.1)
-	  &&
-	  (fabs(ooEmooP) < 0.0129)
-	  &&
-	  (relIsoWithDBeta < 0.0571)
+	  (relIsoWithDBeta < 0.107)
 	  &&
 	  (el.passConversionVeto())
 	  &&
-	  (el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1 )
+	  (el.gsfTrack()->hitPattern().numberOfLostHits(reco::HitPattern::MISSING_INNER_HITS) <= 1) 
 	  )
 	 pass = kTRUE;
+
+
      } else if (fabs(el.superCluster()->eta()) < 1.479) {
        if(
-	  (fabs(el.deltaEtaSuperClusterTrackAtVtx()) <  0.00308)
+	  (fabs(el.deltaEtaSuperClusterTrackAtVtx() - el.superCluster()->eta() + el.superCluster()->seed()->eta()) < 0.00477)
 	  &&
-	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.0816)
+	  ( fabs(el.deltaPhiSuperClusterTrackAtVtx()) < 0.222)
 	  &&
-	  (el.full5x5_sigmaIetaIeta() < 0.00998)
+	  (el.full5x5_sigmaIetaIeta() < 0.011)
 	  &&
-	  ( el.hcalOverEcal() < 0.0414)
+	  ( el.hadronicOverEm() < 0.298)
 	  &&
-	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.1 )
+	  //	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.1)
+	  //	  &&
+	  //	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.2)
+	  //	  &&
+	  (fabs(ooEmooP) < 0.241)
 	  &&
-	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.2 )
-	  &&
-	  (fabs(ooEmooP) < 0.0129)
-	  &&
-	  (relIsoWithDBeta < 0.0588)
+	  (relIsoWithDBeta < 0.0994)
 	  &&
 	  (el.passConversionVeto())
 	  &&
@@ -1141,6 +1040,23 @@ inline Bool_t passVeryLooseMuonSelection(const pat::Muon & muon, const reco::Ver
 
 }
 
+inline Bool_t passWLLJJVetoMuonId(const pat::Muon & muon, const reco::Vertex &vtx){
+
+  //  Float_t relative_isolation = ( muon.pfIsolationR04().sumChargedHadronPt+ std::max(0.0,muon.pfIsolationR04().sumNeutralHadronEt + muon.pfIsolationR04().sumPhotonEt - 0.5 * muon.pfIsolationR04().sumPUPt) )/muon.pt();  
+  //  Float_t relative_isolation = ( muon.pfIsolationR04().sumChargedHadronPt+ std::max(0.0,muon.pfIsolationR04().sumNeutralHadronEt  - 0.5 * muon.pfIsolationR04().sumPUPt) )/muon.pt();  
+
+  if (muon.isSoftMuon(vtx) && fabs(muon.muonBestTrack()->dxy(vtx.position())) < 0.02 && fabs(muon.muonBestTrack()->dz(vtx.position())) < 0.1)
+    return true;
+  else
+    return false;
+
+
+}
+
+inline Bool_t passWLLJJVetoElectronId(const pat::Electron & el, const reco::Vertex &PV, const float &rho, const double &rhoHLTElectronSelection){
+
+     return passLooseElectronSelectionV2(el, PV, rho, rhoHLTElectronSelection) || passLooseElectronSelectionV1(el, PV, rho, rhoHLTElectronSelection);
+}
 
 #endif
 
