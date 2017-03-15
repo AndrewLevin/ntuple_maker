@@ -25,11 +25,13 @@ process.source = cms.Source("PoolSource",
 
 #'/store/data/Run2016H/MuonEG/MINIAOD/PromptReco-v2/000/283/876/00000/AA7CCD56-C19C-E611-8F3B-02163E011872.root'
 
-'/store/data/Run2016G/DoubleMuon/MINIAOD/03Feb2017-v1/100000/00182C13-EEEA-E611-8897-001E675A6C2A.root'
+#'/store/data/Run2016G/DoubleMuon/MINIAOD/03Feb2017-v1/100000/00182C13-EEEA-E611-8897-001E675A6C2A.root'
+
+'/store/data/Run2016H/DoubleMuon/MINIAOD/03Feb2017_ver2-v1/110000/E6E5089B-C4EC-E611-BC44-549F3525C0BC.root'
 
 ),
 
-#eventsToProcess = cms.untracked.VEventRange('276525:394:592892349-276525:394:592892349'),
+#eventsToProcess = cms.untracked.VEventRange('283820:1041:1838429751-283820:1041:1838429751'),
 
 )
 
@@ -141,7 +143,8 @@ process.demo = cms.EDAnalyzer('ntuple_maker',
   syscalcinfo = cms.untracked.bool (False), #fill the information from syscalc
   mgreweightinfo = cms.untracked.bool (False),
   vertices = cms.InputTag("offlineSlimmedPrimaryVertices"),
-  muons = cms.InputTag("cleanedMu"),
+#  muons = cms.InputTag("cleanedMu"),
+  muons = cms.InputTag("slimmedMuons"),
   lheevent = cms.InputTag("externalLHEProducer"),
   lheruninfo = cms.InputTag("externalLHEProducer"),
 #  lheruninfo = cms.InputTag("source"),
@@ -174,6 +177,7 @@ trigger_results_process = cms.untracked.string("HLT")
 )
 
 
-process.p = cms.Path( process.regressionApplication * process.calibratedPatElectrons * process.fullPatMetSequence  * process.jecSequence*  process.cleanedMu*process.demo)
+#process.p = cms.Path( process.regressionApplication * process.calibratedPatElectrons * process.fullPatMetSequence  * process.jecSequence*  process.cleanedMu*process.demo)
+process.p = cms.Path( process.regressionApplication * process.calibratedPatElectrons * process.fullPatMetSequence  * process.jecSequence*  process.demo)
 
 
