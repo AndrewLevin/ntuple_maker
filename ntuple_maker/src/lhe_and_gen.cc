@@ -158,8 +158,6 @@ int lhe_and_gen::analyze(const edm::Event& iEvent, LorentzVector & lep1, Lorentz
 
   }
 
-  
-
   if (syscalcinfo_){
 
     assert(qcd_weight_mur1muf2_index != std::numeric_limits<int>::max());
@@ -350,6 +348,24 @@ lhe_and_gen::beginRun(edm::Run const& iRun)
 
   }
 
+  // use the lines below for /WLLJJ_WToLNu_MLL-4To60_EWK_TuneCUETP8M1_13TeV_madgraph-madspin-pythia8/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v2/MINIAODSIM which does not have the initrwgt header because  madspin drops it for some reason
+
+  /*
+
+  qcd_weight_mur1muf2_index = 2 - 1;
+  qcd_weight_mur1muf0p5_index = 3 - 1;
+  qcd_weight_mur2muf1_index = 4 - 1;
+  qcd_weight_mur2muf2_index= 5 - 1;
+  qcd_weight_mur2muf0p5_index = 6 - 1;
+  qcd_weight_mur0p5muf1_index= 7 - 1;
+  qcd_weight_mur0p5muf2_index= 8 - 1;
+  qcd_weight_mur0p5muf0p5_index= 9 - 1;
+
+  for (int i = 10; i < 111; i++)
+    pdf_weights_indices.push_back(i - 1);
+
+  */
+
   for ( LHERunInfoProduct::headers_const_iterator lheruniter = hLheRun.product()->headers_begin(); lheruniter != hLheRun.product()->headers_end(); lheruniter++ ) {
     
     if (lheruniter->tag() != "initrwgt")
@@ -362,10 +378,8 @@ lhe_and_gen::beginRun(edm::Run const& iRun)
 
     for ( LHERunInfoProduct::Header::const_iterator iter = lheruniter->begin(); iter != lheruniter->end(); iter++ ) {
 
-      if (  (*iter).find("weight id") != std::string::npos )
+     if (  (*iter).find("weight id") != std::string::npos || (*iter).find("weight MUF=") != std::string::npos )
 	weight_index++;
-
-      //std::cout << (*iter) << std::endl;
 
       if ( (*iter).find("mur=1 muf=2") != std::string::npos || (*iter).find("muR=0.10000E+01 muF=0.20000E+01") != std::string::npos){
 
@@ -426,7 +440,7 @@ lhe_and_gen::beginRun(edm::Run const& iRun)
 	continue;
       }
 
-      if ( (*iter).find("NNPDF30_lo_as_0130.LHgrid") != std::string::npos){
+      if ( (*iter).find("\"NNPDF30_lo_as_0130\"") != std::string::npos && (*iter).find("weightgroup") != std::string::npos && (*iter).find("hessian") != std::string::npos){
 	in_NNPDF23_lo_as_0130_qed = true;
 	continue;
       }
