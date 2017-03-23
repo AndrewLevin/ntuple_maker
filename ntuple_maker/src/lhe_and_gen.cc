@@ -328,6 +328,8 @@ lhe_and_gen::beginRun(edm::Run const& iRun)
 
     for ( LHERunInfoProduct::Header::const_iterator iter = lheruniter->begin(); iter != lheruniter->end(); iter++ ) {
 
+      std::cout << "(*iter) = " << (*iter) << std::endl;
+
       initrwgt_header_line_ = (*iter);
 
       //skip leading empty line
@@ -440,7 +442,8 @@ lhe_and_gen::beginRun(edm::Run const& iRun)
 	continue;
       }
 
-      if ( (*iter).find("\"NNPDF30_lo_as_0130\"") != std::string::npos && (*iter).find("weightgroup") != std::string::npos && (*iter).find("hessian") != std::string::npos){
+      if ( ((*iter).find("\"NNPDF30_lo_as_0130.LHgrid\"") != std::string::npos || (*iter).find("\"NNPDF30_lo_as_0130\"") != std::string::npos) && (*iter).find("weightgroup") != std::string::npos && (*iter).find("hessian") != std::string::npos){
+
 	in_NNPDF23_lo_as_0130_qed = true;
 	continue;
       }
@@ -470,6 +473,7 @@ lhe_and_gen::beginRun(edm::Run const& iRun)
 
       if (in_NNPDF23_lo_as_0130_qed){
 	if ( (*iter).find("/weightgroup") != std::string::npos){
+
 	  in_NNPDF23_lo_as_0130_qed = false;
 	  continue;
 	}
