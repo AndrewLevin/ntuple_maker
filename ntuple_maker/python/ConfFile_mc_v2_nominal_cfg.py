@@ -1,3 +1,4 @@
+
 import FWCore.ParameterSet.Config as cms
 
 process = cms.Process("Demo")
@@ -22,7 +23,7 @@ input = cms.untracked.int32(-1) ,
 
 process.source = cms.Source("PoolSource",
 
-#skipEvents= cms.untracked.uint32(1),
+#skipEvents= cms.untracked.uint32(3146),
 
     # replace 'myfile.root' with the source file you want to use
 #    duplicateCheckMode = cms.untracked.string('noDuplicateCheck'),
@@ -35,9 +36,21 @@ process.source = cms.Source("PoolSource",
 
 '/store/mc/RunIISummer16MiniAODv2/WpWpJJ_EWK_TuneCUETP8M1_13TeV-madgraph-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/80000/E40448C3-94DE-E611-9C31-0CC47A78A340.root'
 
+#'/store/mc/RunIISummer16MiniAODv2/WLLJJ_WToLNu_MLL-4To60_EWK_TuneCUETP8M1_13TeV_madgraph-madspin-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v2/50000/0E8F00D6-DFEB-E611-99F6-001E67504475.root'
+
+#'/store/mc/RunIISummer16MiniAODv2/WLLJJ_WToLNu_EWK_TuneCUETP8M1_13TeV_madgraph-madspin-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/70000/1A95882D-64C6-E611-9437-0CC47A4C8F30.root'
+
+#'/store/mc/RunIISummer16MiniAODv2/WpWpJJ_QCD_TuneCUETP8M1_13TeV-madgraph-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/110000/1ECE8AAB-E7DA-E611-A1D1-001E67E71B96.root'
+
+#'/store/mc/RunIISummer16MiniAODv2/WLLJJ_WToLNu_EWK_TuneCUETP8M1_13TeV_madgraph-madspin-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/90000/C27E1FD3-C8C5-E611-8E3C-0CC47A4D7692.root'
+
+#'/store/mc/RunIISummer16MiniAODv2/WLLJJ_WToLNu_EWK_TuneCUETP8M1_13TeV_madgraph-madspin-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/70000/B849F6A3-5BC5-E611-94A6-6C3BE5B59150.root'
+
+#'/store/mc/RunIISummer16MiniAODv2/WLLJJ_WToLNu_EWK_TuneCUETP8M1_13TeV_madgraph-madspin-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/70000/0A6FE368-F5C5-E611-9F7C-782BCB20E48C.root'
+
     ),
 
-eventsToProcess = cms.untracked.VEventRange('1:1124:138798-1:1124:138798'),
+#eventsToProcess = cms.untracked.VEventRange('1:1747:239313-1:1747:239313'),
 
 )
 
@@ -182,5 +195,6 @@ mets = cms.InputTag('slimmedMETs','','Demo'),
   trigger_results_process = cms.untracked.string("HLT")                              
 )
 
-process.p = cms.Path( process.regressionApplication * process.calibratedPatElectrons * process.fullPatMetSequence  * process.jecSequence*  process.cleanedMu*process.demo)
+#process.p = cms.Path( process.regressionApplication * process.calibratedPatElectrons * process.fullPatMetSequence  * process.jecSequence*  process.cleanedMu*process.demo)
+process.p = cms.Path( process.regressionApplication * process.calibratedPatElectrons * process.fullPatMetSequence  * process.jecSequence* process.demo)
 
