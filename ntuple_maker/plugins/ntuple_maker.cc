@@ -89,9 +89,6 @@ const Float_t z_mass = 91.18800;
 
 typedef ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> > LorentzVector;
 
-inline void fill_third_lepton() {
-
-}
 
 inline void fill_electron_selection_flags(const pat::Electron & el, const reco::Vertex &PV, const double &rho, const double &rhoHLTElectronSelection, UInt_t &flags, const int & flag_index) {
 
@@ -486,6 +483,8 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   lepton_selection_flags = 0;
   flags = 0;
+  lep3id = 0;
+  lep3q = 0;
 
   if (!isJecUncSet_ && isMC_){
 
@@ -636,21 +635,6 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    //   std::cout << "muons->size() = " << muons->size() << std::endl;
    //   std::cout << "electrons->size() = " << electrons->size() << std::endl;
 
-   for (UInt_t i = 0; i < muons->size(); i++){
-     for (UInt_t j = i+1; j < muons->size(); j++){
-
-       if ((*muons)[i].pt() < 10 || (*muons)[j].pt() < 10 || abs((*muons)[i].eta()) > 2.4 || abs((*muons)[j].eta()) > 2.4)
-	 continue;
-
-       if ((*muons)[j].charge() != (*muons)[i].charge() && abs(((*muons)[i].p4() + (*muons)[j].p4()).mass() - z_mass)  < 15){
-	 
-	 flags = flags | VetoV1;
-	 
-       }
-
-     }
-   }
-
 
    for(UInt_t i = 0; i < electrons->size(); i++){
      for(UInt_t j = 0; j < electrons->size(); j++){
@@ -677,8 +661,10 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    for(UInt_t i = 0; i < electrons->size(); i++){
 
-     if( (*electrons)[i].pt() < 20 || abs((*electrons)[i].eta()) > 2.5) 
+     if( (*electrons)[i].pt() < 10 || abs((*electrons)[i].eta()) > 2.5) 
        continue;
+
+     /*
 
      bool should_be_cleaned = false;
 
@@ -690,6 +676,8 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      }
 
      if (should_be_cleaned) continue;
+
+     */
 
      if (passTightElectronSelectionV4((*electrons)[i],PV,rho))
        tight_electron_indices.push_back(i);
@@ -716,7 +704,7 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    for(UInt_t i = 0; i < muons->size(); i++){
 
-     if ((*muons)[i].pt() < 20 || abs((*muons)[i].eta()) > 2.4)
+     if ((*muons)[i].pt() < 10 || abs((*muons)[i].eta()) > 2.4)
        continue;
 
      //if (!passTightMuonSelectionV1((*muons)[i],PV) )
@@ -730,10 +718,10 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     }
 
-   //      std::cout << "tight_muon_indices.size() = " << tight_muon_indices.size() << std::endl;
-   //      std::cout << "tight_electron_indices.size() = " << tight_electron_indices.size() << std::endl;
-   //      std::cout << "veryloose_muon_indices.size() = " << veryloose_muon_indices.size() << std::endl;
-   //      std::cout << "veryloose_electron_indices.size() = " << veryloose_electron_indices.size() << std::endl;
+   //         std::cout << "tight_muon_indices.size() = " << tight_muon_indices.size() << std::endl;
+   //         std::cout << "tight_electron_indices.size() = " << tight_electron_indices.size() << std::endl;
+   //         std::cout << "veryloose_muon_indices.size() = " << veryloose_muon_indices.size() << std::endl;
+   //         std::cout << "veryloose_electron_indices.size() = " << veryloose_electron_indices.size() << std::endl;
 
    if(tight_muon_indices.size() >= 2){
 
@@ -2178,6 +2166,12 @@ ntuple_maker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
      }
 
+     if (lep3id != 0){       
+       if ( reco::deltaR(j.p4(),lep3) < 0.4 ){
+	 continue;       
+       }       
+     }
+       
      if (isMC_){
 
        jecUnc_->setJetEta(j.eta());
