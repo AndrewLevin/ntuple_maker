@@ -488,10 +488,10 @@ inline Bool_t passTightElectronSelectionV4(const pat::Electron & el, const reco:
 	  &&
 	  ( el.hadronicOverEm() < 0.0414)
 	  &&
-	  //	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.05 )
-	  //	  &&
-	  //	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.1 )
-	  //	  &&
+	  ( fabs((-1) * el.gsfTrack()->dxy(PV.position())) < 0.05 )
+	  &&
+	  (  fabs(el.gsfTrack()->dz( PV.position() )) < 0.1 )
+	  &&
 	  (fabs(ooEmooP) < 0.0129)
 	  &&
 	  (relIsoWithDBeta < 0.0588)

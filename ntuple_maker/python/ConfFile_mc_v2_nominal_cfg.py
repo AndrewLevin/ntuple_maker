@@ -30,11 +30,17 @@ process.source = cms.Source("PoolSource",
 
     fileNames = cms.untracked.vstring(
 
-'/store/mc/RunIISummer16MiniAODv2/WpWpJJ_EWK_TuneCUETP8M1_13TeV-madgraph-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/80000/044AEFD6-92DE-E611-B842-0CC47A4D7616.root',
+'/store/mc/RunIISummer16MiniAODv2/tZq_ll_4f_13TeV-amcatnlo-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v1/120000/04A3B6DA-91C0-E611-BFF9-002590E39D8A.root'
 
-'/store/mc/RunIISummer16MiniAODv2/WpWpJJ_EWK_TuneCUETP8M1_13TeV-madgraph-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/80000/CA3039C2-9CDE-E611-9E74-0CC47A4D7662.root',
+#'/store/mc/RunIISummer16MiniAODv2/WWW_4F_TuneCUETP8M1_13TeV-amcatnlo-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/50000/06CEB378-7EC0-E611-8D9B-A0000420FE80.root'
 
-'/store/mc/RunIISummer16MiniAODv2/WpWpJJ_EWK_TuneCUETP8M1_13TeV-madgraph-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/80000/E40448C3-94DE-E611-9C31-0CC47A78A340.root'
+#'/store/mc/RunIISummer16MiniAODv2/WWZ_TuneCUETP8M1_13TeV-amcatnlo-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/50000/5879BADB-1BB7-E611-827D-0025901D08F0.root'
+
+#'/store/mc/RunIISummer16MiniAODv2/WpWpJJ_EWK_TuneCUETP8M1_13TeV-madgraph-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/80000/044AEFD6-92DE-E611-B842-0CC47A4D7616.root',
+
+#'/store/mc/RunIISummer16MiniAODv2/WpWpJJ_EWK_TuneCUETP8M1_13TeV-madgraph-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/80000/CA3039C2-9CDE-E611-9E74-0CC47A4D7662.root',
+
+#'/store/mc/RunIISummer16MiniAODv2/WpWpJJ_EWK_TuneCUETP8M1_13TeV-madgraph-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/80000/E40448C3-94DE-E611-9C31-0CC47A78A340.root'
 
 #'/store/mc/RunIISummer16MiniAODv2/WLLJJ_WToLNu_MLL-4To60_EWK_TuneCUETP8M1_13TeV_madgraph-madspin-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v2/50000/0E8F00D6-DFEB-E611-99F6-001E67504475.root'
 

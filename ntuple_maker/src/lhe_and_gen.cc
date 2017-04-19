@@ -124,17 +124,19 @@ int lhe_and_gen::analyze(const edm::Event& iEvent, LorentzVector & lep1, Lorentz
   if (! isMC_)
     return 0;
 
+  edm::Handle<GenEventInfoProduct> hGenEvt;
+  iEvent.getByToken(genEvtToken_,hGenEvt);
+
+  gen_weight = hGenEvt->weight();
+
   if(mgreweightinfo_ || syscalcinfo_ || lhe_lepton_info_){
 
   edm::Handle<LHEEventProduct> hLheEvt;
   iEvent.getByToken(lheEvtToken_,hLheEvt);
 
-  edm::Handle<GenEventInfoProduct> hGenEvt;
-  iEvent.getByToken(genEvtToken_,hGenEvt);
-
   //assert(hGenEvt->weight() == hLheEvt->originalXWGTUP());
 
-  gen_weight = hGenEvt->weight();
+
 
   lhe_weight_orig = hLheEvt->originalXWGTUP();
 
@@ -159,6 +161,7 @@ int lhe_and_gen::analyze(const edm::Event& iEvent, LorentzVector & lep1, Lorentz
   }
 
   if (syscalcinfo_){
+
 
     assert(qcd_weight_mur1muf2_index != std::numeric_limits<int>::max());
     assert(qcd_weight_mur1muf0p5_index != std::numeric_limits<int>::max());
@@ -279,7 +282,11 @@ void
 lhe_and_gen::beginRun(edm::Run const& iRun)
 {
 
+
+
   if(mgreweightinfo_ || syscalcinfo_){
+
+    bool found_pdf_set = false;
 
   edm::Handle<LHERunInfoProduct> hLheRun;
   iRun.getByLabel(lheRunInfoLabel_,hLheRun);
@@ -328,7 +335,7 @@ lhe_and_gen::beginRun(edm::Run const& iRun)
 
     for ( LHERunInfoProduct::Header::const_iterator iter = lheruniter->begin(); iter != lheruniter->end(); iter++ ) {
 
-      std::cout << "(*iter) = " << (*iter) << std::endl;
+      //                              std::cout << "(*iter) = " << (*iter) << std::endl;
 
       initrwgt_header_line_ = (*iter);
 
@@ -352,7 +359,7 @@ lhe_and_gen::beginRun(edm::Run const& iRun)
 
   // use the lines below for /WLLJJ_WToLNu_MLL-4To60_EWK_TuneCUETP8M1_13TeV_madgraph-madspin-pythia8/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v2/MINIAODSIM which does not have the initrwgt header because  madspin drops it for some reason
 
-  /*
+  /*  
 
   qcd_weight_mur1muf2_index = 2 - 1;
   qcd_weight_mur1muf0p5_index = 3 - 1;
@@ -442,7 +449,28 @@ lhe_and_gen::beginRun(edm::Run const& iRun)
 	continue;
       }
 
-      if ( ((*iter).find("\"NNPDF30_lo_as_0130.LHgrid\"") != std::string::npos || (*iter).find("\"NNPDF30_lo_as_0130\"") != std::string::npos) && (*iter).find("weightgroup") != std::string::npos && (*iter).find("hessian") != std::string::npos){
+      if ( 
+
+	  (
+((*iter).find("\"NNPDF30_lo_as_0130.LHgrid\"") != std::string::npos || (*iter).find("\"NNPDF30_lo_as_0130\"") != std::string::npos) && (*iter).find("weightgroup") != std::string::npos && (*iter).find("hessian") != std::string::npos 
+	   )
+
+
+|| 
+
+	  (
+
+(*iter).find("weightgroup combine=\"gaussian\" type=\"PDF_variation\"") != std::string::npos 
+
+	   )
+
+){
+
+
+	//make sure this is not entered more than once
+	assert(found_pdf_set == false);
+
+	found_pdf_set = true;
 
 	in_NNPDF23_lo_as_0130_qed = true;
 	continue;
@@ -479,7 +507,7 @@ lhe_and_gen::beginRun(edm::Run const& iRun)
 	}
 
 
-	assert((*iter).find("Member") != std::string::npos);
+	assert((*iter).find("Member") != std::string::npos || (*iter).find("pdfset=") != std::string::npos);
 
 	//std::cout << (*iter).substr((*iter).find("<weight id=")+12,(*iter).find(">Member") - (*iter).find("<weight id=") - 13) << std::endl;
 
