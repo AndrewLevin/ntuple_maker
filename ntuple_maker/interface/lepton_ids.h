@@ -503,6 +503,7 @@ inline Bool_t passTightElectronSelectionV4(const pat::Electron & el, const reco:
 	 pass = kTRUE;
      } 
 
+
   return pass;
 
 }    
